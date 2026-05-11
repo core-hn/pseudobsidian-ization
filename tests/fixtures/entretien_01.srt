@@ -1,0 +1,23 @@
+1
+00:00:01,000 --> 00:00:04,500
+Bonjour Jean, tu peux te présenter ?
+
+2
+00:00:05,000 --> 00:00:09,200
+Je m'appelle Jean Dupont, j'habite Saint-Jean-de-Luz.
+
+3
+00:00:10,000 --> 00:00:13,500
+Et tu travailles au CHU de Montpellier ?
+
+4
+00:00:14,000 --> 00:00:17,800
+Oui, au CHU de Montpellier, depuis trois ans.
+
+5
+00:00:18,200 --> 00:00:22,000
+Tu connais Paul Martin, qui travaille à Saint-Paul ?
+
+6
+00:00:22,500 --> 00:00:26,300
+Oui, on s'est rencontrés à Montpellier, à la fac de médecine.

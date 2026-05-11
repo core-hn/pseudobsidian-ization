@@ -1,0 +1,10 @@
+{
+  "id": "pseudobsidianization",
+  "name": "PseudObsidian-ization",
+  "version": "0.0.1",
+  "minAppVersion": "1.4.0",
+  "description": "Correction et pseudonymisation de transcriptions d'entretiens (Jefferson, ICOR, SRT, CHAT/CHA).",
+  "author": "Axelle Abbadie",
+  "authorUrl": "https://cv.hal.science/axelle-abbadie/",
+  "isDesktopOnly": true
+}

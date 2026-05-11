@@ -1,0 +1,187 @@
+import { App, PluginSettingTab, Setting } from 'obsidian';
+import type PseudObsPlugin from './main';
+
+export interface PseudObsSettings {
+  transcriptionsFolder: string;
+  mappingFolder: string;
+  dictionariesFolder: string;
+  exportsFolder: string;
+  reportsFolder: string;
+  caseSensitive: boolean;
+  accentSensitive: boolean;
+  wholeWordOnly: boolean;
+  preserveCase: boolean;
+  preserveAnalyticNotation: boolean;
+  warnIfSyncedFolder: boolean;
+  useMarkerInExport: boolean;
+  markerOpen: string;
+  markerClose: string;
+}
+
+export const DEFAULT_SETTINGS: PseudObsSettings = {
+  transcriptionsFolder: 'Transcriptions',
+  mappingFolder: '_pseudonymisation/mappings',
+  dictionariesFolder: '_pseudonymisation/dictionaries',
+  exportsFolder: '_pseudonymisation/exports',
+  reportsFolder: '_pseudonymisation/reports',
+  caseSensitive: false,
+  accentSensitive: false,
+  wholeWordOnly: true,
+  preserveCase: true,
+  preserveAnalyticNotation: true,
+  warnIfSyncedFolder: true,
+  useMarkerInExport: false,
+  markerOpen: '⟦',
+  markerClose: '⟧',
+};
+
+export class PseudObsSettingTab extends PluginSettingTab {
+  plugin: PseudObsPlugin;
+
+  constructor(app: App, plugin: PseudObsPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+    containerEl.createEl('h2', { text: 'PseudObsidian-ization' });
+
+    containerEl.createEl('h3', { text: 'Dossiers' });
+
+    new Setting(containerEl)
+      .setName('Transcriptions importées')
+      .setDesc('Dossier de destination pour les fichiers ajoutés via la commande "Ajouter une transcription"')
+      .addText((text) =>
+        text.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
+          this.plugin.settings.transcriptionsFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Tables de correspondance')
+      .setDesc('Chemin relatif dans le vault')
+      .addText((text) =>
+        text.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
+          this.plugin.settings.mappingFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Dictionnaires')
+      .setDesc('Chemin relatif dans le vault')
+      .addText((text) =>
+        text.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
+          this.plugin.settings.dictionariesFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Exports')
+      .addText((text) =>
+        text.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
+          this.plugin.settings.exportsFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    containerEl.createEl('h3', { text: 'Remplacement' });
+
+    new Setting(containerEl)
+      .setName('Sensible à la casse')
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.caseSensitive).onChange(async (value) => {
+          this.plugin.settings.caseSensitive = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Sensible aux accents')
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.accentSensitive).onChange(async (value) => {
+          this.plugin.settings.accentSensitive = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Mots entiers uniquement')
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.wholeWordOnly).onChange(async (value) => {
+          this.plugin.settings.wholeWordOnly = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Préserver la casse')
+      .setDesc('Adapter la casse du remplacement à celle de la source (Jean → Pierre, JEAN → PIERRE)')
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
+          this.plugin.settings.preserveCase = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Préserver les notations analytiques')
+      .setDesc('Ne jamais remplacer les symboles Jefferson / ICOR')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.preserveAnalyticNotation)
+          .onChange(async (value) => {
+            this.plugin.settings.preserveAnalyticNotation = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    containerEl.createEl('h3', { text: 'Marqueur d\'export' });
+
+    new Setting(containerEl)
+      .setName('Ajouter un marqueur autour des pseudonymes dans l\'export')
+      .setDesc('Permet d\'identifier visuellement les termes pseudonymisés dans le fichier exporté')
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.useMarkerInExport).onChange(async (value) => {
+          this.plugin.settings.useMarkerInExport = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Marqueur ouvrant')
+      .setDesc('Exemple : ⟦  [  {  «')
+      .addText((text) =>
+        text.setValue(this.plugin.settings.markerOpen).onChange(async (value) => {
+          this.plugin.settings.markerOpen = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('Marqueur fermant')
+      .setDesc('Exemple : ⟧  ]  }  »')
+      .addText((text) =>
+        text.setValue(this.plugin.settings.markerClose).onChange(async (value) => {
+          this.plugin.settings.markerClose = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    containerEl.createEl('h3', { text: 'Sécurité' });
+
+    new Setting(containerEl)
+      .setName('Avertir si le dossier est synchronisé')
+      .setDesc('Alerter si les tables de correspondance sont dans un dossier Git, iCloud ou Synology Drive')
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.warnIfSyncedFolder).onChange(async (value) => {
+          this.plugin.settings.warnIfSyncedFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+  }
+}

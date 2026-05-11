@@ -1,0 +1,21 @@
+# Notes de développement internes (Claude Code)
+CLAUDE.md
+
+# Vault de test Obsidian — peut contenir des transcriptions avec données personnelles
+test/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Dépendances Node
+node_modules/
+
+# Sourcemaps (inutiles en production)
+*.js.map
+
+# Données Obsidian locales du plugin (paramètres utilisateur)
+data.json
+
+# Variables d'environnement locales
+.env.local

@@ -1,0 +1,19 @@
+@Begin
+@Languages: fra
+@Participants: INV Investigatrice adulte, PAR Participant adulte
+@ID: fra|corpus|INV|adulte||Investigatrice|||adulte|
+@ID: fra|corpus|PAR|adulte||Participant|||adulte|
+@Date: 11-MAY-2026
+@Location: Lyon
+@Transcriber: AA
+*INV: bonjour Marie, tu peux te présenter ?
+*PAR: je m'appelle Marie Dupont, j'ai trente-deux ans .
+*INV: et tu habites à Lyon ?
+*PAR: oui, dans le quartier de la Guillotière .
+%com: PAR marque une hésitation avant de répondre
+*INV: tu travailles dans quel secteur ?
+*PAR: à l' hôpital (.) au service de pédiatrie .
+*INV: et tu as grandi à Nancy ?
+*PAR: oui (0.5) à Nancy (.) la ville (.) pas le prénom .
+%com: INV et PAR rient
+@End
