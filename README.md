@@ -93,7 +93,7 @@ Le moteur de **reconnaissance d'entités nommées** détecte prénoms, noms, lie
 
 **Modèle :** `Xenova/bert-base-multilingual-cased-ner-hrl` via `transformers.js`. Exécution 100 % locale. Téléchargements uniques au premier usage : WASM (~19 Mo) + modèle NER (~66 Mo). **Fonctionnement hors-ligne après le premier téléchargement.**
 
-**Paramètres (onglet NER du panneau) :**
+**Paramètres (onglet NER du panneau)** :
 - **Seuil de confiance** (0,50–1,00) : augmenter réduit les faux positifs
 - **Mots fonctionnels exclus** : liste éditable des tokens à toujours ignorer ("de", "du", "la"…)
 
@@ -132,8 +132,8 @@ Dans les fichiers exportés, les pseudonymes sont encadrés de marqueurs `{{Pier
 
 - Tout traitement est **local** — aucun texte de transcription n'est envoyé à un serveur externe
 - Le modèle NER s'exécute dans Obsidian via WASM, sans appel réseau
-- **Exception documentée :** "Pseudonymiser avec Coulmont" envoie le *prénom de remplacement* (pas le contenu de la transcription) à `coulmont.com`
-- Les tables de correspondance ne sont jamais incluses dans les exports pseudonymisés
+- **Exception documentée :** "Pseudonymiser avec Coulmont" propose des *prénoms de remplacement* à partir d'une requête du *prénom à pseudonymiser* (pas le contenu de la transcription) à l'outil `coulmont.com/bac`. Sur son site web, B. Coulmont précise que "recherches ne sont pas enregistrées".
+- Les tables de correspondance ne sont jamais incluses dans les exports pseudonymisés.
 
 ---
 
@@ -172,7 +172,7 @@ src/
 | 0–6 | ✅ | Parsers · Moteur · Commandes · Portées · Surlignage · Validation |
 | 7 — Coulmont | ✅ | Suggestions de prénoms équivalents · Import JSON/CSV |
 | 8 — Panneau latéral | ✅ | 4 onglets · NER embarqué · Wizard · Annulation · Surlignage export |
-| 9 — Dictionnaires NER | 🔄 | Dictionnaires de remplacement pour lieux/institutions |
+| 9 — Dictionnaires de candidats NER & spaCy | 🔄 | Dictionnaires de d'identification des mots candidats pour lieux/institutions à pseudonymiser |
 | 10 — Affinage | ⏳ | Stabilisation v0.2.0 |
 | 11 — Fonctions EMCA | ⏳ | Navigation tours · Correction Jefferson/ICOR · Export ELAN |
 

@@ -4,21 +4,20 @@ Plugin Obsidian de pseudonymisation et correction de transcriptions (conventions
 
 Chaque phase produit quelque chose de testable. Les critères d'acceptation renvoient aux sections de SPECS.md.
 
-## État actuel (mai 2026)
+## État actuel (mai 2026) — v0.1.0
 
-**Phases 0 à 7 terminées.** La Phase 8 (interface complète) est la prochaine cible.
+**Phases 0 à 8 terminées.** La Phase 9 (dictionnaires de remplacement pour lieux/institutions) est la prochaine cible.
 
-Décision architecturale adoptée en mai 2026 : la **détection des entités identifiantes** reposera sur du **NER** (reconnaissance d'entités nommées) plutôt que sur des dictionnaires lexicaux exhaustifs. Les dictionnaires (Coulmont, etc.) restent des ressources de **remplacement** (candidats de substitution), pas de détection. La detection par listes est insuffisante pour les lieux (ambiguïté contextuelle : "Florence" la personne vs la ville).
+Décision architecturale adoptée en mai 2026 : la **détection des entités identifiantes** repose sur du **NER** (`transformers.js` + `bert-base-multilingual-cased-ner-hrl`) plutôt que sur des dictionnaires lexicaux exhaustifs. Les dictionnaires restent des ressources de **remplacement** (candidats de substitution), pas de détection.
 
 ```
-✅ Phases 0–7   Parsers · Moteur · UI de base · Portées · Surlignage · Validation · Coulmont
-🔄 Phase 8      Interface complète — panneau latéral 4 onglets
-⏳ Phase 9      Détection NER + dictionnaires de remplacement (v0.1.0)
+✅ Phases 0–8   Parsers · Moteur · UI · Portées · Surlignage · Validation · Coulmont · Panneau · NER · Wizard
+🔄 Phase 9      Dictionnaires de remplacement (lieux/institutions) (v0.1.0)
 ⏳ Phase 10     Affinage et stabilisation (v0.2.0)
 ⏳ Phase 11     Fonctions d'analyse interactionnelle et conversationnelle (v1.0.0)
 ```
 
-La publication sur le répertoire communautaire Obsidian se fait **au fil des versions** (déjà en cours via PR #12766).
+La publication sur le répertoire communautaire Obsidian se fait **au fil des versions** (PR #12766 en cours de validation).
 
 ---
 
@@ -159,24 +158,26 @@ Objectif : générer des suggestions de prénoms sociologiquement équivalents e
 
 ---
 
-## 🔄 Phase 8 — Interface complète (panneau latéral 4 onglets)
+## ✅ Phase 8 — Interface complète (panneau latéral 4 onglets)
 
 Objectif : interface de travail complète pour le workflow pseudonymisation.
 
-- [ ] Vue latérale complète : 4 onglets **Occurrences / Mappings / Dictionnaires / Exports** (§10.3)
-  - Onglet **Occurrences** : liste des occurrences candidates, contexte, boutons Valider / Ignorer / Faux positif, prévisualisation diff
-  - Onglet **Mappings** : tableau des règles actives — modifier source, remplacement, catégorie, portée, priority, désactiver
-  - Onglet **Dictionnaires** : liste des dictionnaires chargés, activation/désactivation par portée, commande import
-  - Onglet **Exports** : choix du format (SRT/CHA/MD/TXT), vérification absence de table dans l'export (§14.1)
-- [ ] Rapport de pseudonymisation (§14.3)
-- [ ] `correction/checker.ts` : vérification des conventions Jefferson/ICOR
-- [ ] Suggestions de correction au survol des symboles de convention
-- [ ] **Exploitable dans Obsidian** :
-  - Panneau latéral complet accessible via l'icône ruban
-  - Workflow de bout en bout : ouvrir → scanner → valider → pseudonymiser → exporter sans table
-  - Tester sur `entretien_01.srt` et `entretien_02.cha`
+- [x] Vue latérale 5 onglets : **Candidats / Mappings / Dictionnaires / Exports / NER**
+  - Onglet **Candidats** (ex-Occurrences) : scanner le fichier + identifier des candidats NER · Valider / Ignorer / Faux positif · Appliquer
+  - Onglet **Mappings** : tableau des règles actives — modifier, supprimer, ajouter
+  - Onglet **Dictionnaires** : import de fichiers `.dict.json`
+  - Onglet **Exports** : pseudonymiser + exporter · exporter la table de correspondance
+  - Onglet **NER** : seuil de confiance + mots fonctionnels exclus (visible si NER activé)
+- [x] Surlignage tri-couleur dans l'éditeur : orange (sources) · vert souligné (remplacements) · bleu (candidats NER)
+- [x] Surlignage actif dans les fichiers exportés `.pseudonymized.*`
+- [x] Clic droit → Annuler la pseudonymisation (sur termes verts)
+- [x] Marqueurs `{{...}}` activés par défaut dans les remplacements en direct et les exports
+- [x] Wizard onboarding (3 étapes) avec téléchargement WASM et import de dictionnaires
+- [x] NER embarqué via `transformers.js` + `bert-base-multilingual-cased-ner-hrl`
+- [x] Filtrage des sous-termes de règles composées (Saint-Jean-de-Luz filtre Jean/Luz en NER)
+- [ ] `correction/checker.ts` : vérification des conventions Jefferson/ICOR *(reporté Phase 10)*
 
-**Testable :** workflow complet depuis l'ouverture d'un fichier jusqu'à l'export pseudonymisé sans table de correspondance.
+**Livré en v0.1.0.**
 
 ---
 
@@ -199,7 +200,7 @@ Objectif : détecter automatiquement les entités identifiantes (prénoms, noms,
 - [ ] `mappings/ConflictDetector.ts` : détection des chevauchements entre spans NER et règles manuelles (§8.5)
 - [ ] Dictionnaires de **remplacement** pour lieux (`cities.json` avec `sizeClass`) et institutions
 - [ ] `adapters/geoapi.ts` : GeoAPI INSEE → `DictionaryEntry[]` avec `sizeClass`
-- [ ] `ambiguous.json` : tokens historiquement ambigus (Nancy, Florence, Lorraine…) — signalement prioritaire
+- [ ] `ambiguous.json` : tokens historiquement ambigus — signalement prioritaire
 - [ ] Amélioration modèle : évaluer un modèle français spécifique (CamemBERT-NER)
 
 **Testable (v0.1.0) :** scan NER → entités surlignées en bleu → clic droit → règle créée → pseudonymisation.
@@ -214,9 +215,9 @@ Objectif : consolider l'ensemble des features en place avant d'aborder les fonct
 - [ ] Tests de non-régression Phase 4 (§18.2) maintenus verts avec les règles NER actives
 - [ ] Correction des conventions Jefferson / ICOR : suggestions au survol, highlighting éditeur
 - [ ] Performance : mesurer et optimiser le temps de scan NER sur un fichier de 500 tours
-- [ ] Documentation utilisateur (README + guide de démarrage rapide pour chercheurs ICAR)
+- [ ] **Internationalisation (i18n)** : externaliser toutes les chaînes UI dans un fichier de traduction (`locales/fr.json`, `locales/en.json`) — architecture à définir (standard Obsidian ou `i18next`)
+- [ ] Intégration [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) dans l'onglet Exports pour le chiffrement des tables de correspondance et des exports pseudonymisés
 - [ ] Trancher les questions ouvertes persistantes (SPECS §20)
-- [ ] Licence : MIT ou EUPL (selon contraintes CNRS)
 
 **Testable (v0.2.0) :** workflow de bout en bout stable sur un corpus réel de 10 entretiens.
 
@@ -235,7 +236,7 @@ Périmètre à définir lors de la Phase 10 — pistes envisagées :
 - Couplage audio optionnel via fichier local (Obsidian API `app.vault`) — synchronisation tour ↔ segment audio
 - Compatibilité avec le JSON d'échange Whispurge / Sonal pi (SPECS §20.6)
 
-**Testable (v1.0.0) :** un chercheur ICAR peut ouvrir une transcription CHAT, la naviguer tour par tour, corriger les conventions, pseudonymiser, annoter thématiquement, et exporter vers ELAN — sans quitter Obsidian.
+**Testable (v1.0.0) :** un chercheur peut ouvrir une transcription CHAT, la naviguer tour par tour, corriger les conventions, pseudonymiser, annoter thématiquement, et exporter vers ELAN — sans quitter Obsidian.
 
 ---
 
@@ -256,12 +257,13 @@ Ces fonctionnalités sont identifiées comme utiles mais non planifiées dans le
 
 | # | Question | Statut |
 |---|---|---|
-| 1 | Modifier les fichiers originaux ou fonctionner uniquement par export ? | À trancher |
+| 1 | Modifier les fichiers originaux ou fonctionner uniquement par export ? | **Décidé** — export en `.md` pour relire dans Obsidian, puis re-export dans le format inscrit dans les métadonnées du fichier source. L'onglet Exports affiche conditionnellement une option de chiffrement via [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) quand on est dans un `*.pseudonymized.*`. |
 | 2 | Tables de correspondance dans le vault ou hors vault par défaut ? | À trancher |
-| 3 | Chiffrement des tables dès la v1 ? | À trancher |
+| 3 | Chiffrement des tables dès la v1 ? | **Décidé** — recommander le plugin [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) pour le chiffrement des tables et des exports. Intégration dans l'onglet Exports (Phase 10). |
 | 4 | Métadonnées CHAT dès le MVP ou à partir de la v0.3 ? | À trancher |
-| 5 | NER avancé plus tard, ou rester sur dictionnaires + regex + validation humaine ? | **Décidé : NER (Phase 9)** — les dictionnaires servent au remplacement, pas à la détection |
+| 5 | NER avancé plus tard, ou rester sur dictionnaires + regex + validation humaine ? | **Décidé : NER (Phase 9)** — l'objectif du dictionnaire (détection ou remplacement) est déterminé à l'import. Le NER assure la détection ; les dictionnaires fournissent les candidats de substitution. |
 | 6 | Compatibilité exacte à viser avec les JSON de Sonal pi / Whispurge ? | À explorer |
 | 7 | Couplage audio optionnel via fichier local (API Obsidian) ? | À explorer |
 | 8 | Export ELAN ou Praat ? | À explorer |
 | 9 | Liste canonique pour `ambiguous.json` (Nancy, Florence, Lorraine…) ? | À constituer |
+| 10 | Internationalisation (i18n) du plugin ? | **Décidé** — l'architecture doit permettre la traduction de l'interface. Toutes les chaînes UI doivent être externalisées dans un fichier de traduction. Implémentation en Phase 10. |
