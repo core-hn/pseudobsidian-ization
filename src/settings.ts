@@ -46,7 +46,6 @@ export class PseudObsSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName('Pseudonymizer tool').setHeading();
 
     new Setting(containerEl).setName('Dossiers').setHeading();
 
