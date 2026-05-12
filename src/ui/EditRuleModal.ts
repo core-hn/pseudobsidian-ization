@@ -34,7 +34,7 @@ export class EditRuleModal extends Modal {
       .setDesc('Non modifiable — créez une nouvelle règle pour changer la source')
       .addText((t) => {
         t.setValue(rule.source).setDisabled(true);
-        t.inputEl.style.opacity = '0.6';
+        t.inputEl.addClass('pseudobs-disabled-input');
       });
 
     new Setting(contentEl)
@@ -101,7 +101,7 @@ export class EditRuleModal extends Modal {
 
     await this.plugin.scopeResolver.saveStore(store, filePath);
     new Notice(`✓ Règle mise à jour : "${rule.source}" → "${this.replacement.trim()}"`);
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
 
@@ -110,7 +110,7 @@ export class EditRuleModal extends Modal {
     store.remove(rule.id);
     await this.plugin.scopeResolver.saveStore(store, filePath);
     new Notice(`✓ Règle supprimée : "${rule.source}"`);
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
 

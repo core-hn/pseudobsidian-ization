@@ -52,29 +52,29 @@ export class OccurrencesModal extends Modal {
 
     // Légende
     const legend = contentEl.createDiv();
-    legend.style.cssText = 'display:flex;gap:16px;font-size:.8em;opacity:.65;margin-bottom:8px;flex-wrap:wrap;';
-    for (const [icon, label, color] of [
-      ['✓', 'Valider le remplacement', 'rgba(50,205,90,.7)'],
-      ['✗', 'Conserver l\'original',   'rgba(150,150,150,.7)'],
-      ['⚠', 'Faux positif — exclure', 'rgba(255,80,80,.6)'],
+    legend.addClass('pseudobs-legend');
+    for (const [icon, label, cls] of [
+      ['✓', 'Valider le remplacement', 'pseudobs-legend-badge-validate'],
+      ['✗', "Conserver l'original",    'pseudobs-legend-badge-ignore'],
+      ['⚠', 'Faux positif — exclure', 'pseudobs-legend-badge-fp'],
     ] as [string, string, string][]) {
       const item = legend.createSpan();
-      item.style.cssText = `display:inline-flex;align-items:center;gap:4px;`;
+      item.addClass('pseudobs-legend-item');
       const badge = item.createSpan({ text: icon });
-      badge.style.cssText = `background:${color};border-radius:3px;padding:0 5px;font-weight:700;`;
+      badge.addClass('pseudobs-legend-badge', cls);
       item.createSpan({ text: ` ${label}` });
     }
 
     // Boutons globaux
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText('✓ Tout valider').onClick(() => {
+        b.setButtonText('✓ tout valider').onClick(() => {
           for (const occ of this.occurrences) this.decisions.set(occ.id, 'validated');
           this.updateAllCards();
         })
       )
       .addButton((b) =>
-        b.setButtonText('✗ Tout ignorer').onClick(() => {
+        b.setButtonText('✗ tout ignorer').onClick(() => {
           for (const occ of this.occurrences) this.decisions.set(occ.id, 'ignored');
           this.updateAllCards();
         })
@@ -110,7 +110,8 @@ export class OccurrencesModal extends Modal {
       const group = container.createDiv();
       group.createEl('div', {
         text: `${rule.source}  →  ${rule.replacement}`,
-      }).style.cssText = 'font-weight:600;font-size:.9em;padding:4px 8px;background:var(--background-secondary);border-radius:4px;margin:12px 0 6px;';
+        cls: 'pseudobs-occ-rule-header',
+      });
 
       for (const occ of occs) {
         this.buildCard(group, occ, rule);
@@ -122,40 +123,40 @@ export class OccurrencesModal extends Modal {
     const decision = this.decisions.get(occ.id) ?? 'validated';
 
     const card = container.createDiv();
-    this.applyCardStyle(card, decision);
+    card.addClass('pseudobs-occ-card');
 
     // Ligne source : terme surligné en jaune
     const srcLine = card.createDiv();
-    srcLine.style.cssText = 'font-family:var(--font-monospace);font-size:.85em;line-height:1.7;white-space:pre-wrap;word-break:break-word;';
+    srcLine.addClass('pseudobs-occ-line');
     this.ctxSpan(srcLine, occ.contextBefore);
     const termSpan = srcLine.createSpan({ text: occ.text });
-    termSpan.style.cssText = 'background:rgba(255,210,0,.6);border-radius:3px;padding:1px 5px;font-weight:700;';
+    termSpan.addClass('pseudobs-occ-term');
     this.ctxSpan(srcLine, occ.contextAfter);
 
     // Flèche + ligne résultat (masquées si ignoré ou faux positif)
     const arrow = card.createDiv();
-    arrow.style.cssText = 'font-size:.75em;opacity:.35;line-height:1.2;margin:1px 0;user-select:none;';
+    arrow.addClass('pseudobs-occ-arrow');
     arrow.setText('↓');
 
     const resLine = card.createDiv();
-    resLine.style.cssText = 'font-family:var(--font-monospace);font-size:.85em;line-height:1.7;white-space:pre-wrap;word-break:break-word;opacity:.8;';
+    resLine.addClass('pseudobs-occ-line', 'pseudobs-occ-result-line');
     this.ctxSpan(resLine, occ.contextBefore);
     const replSpan = resLine.createSpan({ text: rule.replacement });
-    replSpan.style.cssText = 'background:rgba(50,205,90,.55);border-radius:3px;padding:1px 5px;font-weight:700;';
+    replSpan.addClass('pseudobs-occ-replacement');
     this.ctxSpan(resLine, occ.contextAfter);
 
     // Label contextuel affiché quand la ligne résultat est masquée
     const statusLabel = card.createDiv();
-    statusLabel.style.cssText = 'font-size:.8em;font-style:italic;opacity:.55;margin:2px 0 4px;display:none;';
+    statusLabel.addClass('pseudobs-occ-status-label');
 
     // Méta
     const meta = card.createEl('small');
-    meta.style.cssText = 'display:block;font-size:.75em;opacity:.45;margin-top:4px;';
+    meta.addClass('pseudobs-occ-meta');
     meta.setText(`ligne ${occ.line}`);
 
     // Boutons — créés une seule fois, mis à jour via updateCard()
     const actions = card.createDiv();
-    actions.style.cssText = 'display:flex;gap:6px;margin-top:6px;';
+    actions.addClass('pseudobs-occ-actions');
 
     const btnRefs = new Map<Decision, HTMLElement>();
     for (const [label, value, title] of [
@@ -165,7 +166,7 @@ export class OccurrencesModal extends Modal {
     ] as [string, Decision, string][]) {
       const btn = actions.createEl('button', { text: label });
       btn.title = title;
-      this.applyBtnStyle(btn, value === decision);
+      btn.addClass('pseudobs-occ-btn');
       btn.addEventListener('click', () => {
         this.decisions.set(occ.id, value);
         this.updateCard(occ.id);
@@ -184,16 +185,18 @@ export class OccurrencesModal extends Modal {
     if (!ref) return;
     const decision = this.decisions.get(occId) ?? 'validated';
 
-    this.applyCardStyle(ref.card, decision);
+    ref.card.removeClass('pseudobs-occ-validated', 'pseudobs-occ-ignored', 'pseudobs-occ-false_positive');
+    ref.card.addClass(`pseudobs-occ-${decision}`);
 
     for (const [value, btn] of ref.buttons) {
-      this.applyBtnStyle(btn, value === decision);
+      btn.toggleClass('pseudobs-occ-btn-active', value === decision);
     }
 
     // Afficher la ligne résultat seulement si l'occurrence est validée
     const show = decision === 'validated';
-    ref.arrow.style.display = show ? '' : 'none';
-    ref.resLine.style.display = show ? '' : 'none';
+    ref.arrow.toggle(show);
+    ref.resLine.toggle(show);
+    ref.statusLabel.toggle(!show);
 
     // Label contextuel pour les cas ignoré / faux positif
     const labels: Record<Decision, string> = {
@@ -201,7 +204,6 @@ export class OccurrencesModal extends Modal {
       ignored:        'Conservé tel quel dans ce fichier',
       false_positive: 'Faux positif — exclu du remplacement',
     };
-    ref.statusLabel.style.display = show ? 'none' : '';
     ref.statusLabel.setText(labels[decision]);
   }
 
@@ -212,23 +214,8 @@ export class OccurrencesModal extends Modal {
     }
   }
 
-  private applyCardStyle(card: HTMLElement, decision: Decision): void {
-    const borders: Record<Decision, string> = {
-      validated:     'rgba(60,200,100,.7)',
-      ignored:       'rgba(150,150,150,.4)',
-      false_positive:'rgba(255,80,80,.6)',
-    };
-    const opacity = decision === 'validated' ? '1' : '0.55';
-    card.style.cssText = `border:1px solid var(--background-modifier-border);border-left:3px solid ${borders[decision]};border-radius:6px;padding:8px 10px;margin:4px 0;opacity:${opacity};`;
-  }
-
-  private applyBtnStyle(btn: HTMLElement, active: boolean): void {
-    btn.style.cssText = `padding:2px 10px;border-radius:4px;cursor:pointer;font-size:.85em;border:1px solid var(--background-modifier-border);background:${active ? 'var(--interactive-accent)' : 'var(--background-primary)'};color:${active ? 'var(--text-on-accent)' : 'var(--text-normal)'};`;
-  }
-
   private ctxSpan(parent: HTMLElement, text: string): void {
-    const s = parent.createSpan({ text });
-    s.style.opacity = '0.5';
+    parent.createSpan({ text, cls: 'pseudobs-ctx-side' });
   }
 
   private async apply(): Promise<void> {
@@ -248,7 +235,7 @@ export class OccurrencesModal extends Modal {
     const nv = validated.length, ni = ignored.length;
     new Notice(`✓ ${nv} remplacement${nv > 1 ? 's' : ''} appliqué${nv > 1 ? 's' : ''}` + (ni > 0 ? `, ${ni} ignoré${ni > 1 ? 's' : ''}` : ''));
 
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
 

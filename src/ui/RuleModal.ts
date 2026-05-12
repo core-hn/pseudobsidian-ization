@@ -45,22 +45,22 @@ export class RuleModal extends Modal {
     let replacementInput: HTMLInputElement | undefined;
     if (this.suggestions.length > 0) {
       const box = contentEl.createDiv();
-      box.style.cssText = 'margin-bottom:6px;';
-      box.createEl('small', { text: 'Suggestions Coulmont (M/F non différencié — choisissez) :' })
-        .style.cssText = 'display:block;opacity:.6;margin-bottom:4px;font-size:.8em;';
+      box.addClass('pseudobs-suggestions-box');
+      box.createEl('small', { text: 'Suggestions de prénoms équivalents — choisissez :' })
+        .addClass('pseudobs-suggestions-label');
       const tags = box.createDiv();
-      tags.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;';
+      tags.addClass('pseudobs-suggestions-tags');
+      const btnEls: HTMLElement[] = [];
       for (const name of this.suggestions) {
         const btn = tags.createEl('button', { text: name });
-        btn.style.cssText = 'padding:2px 10px;border-radius:12px;border:1px solid var(--background-modifier-border);cursor:pointer;font-size:.85em;background:var(--background-secondary);';
+        btn.addClass('pseudobs-suggestion-btn');
         btn.addEventListener('click', () => {
           this.replacement = name;
           if (replacementInput) replacementInput.value = name;
-          tags.querySelectorAll('button').forEach((b) => {
-            (b as HTMLElement).style.cssText = 'padding:2px 10px;border-radius:12px;border:1px solid var(--background-modifier-border);cursor:pointer;font-size:.85em;background:var(--background-secondary);';
-          });
-          btn.style.cssText = 'padding:2px 10px;border-radius:12px;border:1px solid var(--interactive-accent);cursor:pointer;font-size:.85em;background:var(--interactive-accent);color:var(--text-on-accent);font-weight:600;';
+          btnEls.forEach((b) => b.removeClass('pseudobs-suggestion-btn-selected'));
+          btn.addClass('pseudobs-suggestion-btn-selected');
         });
+        btnEls.push(btn);
       }
     }
 
@@ -94,7 +94,8 @@ export class RuleModal extends Modal {
         d.onChange((v) => { this.category = v as EntityCategory; });
         // Masquer le dropdown si la catégorie est imposée par Coulmont
         if (this.suggestions.length > 0) {
-          d.selectEl.closest('.setting-item')?.setAttribute('style', 'display:none');
+          const settingItem = d.selectEl.closest('.setting-item');
+          if (settingItem instanceof HTMLElement) settingItem.hide();
         }
       });
 
@@ -177,7 +178,7 @@ export class RuleModal extends Modal {
 
     new Notice(`✓ Règle créée : "${this.source.trim()}" → "${this.replacement.trim()}"`);
     // Rafraîchir le surlignage immédiatement sans attendre un changement de fichier
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
 

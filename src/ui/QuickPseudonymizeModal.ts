@@ -47,36 +47,32 @@ export class QuickPseudonymizeModal extends Modal {
       .setDesc('Terme à remplacer — non modifiable')
       .addText((t) => {
         t.setValue(this.source).setDisabled(true);
-        t.inputEl.style.opacity = '0.6';
+        t.inputEl.addClass('pseudobs-disabled-input');
       });
 
     // Suggestions Coulmont : boutons cliquables qui remplissent le champ
     let replacementInput: HTMLInputElement;
     if (this.suggestions.length > 0) {
       const suggBox = contentEl.createDiv();
-      suggBox.style.cssText = 'margin-bottom:6px;';
-      suggBox.createEl('small', { text: 'Suggestions Coulmont (le jeu de données ne différencie pas M/F) :' })
-        .style.cssText = 'display:block;opacity:.6;margin-bottom:4px;font-size:.8em;';
+      suggBox.addClass('pseudobs-suggestions-box');
+      suggBox.createEl('small', { text: 'Suggestions de prénoms équivalents (m/f non différenciés) :' })
+        .addClass('pseudobs-suggestions-label');
       const tags = suggBox.createDiv();
-      tags.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+      tags.addClass('pseudobs-suggestions-tags');
+      const btnEls: HTMLElement[] = [];
       for (const name of this.suggestions) {
         const btn = tags.createEl('button', { text: name });
-        btn.style.cssText = 'padding:2px 10px;border-radius:12px;border:1px solid var(--background-modifier-border);cursor:pointer;font-size:.85em;background:var(--background-secondary);';
+        btn.addClass('pseudobs-suggestion-btn');
         btn.addEventListener('click', () => {
           this.replacement = name;
           if (replacementInput) {
             replacementInput.value = name;
             replacementInput.dispatchEvent(new Event('input'));
           }
-          // Mettre en évidence le bouton sélectionné
-          tags.querySelectorAll('button').forEach((b) => {
-            (b as HTMLElement).style.background = 'var(--background-secondary)';
-            (b as HTMLElement).style.fontWeight = 'normal';
-          });
-          btn.style.background = 'var(--interactive-accent)';
-          btn.style.color = 'var(--text-on-accent)';
-          btn.style.fontWeight = '600';
+          btnEls.forEach((b) => b.removeClass('pseudobs-suggestion-btn-selected'));
+          btn.addClass('pseudobs-suggestion-btn-selected');
         });
+        btnEls.push(btn);
       }
     }
 
@@ -84,7 +80,7 @@ export class QuickPseudonymizeModal extends Modal {
     new Setting(contentEl)
       .setName('Remplacer par')
       .addText((t) => {
-        t.setPlaceholder('pseudonyme ou catégorie analytique');
+        t.setPlaceholder('Pseudonyme ou catégorie analytique');
         t.setValue(this.replacement);
         t.onChange((v) => (this.replacement = v));
         replacementInput = t.inputEl;
@@ -159,7 +155,7 @@ export class QuickPseudonymizeModal extends Modal {
     }
 
     // Rafraîchir le surlignage immédiatement
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
 

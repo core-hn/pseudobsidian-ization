@@ -51,9 +51,9 @@ var PseudObsSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "PseudObsidian-ization" });
-    containerEl.createEl("h3", { text: "Dossiers" });
-    new import_obsidian.Setting(containerEl).setName("Transcriptions import\xE9es").setDesc('Dossier de destination pour les fichiers ajout\xE9s via la commande "Ajouter une transcription"').addText(
+    new import_obsidian.Setting(containerEl).setName("Pseudonymizer tool").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Dossiers").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Transcriptions import\xE9es").setDesc("Dossier de destination des transcriptions import\xE9es").addText(
       (text) => text.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
         this.plugin.settings.transcriptionsFolder = value;
         await this.plugin.saveSettings();
@@ -77,7 +77,7 @@ var PseudObsSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "Remplacement" });
+    new import_obsidian.Setting(containerEl).setName("Remplacement").setHeading();
     new import_obsidian.Setting(containerEl).setName("Sensible \xE0 la casse").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.caseSensitive).onChange(async (value) => {
         this.plugin.settings.caseSensitive = value;
@@ -96,19 +96,19 @@ var PseudObsSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Pr\xE9server la casse").setDesc("Adapter la casse du remplacement \xE0 celle de la source (Jean \u2192 Pierre, JEAN \u2192 PIERRE)").addToggle(
+    new import_obsidian.Setting(containerEl).setName("Pr\xE9server la casse").setDesc("Adapter la casse du remplacement \xE0 celle de la source (ex. : JEAN \u2192 PIERRE, jean \u2192 pierre, Jean \u2192 Pierre)").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
         this.plugin.settings.preserveCase = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Pr\xE9server les notations analytiques").setDesc("Ne jamais remplacer les symboles Jefferson / ICOR").addToggle(
+    new import_obsidian.Setting(containerEl).setName("Pr\xE9server les notations analytiques").setDesc("Ne jamais remplacer les symboles de convention analytique de type Jefferson ou ICOR").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.preserveAnalyticNotation).onChange(async (value) => {
         this.plugin.settings.preserveAnalyticNotation = value;
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "Marqueur d'export" });
+    new import_obsidian.Setting(containerEl).setName("Marqueur d'export").setHeading();
     new import_obsidian.Setting(containerEl).setName("Ajouter un marqueur autour des pseudonymes dans l'export").setDesc("Permet d'identifier visuellement les termes pseudonymis\xE9s dans le fichier export\xE9").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.useMarkerInExport).onChange(async (value) => {
         this.plugin.settings.useMarkerInExport = value;
@@ -127,7 +127,7 @@ var PseudObsSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: "S\xE9curit\xE9" });
+    new import_obsidian.Setting(containerEl).setName("S\xE9curit\xE9").setHeading();
     new import_obsidian.Setting(containerEl).setName("Avertir si le dossier est synchronis\xE9").setDesc("Alerter si les tables de correspondance sont dans un dossier Git, iCloud ou Synology Drive").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.warnIfSyncedFolder).onChange(async (value) => {
         this.plugin.settings.warnIfSyncedFolder = value;
@@ -253,22 +253,22 @@ var RuleModal = class extends import_obsidian2.Modal {
     let replacementInput;
     if (this.suggestions.length > 0) {
       const box = contentEl.createDiv();
-      box.style.cssText = "margin-bottom:6px;";
-      box.createEl("small", { text: "Suggestions Coulmont (M/F non diff\xE9renci\xE9 \u2014 choisissez) :" }).style.cssText = "display:block;opacity:.6;margin-bottom:4px;font-size:.8em;";
+      box.addClass("pseudobs-suggestions-box");
+      box.createEl("small", { text: "Suggestions de pr\xE9noms \xE9quivalents \u2014 choisissez :" }).addClass("pseudobs-suggestions-label");
       const tags = box.createDiv();
-      tags.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;";
+      tags.addClass("pseudobs-suggestions-tags");
+      const btnEls = [];
       for (const name of this.suggestions) {
         const btn = tags.createEl("button", { text: name });
-        btn.style.cssText = "padding:2px 10px;border-radius:12px;border:1px solid var(--background-modifier-border);cursor:pointer;font-size:.85em;background:var(--background-secondary);";
+        btn.addClass("pseudobs-suggestion-btn");
         btn.addEventListener("click", () => {
           this.replacement = name;
           if (replacementInput)
             replacementInput.value = name;
-          tags.querySelectorAll("button").forEach((b) => {
-            b.style.cssText = "padding:2px 10px;border-radius:12px;border:1px solid var(--background-modifier-border);cursor:pointer;font-size:.85em;background:var(--background-secondary);";
-          });
-          btn.style.cssText = "padding:2px 10px;border-radius:12px;border:1px solid var(--interactive-accent);cursor:pointer;font-size:.85em;background:var(--interactive-accent);color:var(--text-on-accent);font-weight:600;";
+          btnEls.forEach((b) => b.removeClass("pseudobs-suggestion-btn-selected"));
+          btn.addClass("pseudobs-suggestion-btn-selected");
         });
+        btnEls.push(btn);
       }
     }
     new import_obsidian2.Setting(contentEl).setName("Remplacement").setDesc("Pseudonyme ou cat\xE9gorie analytique").addText((t) => {
@@ -278,7 +278,6 @@ var RuleModal = class extends import_obsidian2.Modal {
       replacementInput = t.inputEl;
     });
     new import_obsidian2.Setting(contentEl).setName("Cat\xE9gorie").addDropdown((d) => {
-      var _a;
       const options = {
         first_name: "Pr\xE9nom",
         last_name: "Nom de famille",
@@ -298,7 +297,9 @@ var RuleModal = class extends import_obsidian2.Modal {
         this.category = v;
       });
       if (this.suggestions.length > 0) {
-        (_a = d.selectEl.closest(".setting-item")) == null ? void 0 : _a.setAttribute("style", "display:none");
+        const settingItem = d.selectEl.closest(".setting-item");
+        if (settingItem instanceof HTMLElement)
+          settingItem.hide();
       }
     });
     new import_obsidian2.Setting(contentEl).setName("Port\xE9e").addDropdown((d) => {
@@ -357,7 +358,7 @@ var RuleModal = class extends import_obsidian2.Modal {
       await this.app.vault.create(mappingPath, json);
     }
     new import_obsidian2.Notice(`\u2713 R\xE8gle cr\xE9\xE9e : "${this.source.trim()}" \u2192 "${this.replacement.trim()}"`);
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
   onClose() {
@@ -388,36 +389,33 @@ var QuickPseudonymizeModal = class extends import_obsidian3.Modal {
     contentEl.createEl("h2", { text: "Pseudonymiser" });
     new import_obsidian3.Setting(contentEl).setName("Expression s\xE9lectionn\xE9e").setDesc("Terme \xE0 remplacer \u2014 non modifiable").addText((t) => {
       t.setValue(this.source).setDisabled(true);
-      t.inputEl.style.opacity = "0.6";
+      t.inputEl.addClass("pseudobs-disabled-input");
     });
     let replacementInput;
     if (this.suggestions.length > 0) {
       const suggBox = contentEl.createDiv();
-      suggBox.style.cssText = "margin-bottom:6px;";
-      suggBox.createEl("small", { text: "Suggestions Coulmont (le jeu de donn\xE9es ne diff\xE9rencie pas M/F) :" }).style.cssText = "display:block;opacity:.6;margin-bottom:4px;font-size:.8em;";
+      suggBox.addClass("pseudobs-suggestions-box");
+      suggBox.createEl("small", { text: "Suggestions de pr\xE9noms \xE9quivalents (m/f non diff\xE9renci\xE9s) :" }).addClass("pseudobs-suggestions-label");
       const tags = suggBox.createDiv();
-      tags.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;";
+      tags.addClass("pseudobs-suggestions-tags");
+      const btnEls = [];
       for (const name of this.suggestions) {
         const btn = tags.createEl("button", { text: name });
-        btn.style.cssText = "padding:2px 10px;border-radius:12px;border:1px solid var(--background-modifier-border);cursor:pointer;font-size:.85em;background:var(--background-secondary);";
+        btn.addClass("pseudobs-suggestion-btn");
         btn.addEventListener("click", () => {
           this.replacement = name;
           if (replacementInput) {
             replacementInput.value = name;
             replacementInput.dispatchEvent(new Event("input"));
           }
-          tags.querySelectorAll("button").forEach((b) => {
-            b.style.background = "var(--background-secondary)";
-            b.style.fontWeight = "normal";
-          });
-          btn.style.background = "var(--interactive-accent)";
-          btn.style.color = "var(--text-on-accent)";
-          btn.style.fontWeight = "600";
+          btnEls.forEach((b) => b.removeClass("pseudobs-suggestion-btn-selected"));
+          btn.addClass("pseudobs-suggestion-btn-selected");
         });
+        btnEls.push(btn);
       }
     }
     new import_obsidian3.Setting(contentEl).setName("Remplacer par").addText((t) => {
-      t.setPlaceholder("pseudonyme ou cat\xE9gorie analytique");
+      t.setPlaceholder("Pseudonyme ou cat\xE9gorie analytique");
       t.setValue(this.replacement);
       t.onChange((v) => this.replacement = v);
       replacementInput = t.inputEl;
@@ -470,7 +468,7 @@ var QuickPseudonymizeModal = class extends import_obsidian3.Modal {
       const count = await this.plugin.applyRuleToFile(activeFile, this.source, replacement);
       new import_obsidian3.Notice(`\u2713 "${this.source}" \u2192 "${replacement}" (${count} occurrence${count > 1 ? "s" : ""})`);
     }
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
   async saveRule(activeFile, replacement) {
@@ -583,7 +581,7 @@ var EditRuleModal = class extends import_obsidian4.Modal {
     contentEl.createEl("h2", { text: "Modifier la r\xE8gle" });
     new import_obsidian4.Setting(contentEl).setName("Source").setDesc("Non modifiable \u2014 cr\xE9ez une nouvelle r\xE8gle pour changer la source").addText((t) => {
       t.setValue(rule.source).setDisabled(true);
-      t.inputEl.style.opacity = "0.6";
+      t.inputEl.addClass("pseudobs-disabled-input");
     });
     new import_obsidian4.Setting(contentEl).setName("Remplacement").addText(
       (t) => t.setValue(this.replacement).onChange((v) => this.replacement = v)
@@ -635,7 +633,7 @@ var EditRuleModal = class extends import_obsidian4.Modal {
     });
     await this.plugin.scopeResolver.saveStore(store, filePath);
     new import_obsidian4.Notice(`\u2713 R\xE8gle mise \xE0 jour : "${rule.source}" \u2192 "${this.replacement.trim()}"`);
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
   async delete() {
@@ -643,7 +641,7 @@ var EditRuleModal = class extends import_obsidian4.Modal {
     store.remove(rule.id);
     await this.plugin.scopeResolver.saveStore(store, filePath);
     new import_obsidian4.Notice(`\u2713 R\xE8gle supprim\xE9e : "${rule.source}"`);
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
   onClose() {
@@ -707,26 +705,26 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
       text: `${n} occurrence${n > 1 ? "s" : ""} trouv\xE9e${n > 1 ? "s" : ""} pour ${this.countRules()} r\xE8gle${this.countRules() > 1 ? "s" : ""}.`
     });
     const legend = contentEl.createDiv();
-    legend.style.cssText = "display:flex;gap:16px;font-size:.8em;opacity:.65;margin-bottom:8px;flex-wrap:wrap;";
-    for (const [icon, label, color] of [
-      ["\u2713", "Valider le remplacement", "rgba(50,205,90,.7)"],
-      ["\u2717", "Conserver l'original", "rgba(150,150,150,.7)"],
-      ["\u26A0", "Faux positif \u2014 exclure", "rgba(255,80,80,.6)"]
+    legend.addClass("pseudobs-legend");
+    for (const [icon, label, cls] of [
+      ["\u2713", "Valider le remplacement", "pseudobs-legend-badge-validate"],
+      ["\u2717", "Conserver l'original", "pseudobs-legend-badge-ignore"],
+      ["\u26A0", "Faux positif \u2014 exclure", "pseudobs-legend-badge-fp"]
     ]) {
       const item = legend.createSpan();
-      item.style.cssText = `display:inline-flex;align-items:center;gap:4px;`;
+      item.addClass("pseudobs-legend-item");
       const badge = item.createSpan({ text: icon });
-      badge.style.cssText = `background:${color};border-radius:3px;padding:0 5px;font-weight:700;`;
+      badge.addClass("pseudobs-legend-badge", cls);
       item.createSpan({ text: ` ${label}` });
     }
     new import_obsidian5.Setting(contentEl).addButton(
-      (b) => b.setButtonText("\u2713 Tout valider").onClick(() => {
+      (b) => b.setButtonText("\u2713 tout valider").onClick(() => {
         for (const occ of this.occurrences)
           this.decisions.set(occ.id, "validated");
         this.updateAllCards();
       })
     ).addButton(
-      (b) => b.setButtonText("\u2717 Tout ignorer").onClick(() => {
+      (b) => b.setButtonText("\u2717 tout ignorer").onClick(() => {
         for (const occ of this.occurrences)
           this.decisions.set(occ.id, "ignored");
         this.updateAllCards();
@@ -757,8 +755,9 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
         continue;
       const group = container.createDiv();
       group.createEl("div", {
-        text: `${rule.source}  \u2192  ${rule.replacement}`
-      }).style.cssText = "font-weight:600;font-size:.9em;padding:4px 8px;background:var(--background-secondary);border-radius:4px;margin:12px 0 6px;";
+        text: `${rule.source}  \u2192  ${rule.replacement}`,
+        cls: "pseudobs-occ-rule-header"
+      });
       for (const occ of occs) {
         this.buildCard(group, occ, rule);
       }
@@ -768,29 +767,29 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
     var _a;
     const decision = (_a = this.decisions.get(occ.id)) != null ? _a : "validated";
     const card = container.createDiv();
-    this.applyCardStyle(card, decision);
+    card.addClass("pseudobs-occ-card");
     const srcLine = card.createDiv();
-    srcLine.style.cssText = "font-family:var(--font-monospace);font-size:.85em;line-height:1.7;white-space:pre-wrap;word-break:break-word;";
+    srcLine.addClass("pseudobs-occ-line");
     this.ctxSpan(srcLine, occ.contextBefore);
     const termSpan = srcLine.createSpan({ text: occ.text });
-    termSpan.style.cssText = "background:rgba(255,210,0,.6);border-radius:3px;padding:1px 5px;font-weight:700;";
+    termSpan.addClass("pseudobs-occ-term");
     this.ctxSpan(srcLine, occ.contextAfter);
     const arrow = card.createDiv();
-    arrow.style.cssText = "font-size:.75em;opacity:.35;line-height:1.2;margin:1px 0;user-select:none;";
+    arrow.addClass("pseudobs-occ-arrow");
     arrow.setText("\u2193");
     const resLine = card.createDiv();
-    resLine.style.cssText = "font-family:var(--font-monospace);font-size:.85em;line-height:1.7;white-space:pre-wrap;word-break:break-word;opacity:.8;";
+    resLine.addClass("pseudobs-occ-line", "pseudobs-occ-result-line");
     this.ctxSpan(resLine, occ.contextBefore);
     const replSpan = resLine.createSpan({ text: rule.replacement });
-    replSpan.style.cssText = "background:rgba(50,205,90,.55);border-radius:3px;padding:1px 5px;font-weight:700;";
+    replSpan.addClass("pseudobs-occ-replacement");
     this.ctxSpan(resLine, occ.contextAfter);
     const statusLabel = card.createDiv();
-    statusLabel.style.cssText = "font-size:.8em;font-style:italic;opacity:.55;margin:2px 0 4px;display:none;";
+    statusLabel.addClass("pseudobs-occ-status-label");
     const meta = card.createEl("small");
-    meta.style.cssText = "display:block;font-size:.75em;opacity:.45;margin-top:4px;";
+    meta.addClass("pseudobs-occ-meta");
     meta.setText(`ligne ${occ.line}`);
     const actions = card.createDiv();
-    actions.style.cssText = "display:flex;gap:6px;margin-top:6px;";
+    actions.addClass("pseudobs-occ-actions");
     const btnRefs = /* @__PURE__ */ new Map();
     for (const [label, value, title] of [
       ["\u2713", "validated", "Valider"],
@@ -799,7 +798,7 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
     ]) {
       const btn = actions.createEl("button", { text: label });
       btn.title = title;
-      this.applyBtnStyle(btn, value === decision);
+      btn.addClass("pseudobs-occ-btn");
       btn.addEventListener("click", () => {
         this.decisions.set(occ.id, value);
         this.updateCard(occ.id);
@@ -816,19 +815,20 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
     if (!ref)
       return;
     const decision = (_a = this.decisions.get(occId)) != null ? _a : "validated";
-    this.applyCardStyle(ref.card, decision);
+    ref.card.removeClass("pseudobs-occ-validated", "pseudobs-occ-ignored", "pseudobs-occ-false_positive");
+    ref.card.addClass(`pseudobs-occ-${decision}`);
     for (const [value, btn] of ref.buttons) {
-      this.applyBtnStyle(btn, value === decision);
+      btn.toggleClass("pseudobs-occ-btn-active", value === decision);
     }
     const show = decision === "validated";
-    ref.arrow.style.display = show ? "" : "none";
-    ref.resLine.style.display = show ? "" : "none";
+    ref.arrow.toggle(show);
+    ref.resLine.toggle(show);
+    ref.statusLabel.toggle(!show);
     const labels = {
       validated: "",
       ignored: "Conserv\xE9 tel quel dans ce fichier",
       false_positive: "Faux positif \u2014 exclu du remplacement"
     };
-    ref.statusLabel.style.display = show ? "none" : "";
     ref.statusLabel.setText(labels[decision]);
   }
   // Met à jour TOUTES les cartes
@@ -837,21 +837,8 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
       this.updateCard(occId);
     }
   }
-  applyCardStyle(card, decision) {
-    const borders = {
-      validated: "rgba(60,200,100,.7)",
-      ignored: "rgba(150,150,150,.4)",
-      false_positive: "rgba(255,80,80,.6)"
-    };
-    const opacity = decision === "validated" ? "1" : "0.55";
-    card.style.cssText = `border:1px solid var(--background-modifier-border);border-left:3px solid ${borders[decision]};border-radius:6px;padding:8px 10px;margin:4px 0;opacity:${opacity};`;
-  }
-  applyBtnStyle(btn, active) {
-    btn.style.cssText = `padding:2px 10px;border-radius:4px;cursor:pointer;font-size:.85em;border:1px solid var(--background-modifier-border);background:${active ? "var(--interactive-accent)" : "var(--background-primary)"};color:${active ? "var(--text-on-accent)" : "var(--text-normal)"};`;
-  }
   ctxSpan(parent, text) {
-    const s = parent.createSpan({ text });
-    s.style.opacity = "0.5";
+    parent.createSpan({ text, cls: "pseudobs-ctx-side" });
   }
   async apply() {
     const validated = this.occurrences.filter((o) => this.decisions.get(o.id) === "validated");
@@ -866,7 +853,7 @@ var OccurrencesModal = class extends import_obsidian5.Modal {
     await this.plugin.updateMappingStatuses(this.file.path, this.rules, this.occurrences, this.decisions);
     const nv = validated.length, ni = ignored.length;
     new import_obsidian5.Notice(`\u2713 ${nv} remplacement${nv > 1 ? "s" : ""} appliqu\xE9${nv > 1 ? "s" : ""}` + (ni > 0 ? `, ${ni} ignor\xE9${ni > 1 ? "s" : ""}` : ""));
-    this.plugin.refreshHighlightData();
+    void this.plugin.refreshHighlightData();
     this.close();
   }
   onClose() {
@@ -1200,16 +1187,20 @@ var PseudObsPlugin = class extends import_obsidian7.Plugin {
       createPseudonymHighlighter(() => this.highlightData)
     );
     this.registerEvent(
-      this.app.workspace.on("active-leaf-change", () => this.refreshHighlightData())
+      this.app.workspace.on("active-leaf-change", () => {
+        void this.refreshHighlightData();
+      })
     );
-    this.refreshHighlightData();
+    void this.refreshHighlightData();
     this.registerEvent(
       this.app.vault.on("create", (file) => {
         if (!(file instanceof import_obsidian7.TFile))
           return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase()))
           return;
-        setTimeout(() => this.autoConvert(file), 300);
+        setTimeout(() => {
+          void this.autoConvert(file);
+        }, 300);
       })
     );
     this.addCommand({
@@ -1269,7 +1260,7 @@ var PseudObsPlugin = class extends import_obsidian7.Plugin {
           (item) => item.setTitle(`Pseudonymiser "${selection.slice(0, 25)}${selection.length > 25 ? "\u2026" : ""}"`).setIcon("eye-off").onClick(() => new QuickPseudonymizeModal(this.app, this, editor).open())
         );
         menu.addItem(
-          (item) => item.setTitle(`Pseudonymiser avec Coulmont\u2026`).setIcon("book-user").onClick(async () => {
+          (item) => item.setTitle(`Pseudonymiser avec Pr Baptiste Coulmont`).setIcon("book-user").onClick(async () => {
             const notice = new import_obsidian7.Notice("Recherche sur coulmont.com\u2026", 0);
             const suggestions = await this.fetchCoulmont(selection);
             notice.hide();
@@ -1373,21 +1364,20 @@ var PseudObsPlugin = class extends import_obsidian7.Plugin {
     input.type = "file";
     input.accept = ".srt,.cha,.chat,.txt,.md";
     input.multiple = true;
-    input.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0;";
+    input.classList.add("pseudobs-hidden-input");
     document.body.appendChild(input);
-    input.addEventListener("change", async () => {
-      var _a, _b, _c;
-      const files = Array.from((_a = input.files) != null ? _a : []);
-      input.remove();
-      for (const file of files) {
-        if (CONVERTIBLE_EXTS.includes((_c = (_b = file.name.split(".").pop()) == null ? void 0 : _b.toLowerCase()) != null ? _c : "")) {
-          await this.copyToVault(file);
-        } else {
-          await this.copyToVault(file);
-        }
-      }
+    input.addEventListener("change", () => {
+      void this.processFilePicker(input);
     });
     input.click();
+  }
+  async processFilePicker(input) {
+    var _a;
+    const files = Array.from((_a = input.files) != null ? _a : []);
+    input.remove();
+    for (const file of files) {
+      await this.copyToVault(file);
+    }
   }
   async copyToVault(browserFile) {
     const raw = await browserFile.text();

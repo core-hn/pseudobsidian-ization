@@ -46,13 +46,13 @@ export class PseudObsSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl('h2', { text: 'PseudObsidian-ization' });
+    new Setting(containerEl).setName('Pseudonymizer tool').setHeading();
 
-    containerEl.createEl('h3', { text: 'Dossiers' });
+    new Setting(containerEl).setName('Dossiers').setHeading();
 
     new Setting(containerEl)
       .setName('Transcriptions importées')
-      .setDesc('Dossier de destination pour les fichiers ajoutés via la commande "Ajouter une transcription"')
+      .setDesc('Dossier de destination des transcriptions importées')
       .addText((text) =>
         text.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
           this.plugin.settings.transcriptionsFolder = value;
@@ -89,7 +89,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
         })
       );
 
-    containerEl.createEl('h3', { text: 'Remplacement' });
+    new Setting(containerEl).setName('Remplacement').setHeading();
 
     new Setting(containerEl)
       .setName('Sensible à la casse')
@@ -120,7 +120,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Préserver la casse')
-      .setDesc('Adapter la casse du remplacement à celle de la source (Jean → Pierre, JEAN → PIERRE)')
+      .setDesc('Adapter la casse du remplacement à celle de la source (ex. : JEAN → PIERRE, jean → pierre, Jean → Pierre)')
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
           this.plugin.settings.preserveCase = value;
@@ -130,7 +130,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Préserver les notations analytiques')
-      .setDesc('Ne jamais remplacer les symboles Jefferson / ICOR')
+      .setDesc('Ne jamais remplacer les symboles de convention analytique de type Jefferson ou ICOR')
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.preserveAnalyticNotation)
@@ -140,7 +140,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
           })
       );
 
-    containerEl.createEl('h3', { text: 'Marqueur d\'export' });
+    new Setting(containerEl).setName("Marqueur d'export").setHeading();
 
     new Setting(containerEl)
       .setName('Ajouter un marqueur autour des pseudonymes dans l\'export')
@@ -172,7 +172,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
         })
       );
 
-    containerEl.createEl('h3', { text: 'Sécurité' });
+    new Setting(containerEl).setName('Sécurité').setHeading();
 
     new Setting(containerEl)
       .setName('Avertir si le dossier est synchronisé')

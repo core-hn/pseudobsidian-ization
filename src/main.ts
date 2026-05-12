@@ -37,10 +37,10 @@ export default class PseudObsPlugin extends Plugin {
 
     // Rafraîchir le cache de surlignage à chaque changement de fichier actif
     this.registerEvent(
-      this.app.workspace.on('active-leaf-change', () => this.refreshHighlightData())
+      this.app.workspace.on('active-leaf-change', () => { void this.refreshHighlightData(); })
     );
     // Premier chargement au démarrage
-    this.refreshHighlightData();
+    void this.refreshHighlightData();
 
     // Watcher : convertir automatiquement tout .srt/.cha/.chat ajouté au vault
     // (drag-and-drop, copie externe, commande "Ajouter une transcription")
@@ -49,7 +49,7 @@ export default class PseudObsPlugin extends Plugin {
         if (!(file instanceof TFile)) return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase())) return;
         // Délai court pour laisser Obsidian finir l'écriture du fichier
-        setTimeout(() => this.autoConvert(file), 300);
+        setTimeout(() => { void this.autoConvert(file); }, 300);
       })
     );
 
@@ -126,7 +126,7 @@ export default class PseudObsPlugin extends Plugin {
 
         menu.addItem((item) =>
           item
-            .setTitle(`Pseudonymiser avec Coulmont…`)
+            .setTitle(`Pseudonymiser avec Pr Baptiste Coulmont`)
             .setIcon('book-user')
             .onClick(async () => {
               const notice = new Notice('Recherche sur coulmont.com…', 0);
@@ -261,24 +261,20 @@ export default class PseudObsPlugin extends Plugin {
     input.accept = '.srt,.cha,.chat,.txt,.md';
     input.multiple = true;
     // Pas de display:none — bloque le change event dans certaines versions d'Electron
-    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    input.classList.add('pseudobs-hidden-input');
     document.body.appendChild(input);
 
-    input.addEventListener('change', async () => {
-      const files = Array.from(input.files ?? []);
-      input.remove();
-
-      for (const file of files) {
-        if (CONVERTIBLE_EXTS.includes(file.name.split('.').pop()?.toLowerCase() ?? '')) {
-          // Copier dans le vault → le watcher s'occupe de la conversion
-          await this.copyToVault(file);
-        } else {
-          await this.copyToVault(file);
-        }
-      }
-    });
+    input.addEventListener('change', () => { void this.processFilePicker(input); });
 
     input.click();
+  }
+
+  private async processFilePicker(input: HTMLInputElement): Promise<void> {
+    const files = Array.from(input.files ?? []);
+    input.remove();
+    for (const file of files) {
+      await this.copyToVault(file);
+    }
   }
 
   private async copyToVault(browserFile: File): Promise<void> {
