@@ -239,7 +239,7 @@ export default class PseudObsPlugin extends Plugin {
       }
 
       // Supprimer le fichier source non-Markdown maintenant remplacé par le .md
-      await this.app.vault.delete(file);
+      await this.app.fileManager.trashFile(file);
 
       // Ouvrir le .md
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);

@@ -59,7 +59,7 @@ export class ScopeResolver {
     for (const child of folder.children) {
       if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
       try {
-        const data: MappingFile = JSON.parse(await this.vault.read(child));
+        const data = JSON.parse(await this.vault.read(child)) as MappingFile;
         const store = MappingStore.fromJSON(data);
         const rule = store.getAll().find(
           (r) =>

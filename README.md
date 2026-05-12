@@ -1,4 +1,5 @@
-# PseudObsidian-ization
+# Pseudonymizer Tool
+alias `PseudObsidian-ization`
 
 **Plugin Obsidian de pseudonymisation et de correction de transcriptions d'entretiens et de corpus interactionnels.**
 
