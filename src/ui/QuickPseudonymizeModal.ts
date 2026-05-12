@@ -1,7 +1,6 @@
 import { App, Editor, EditorPosition, Modal, Notice, Setting, TFile } from 'obsidian';
 import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
-import { PseudonymizationEngine } from '../pseudonymizer/PseudonymizationEngine';
 import type { EntityCategory, MappingFile } from '../types';
 
 type ApplyScope = 'occurrence' | 'file';
@@ -124,7 +123,7 @@ export class QuickPseudonymizeModal extends Modal {
     );
 
     // Focus sur le champ de remplacement à l'ouverture
-    setTimeout(() => replacementInput?.focus(), 50);
+    window.setTimeout(() => replacementInput?.focus(), 50);
   }
 
   private async apply(): Promise<void> {

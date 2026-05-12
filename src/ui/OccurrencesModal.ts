@@ -1,6 +1,6 @@
 import { App, Modal, Notice, Setting, TFile } from 'obsidian';
 import type PseudObsPlugin from '../main';
-import type { MappingRule, Occurrence, MappingStatus } from '../types';
+import type { MappingRule, Occurrence } from '../types';
 import { resolveSpans, applySpans } from '../pseudonymizer/SpanProtector';
 import type { ReplacementSpan } from '../types';
 
@@ -120,8 +120,6 @@ export class OccurrencesModal extends Modal {
   }
 
   private buildCard(container: HTMLElement, occ: Occurrence, rule: MappingRule): void {
-    const decision = this.decisions.get(occ.id) ?? 'validated';
-
     const card = container.createDiv();
     card.addClass('pseudobs-occ-card');
 
