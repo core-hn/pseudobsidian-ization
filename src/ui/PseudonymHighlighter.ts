@@ -6,8 +6,9 @@ import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@
 export const highlightDataChanged = StateEffect.define<void>();
 
 export interface HighlightData {
-  sources: string[];       // termes originaux encore présents → orange (à pseudonymiser)
-  replacements: string[];  // pseudonymes déjà appliqués → vert
+  sources: string[];        // termes originaux encore présents → orange (à pseudonymiser)
+  replacements: string[];   // pseudonymes déjà appliqués → vert + souligné
+  nerCandidates: string[];  // entités détectées par NER → bleu (candidats à pseudonymiser)
 }
 
 // Extension CodeMirror 6 qui surligne dans l'éditeur :
@@ -33,8 +34,9 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
       }
 
       private build(view: EditorView): DecorationSet {
-        const { sources, replacements } = getData();
-        if (sources.length === 0 && replacements.length === 0) return Decoration.none;
+        const { sources, replacements, nerCandidates } = getData();
+        if (sources.length === 0 && replacements.length === 0 && nerCandidates.length === 0)
+          return Decoration.none;
 
         const text = view.state.doc.toString();
         const lower = text.toLowerCase();
@@ -56,6 +58,22 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
           }
         };
 
+        // Les candidats NER ne sont affichés que s'ils n'ont pas déjà une règle active
+        // et ne sont pas des sous-chaînes d'une source composée connue
+        // (ex. "Jean" et "Luz" filtrés si "Saint-Jean-de-Luz" est une source).
+        const knownLower = new Set([
+          ...sources.map((s) => s.toLowerCase()),
+          ...replacements.map((r) => r.toLowerCase()),
+        ]);
+        const sourcesLower = sources.map((s) => s.toLowerCase());
+        const freshCandidates = nerCandidates.filter((c) => {
+          const cl = c.toLowerCase();
+          if (knownLower.has(cl)) return false;
+          // Filtrer si c est une sous-chaîne stricte d'une source composée
+          return !sourcesLower.some((src) => src !== cl && src.includes(cl));
+        });
+
+        collect(freshCandidates, 'pseudobs-ner-candidate');
         collect(sources, 'pseudobs-source');
         collect(replacements, 'pseudobs-replaced');
 

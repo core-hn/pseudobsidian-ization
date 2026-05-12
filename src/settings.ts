@@ -1,5 +1,8 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import type PseudObsPlugin from './main';
+import { OnboardingModal } from './ui/OnboardingModal';
+
+export type NerBackend = 'none' | 'spacy' | 'transformers-js';
 
 export interface PseudObsSettings {
   transcriptionsFolder: string;
@@ -16,6 +19,13 @@ export interface PseudObsSettings {
   useMarkerInExport: boolean;
   markerOpen: string;
   markerClose: string;
+  // Onboarding
+  onboardingCompleted: boolean;
+  nerBackend: NerBackend;
+  spacyServerUrl: string;
+  // Paramètres du scanner NER
+  nerMinScore: number;
+  nerFunctionWords: string[];
 }
 
 export const DEFAULT_SETTINGS: PseudObsSettings = {
@@ -30,9 +40,19 @@ export const DEFAULT_SETTINGS: PseudObsSettings = {
   preserveCase: true,
   preserveAnalyticNotation: true,
   warnIfSyncedFolder: true,
-  useMarkerInExport: false,
-  markerOpen: '⟦',
-  markerClose: '⟧',
+  useMarkerInExport: true,
+  markerOpen: '{{',
+  markerClose: '}}',
+  onboardingCompleted: false,
+  nerBackend: 'none',
+  spacyServerUrl: 'http://localhost:5757',
+  nerMinScore: 0.75,
+  nerFunctionWords: [
+    'de', 'du', 'des', "d'", 'le', 'la', 'les', "l'",
+    'un', 'une', 'au', 'aux', 'en', 'dans', 'sur', 'sous', 'par', 'pour',
+    'et', 'ou', 'ni', 'mais', 'donc', 'or', 'car',
+    'à', 'a', 'y', 'the', 'of', 'in', 'and',
+  ],
 };
 
 export class PseudObsSettingTab extends PluginSettingTab {
@@ -46,7 +66,6 @@ export class PseudObsSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName('Pseudonymizer tool').setHeading();
 
     new Setting(containerEl).setName('Dossiers').setHeading();
 
@@ -154,7 +173,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Marqueur ouvrant')
-      .setDesc('Exemple : ⟦  [  {  «')
+      .setDesc('Exemple : {{  ⟦  [  «')
       .addText((text) =>
         text.setValue(this.plugin.settings.markerOpen).onChange(async (value) => {
           this.plugin.settings.markerOpen = value;
@@ -164,11 +183,36 @@ export class PseudObsSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Marqueur fermant')
-      .setDesc('Exemple : ⟧  ]  }  »')
+      .setDesc('Exemple : }}  ⟧  ]  »')
       .addText((text) =>
         text.setValue(this.plugin.settings.markerClose).onChange(async (value) => {
           this.plugin.settings.markerClose = value;
           await this.plugin.saveSettings();
+        })
+      );
+
+    new Setting(containerEl).setName('Détection automatique (NER)').setHeading();
+
+    new Setting(containerEl)
+      .setName('Moteur de détection')
+      .setDesc('Backend utilisé pour la détection automatique des entités nommées identifiantes')
+      .addDropdown((d) => {
+        d.addOption('none', 'Désactivé — règles manuelles uniquement');
+        d.addOption('transformers-js', 'transformers.js (modèle ONNX embarqué)');
+        d.setValue(this.plugin.settings.nerBackend);
+        d.onChange(async (v) => {
+          this.plugin.settings.nerBackend = v as PseudObsSettings['nerBackend'];
+          await this.plugin.saveSettings();
+          this.display();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Assistant de configuration')
+      .setDesc('Relancer l\'assistant pour reconfigurer la détection NER et les dictionnaires')
+      .addButton((btn) =>
+        btn.setButtonText('Reconfigurer…').onClick(() => {
+          new OnboardingModal(this.app, this.plugin).open();
         })
       );
 

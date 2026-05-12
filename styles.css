@@ -1,5 +1,12 @@
 /* Pseudonymizer Tool — styles */
 
+/* Candidats NER détectés automatiquement — clic droit pour créer une règle */
+.pseudobs-ner-candidate {
+  background-color: rgba(80, 160, 255, 0.22);
+  border-radius: 2px;
+  outline: 1px solid rgba(80, 160, 255, 0.45);
+}
+
 /* Termes sources encore présents dans le texte (à pseudonymiser) */
 .pseudobs-source {
   background-color: rgba(255, 160, 0, 0.22);
@@ -7,11 +14,14 @@
   outline: 1px solid rgba(255, 160, 0, 0.4);
 }
 
-/* Termes de remplacement déjà appliqués (pseudonymes) */
+/* Termes de remplacement déjà appliqués en direct (pseudonymes dans la source) */
 .pseudobs-replaced {
   background-color: rgba(60, 200, 100, 0.2);
   border-radius: 2px;
   outline: 1px solid rgba(60, 200, 100, 0.35);
+  text-decoration: underline;
+  text-decoration-color: rgba(60, 200, 100, 0.9);
+  text-underline-offset: 2px;
 }
 
 /* Modal de validation sélective */
@@ -164,3 +174,411 @@
   color: var(--text-on-accent);
   border-color: var(--interactive-accent);
 }
+
+/* ---- Panneau latéral (PseudonymizationView) ---- */
+
+.pseudobs-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pseudobs-view-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding: 4px 4px 0;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pseudobs-view-tab {
+  padding: 4px 10px;
+  border-radius: 4px 4px 0 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.82em;
+  color: var(--text-muted);
+}
+.pseudobs-view-tab:hover { color: var(--text-normal); }
+.pseudobs-view-tab-active {
+  color: var(--text-normal);
+  border-bottom: 2px solid var(--interactive-accent);
+  font-weight: 600;
+}
+
+.pseudobs-view-content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.pseudobs-view-pane { padding: 10px 12px; }
+
+.pseudobs-view-toolbar { margin-bottom: 10px; }
+
+.pseudobs-view-action-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+}
+.pseudobs-view-action-btn:hover { background: var(--background-secondary-alt); }
+
+.pseudobs-view-results { /* zone de scroll des cartes, héritée du content */ }
+
+.pseudobs-view-count {
+  font-size: 0.82em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.pseudobs-view-hint {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+
+.pseudobs-view-filename {
+  font-family: var(--font-monospace);
+  font-size: 0.82em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.pseudobs-view-global-btns {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pseudobs-view-global-btns button {
+  padding: 2px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  font-size: 0.82em;
+  background: var(--background-secondary);
+}
+
+.pseudobs-view-apply-btn {
+  margin-top: 10px;
+  padding: 5px 16px;
+  border-radius: 4px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+.pseudobs-view-apply-btn:hover { opacity: 0.9; }
+
+/* Table de mappings */
+
+.pseudobs-mappings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+}
+.pseudobs-mappings-table th {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 0.8em;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pseudobs-mappings-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+  vertical-align: middle;
+}
+.pseudobs-mappings-source { color: var(--color-orange); font-family: var(--font-monospace); }
+.pseudobs-mappings-replacement { color: var(--color-green); font-family: var(--font-monospace); }
+.pseudobs-mappings-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.pseudobs-mappings-edit-btn:hover { color: var(--text-normal); background: var(--background-secondary); }
+
+/* ---- Wizard onboarding ---- */
+
+.pseudobs-onboarding { max-width: 680px; }
+
+/* Indicateur d'étapes */
+.pseudobs-onboarding-steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 10px;
+}
+.pseudobs-onboarding-step-dot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 4px 0;
+  font-size: 0.82em;
+  color: var(--text-faint);
+  position: relative;
+}
+.pseudobs-onboarding-step-dot::before {
+  content: '○';
+  font-size: 1em;
+}
+.pseudobs-onboarding-step-current { color: var(--text-normal); font-weight: 600; }
+.pseudobs-onboarding-step-current::before { content: '●'; color: var(--interactive-accent); }
+.pseudobs-onboarding-step-done { color: var(--text-muted); }
+.pseudobs-onboarding-step-done::before { content: '✓'; color: var(--color-green); }
+
+/* Corps */
+.pseudobs-onboarding-body { margin-bottom: 16px; }
+.pseudobs-onboarding-body h2 { margin-top: 0; font-size: 1.2em; }
+.pseudobs-onboarding-hint { color: var(--text-muted); font-size: 0.88em; line-height: 1.5; }
+
+/* Cartes NER */
+.pseudobs-onboarding-ner-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  transition: border-color 0.15s;
+}
+.pseudobs-onboarding-ner-card-selected {
+  border-color: var(--interactive-accent);
+  background: color-mix(in srgb, var(--interactive-accent) 6%, transparent);
+}
+.pseudobs-onboarding-ner-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.pseudobs-onboarding-badge {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--background-secondary);
+  color: var(--text-muted);
+}
+.pseudobs-onboarding-code {
+  display: block;
+  font-family: var(--font-monospace);
+  font-size: 0.82em;
+  background: var(--background-secondary);
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin: 6px 0;
+  user-select: all;
+}
+
+/* Ligne URL + test */
+.pseudobs-onboarding-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 0.88em;
+}
+.pseudobs-onboarding-url-row input {
+  flex: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: 0.95em;
+}
+.pseudobs-onboarding-test-btn {
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.pseudobs-onboarding-test-status { font-size: 0.85em; }
+.pseudobs-onboarding-test-ok  { color: var(--color-green); }
+.pseudobs-onboarding-test-ok::before  { content: '✓ '; }
+.pseudobs-onboarding-test-err { color: var(--color-red); }
+.pseudobs-onboarding-test-err::before { content: '✗ '; }
+
+/* Boutons de sélection dans les cartes */
+.pseudobs-onboarding-select-btn {
+  margin-top: 8px;
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.85em;
+}
+.pseudobs-onboarding-select-btn-active {
+  border-color: var(--interactive-accent);
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+.pseudobs-onboarding-select-btn-active::before { content: '✓ '; }
+.pseudobs-onboarding-none-btn-active::before   { content: '✓ '; }
+
+/* Ligne "Désactivé" */
+.pseudobs-onboarding-none-row { margin-top: 4px; }
+.pseudobs-onboarding-none-btn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.pseudobs-onboarding-none-btn-active { color: var(--text-normal); font-weight: 600; }
+
+/* Import dictionnaires */
+.pseudobs-onboarding-import-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+.pseudobs-onboarding-import-btn {
+  padding: 5px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.88em;
+}
+.pseudobs-onboarding-import-btn:hover  { background: var(--background-secondary-alt); }
+.pseudobs-onboarding-import-btn::before { content: '+ '; }
+.pseudobs-onboarding-dict-count { font-size: 0.88em; color: var(--text-muted); margin-bottom: 4px; }
+.pseudobs-onboarding-dict-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.pseudobs-onboarding-dict-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  font-family: var(--font-monospace);
+}
+.pseudobs-onboarding-dict-list li:hover { background: var(--background-secondary); }
+.pseudobs-onboarding-dict-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  padding: 0 4px;
+  font-size: 0.9em;
+}
+.pseudobs-onboarding-dict-remove:hover { color: var(--color-red); }
+
+/* Résumé */
+.pseudobs-onboarding-summary-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+.pseudobs-onboarding-summary-table td { padding: 6px 10px; border-bottom: 1px solid var(--background-modifier-border-hover); }
+.pseudobs-onboarding-summary-label { font-weight: 600; color: var(--text-muted); width: 160px; }
+
+/* Navigation */
+.pseudobs-onboarding-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.pseudobs-onboarding-nav-right { display: flex; gap: 8px; align-items: center; }
+.pseudobs-onboarding-cancel-btn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.88em;
+  color: var(--text-muted);
+}
+.pseudobs-onboarding-back-btn::before { content: '← '; }
+.pseudobs-onboarding-back-btn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.88em;
+}
+.pseudobs-onboarding-skip-btn {
+  padding: 4px 14px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.88em;
+  color: var(--text-muted);
+}
+.pseudobs-onboarding-skip-btn:hover { color: var(--text-normal); }
+.pseudobs-onboarding-next-btn {
+  padding: 5px 18px;
+  border-radius: 4px;
+  border: none;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+.pseudobs-onboarding-next-btn::after { content: ' →'; }
+
+/* ---- Onglet NER (panneau latéral) ---- */
+.pseudobs-ner-section {
+  margin-bottom: 16px;
+}
+.pseudobs-ner-section strong { display: block; margin-bottom: 4px; }
+.pseudobs-ner-score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.pseudobs-ner-slider { flex: 1; }
+.pseudobs-ner-score-display {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  font-weight: 600;
+  min-width: 3ch;
+  text-align: right;
+}
+.pseudobs-ner-fw-textarea {
+  width: 100%;
+  font-family: var(--font-monospace);
+  font-size: 0.82em;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+
+/* Boutons d'action avec icônes via ::before */
+.pseudobs-btn-validate-all::before { content: '✓ '; }
+.pseudobs-btn-ignore-all::before   { content: '✗ '; }
+.pseudobs-view-add-btn::before     { content: '+ '; }
+.pseudobs-btn-saved::before        { content: '✓ '; color: var(--color-green); }
+.pseudobs-ner-reset-btn { margin-left: 8px; }

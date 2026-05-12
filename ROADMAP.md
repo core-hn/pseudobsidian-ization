@@ -6,15 +6,19 @@ Chaque phase produit quelque chose de testable. Les critères d'acceptation renv
 
 ## État actuel (mai 2026)
 
-**Phases 0 à 6 terminées.** La Phase 7 est en cours : l'intégration de l'outil Coulmont est opérationnelle (suggestion de prénoms sociologiquement équivalents via `coulmont.com`). Le travail porte maintenant sur la **constitution de dictionnaires lexicaux embarqués** (prénoms, toponymes, institutions) et leur **intégration dans le moteur de suggestion** pour les phases de scan automatique.
+**Phases 0 à 7 terminées.** La Phase 8 (interface complète) est la prochaine cible.
+
+Décision architecturale adoptée en mai 2026 : la **détection des entités identifiantes** reposera sur du **NER** (reconnaissance d'entités nommées) plutôt que sur des dictionnaires lexicaux exhaustifs. Les dictionnaires (Coulmont, etc.) restent des ressources de **remplacement** (candidats de substitution), pas de détection. La detection par listes est insuffisante pour les lieux (ambiguïté contextuelle : "Florence" la personne vs la ville).
 
 ```
-✅ Phases 0–6   Parsers · Moteur · Commandes UI · Portées · Surlignage · Validation sélective
-🔄 Phase 7      Dictionnaires — Coulmont ✅ · Dictionnaires JSON/CSV · Ressources embarquées
-⏳ Phase 8      Scan automatique (détection sans règle préexistante)
-⏳ Phase 9      Interface complète (panneau latéral 4 onglets)
-⏳ Phase 10     Publication communauté Obsidian
+✅ Phases 0–7   Parsers · Moteur · UI de base · Portées · Surlignage · Validation · Coulmont
+🔄 Phase 8      Interface complète — panneau latéral 4 onglets
+⏳ Phase 9      Détection NER + dictionnaires de remplacement (v0.1.0)
+⏳ Phase 10     Affinage et stabilisation (v0.2.0)
+⏳ Phase 11     Fonctions d'analyse interactionnelle et conversationnelle (v1.0.0)
 ```
+
+La publication sur le répertoire communautaire Obsidian se fait **au fil des versions** (déjà en cours via PR #12766).
 
 ---
 
@@ -136,67 +140,115 @@ Objectif : pouvoir remplacer certaines occurrences et en ignorer d'autres.
 
 ---
 
-## 🔄 Phase 7 — Dictionnaires : import et suggestions
+## ✅ Phase 7 — Prénoms : suggestions Coulmont et import de dictionnaires
 
-Objectif : importer des dictionnaires existants (Coulmont, INSEE, etc.) et générer des suggestions de remplacement.
+Objectif : générer des suggestions de prénoms sociologiquement équivalents et permettre l'import de dictionnaires existants.
 
-- [ ] Format interne `DictionaryEntry` avec `gender`, `decade`, `socialClass`, `replacementCandidates[]` (§6.3)
-- [ ] `dictionaries/JsonDictionaryImporter.ts` : import JSON format SPECS §6.3
-- [ ] `dictionaries/CsvDictionaryImporter.ts` : import CSV + mapping des colonnes (§6.4)
-- [ ] `adapters/coulmont.ts` : CSV Coulmont → `DictionaryEntry[]`
-- [ ] `adapters/insee.ts` : CSV INSEE prénoms → `DictionaryEntry[]`
-- [ ] `adapters/geoapi.ts` : GeoAPI INSEE (villes + `sizeClass`) → `DictionaryEntry[]`
-- [ ] `dictionaries/DictionaryManager.ts` : activation / désactivation, portée par dictionnaire (§6.5)
-- [ ] Dictionnaires embarqués : `firstnames.json`, `lastnames.json`, `cities.json`, `ambiguous.json`, `protected.json`
-- [ ] **Exploitable dans Obsidian** :
-  - Commande `Pseudonymisation : importer un dictionnaire` (JSON ou CSV)
-  - Dans la modale de création de règle : suggestions issues des dictionnaires actifs
-  - Tester : importer `prenoms_coulmont.json`, créer une règle pour `Jean` → candidats proposés depuis le dictionnaire
+- [x] Intégration de l'outil Coulmont : appel HTTP → suggestions de prénoms équivalents (genre, décennie, milieu social)
+- [x] Format interne `DictionaryEntry` avec `gender`, `decade`, `socialClass`, `replacementCandidates[]` (§6.3)
+- [x] `dictionaries/JsonDictionaryImporter.ts` : import JSON format SPECS §6.3
+- [x] `dictionaries/CsvDictionaryImporter.ts` : import CSV + mapping des colonnes (§6.4)
+- [x] `adapters/coulmont.ts` : CSV Coulmont → `DictionaryEntry[]`
+- [x] `dictionaries/DictionaryManager.ts` : activation / désactivation, portée par dictionnaire (§6.5)
+- [x] `adapters/insee.ts` : CSV INSEE prénoms → `DictionaryEntry[]`
+- [x] Dans la modale de création de règle : suggestions Coulmont affichées sous forme de boutons cliquables
 
-**Testable :** suggestion automatique de remplacement à partir d'un dictionnaire Coulmont importé.
+> **Note :** les dictionnaires embarqués massifs (`cities.json`, `lastnames.json`, etc.) sont **dépriorisés** — la détection des entités sera déléguée au NER en Phase 9. Seuls les dictionnaires de **remplacement** (prénoms Coulmont/INSEE) sont maintenus ici.
+
+**Testable :** sélectionner un prénom dans une transcription → suggestions Coulmont affichées → cliquer pour pré-remplir le champ de remplacement.
 
 ---
 
-## ⏳ Phase 8 — Détection automatique et chevauchements
+## 🔄 Phase 8 — Interface complète (panneau latéral 4 onglets)
 
-Objectif : scanner un fichier sans règle préexistante et détecter les entités candidates.
+Objectif : interface de travail complète pour le workflow pseudonymisation.
 
-- [ ] `scanner/DictionaryScanner.ts` : croisement texte × dictionnaires actifs (§7.2)
-- [ ] `scanner/RegexScanner.ts` : heuristiques typographiques (majuscule initiale, locuteurs CHAT, formats Jefferson/ICOR)
-- [ ] `mappings/ConflictDetector.ts` : détection des chevauchements (§8.5)
-- [ ] Marquage automatique `needs_review` pour les occurrences chevauchantes
-- [ ] `ambiguous.json` : tokens ville/prénom ambigus — signalement pour validation manuelle
-- [ ] **Exploitable dans Obsidian** :
-  - Commande `Pseudonymisation : scanner le fichier` sans mapping préexistant → propose des candidats depuis les dictionnaires et les heuristiques
-  - Modale de désambiguïsation : contexte du tour + boutons Ville / Prénom / Ignorer
-  - Tester : scanner `entretien_01.cha`, voir `Jean` et `Saint-Jean-de-Luz` détectés, chevauchement signalé
-
-**Testable :** scan automatique → détection de candidats → résolution manuelle de l'ambiguïté ville/prénom.
-
----
-
-## ⏳ Phase 9 — Interface complète et correction des conventions
-
-- [ ] Vue latérale complète : 4 onglets Occurrences / Mappings / Dictionnaires / Exports (§10.3)
-- [ ] Onglet **Mappings** : modifier source, remplacement, catégorie, portée, priority (z-index), désactiver
-- [ ] Onglet **Exports** : choix format, vérification absence de table dans l'export (§10.4)
+- [ ] Vue latérale complète : 4 onglets **Occurrences / Mappings / Dictionnaires / Exports** (§10.3)
+  - Onglet **Occurrences** : liste des occurrences candidates, contexte, boutons Valider / Ignorer / Faux positif, prévisualisation diff
+  - Onglet **Mappings** : tableau des règles actives — modifier source, remplacement, catégorie, portée, priority, désactiver
+  - Onglet **Dictionnaires** : liste des dictionnaires chargés, activation/désactivation par portée, commande import
+  - Onglet **Exports** : choix du format (SRT/CHA/MD/TXT), vérification absence de table dans l'export (§14.1)
 - [ ] Rapport de pseudonymisation (§14.3)
 - [ ] `correction/checker.ts` : vérification des conventions Jefferson/ICOR
-- [ ] Suggestions de correction au survol
+- [ ] Suggestions de correction au survol des symboles de convention
 - [ ] **Exploitable dans Obsidian** :
   - Panneau latéral complet accessible via l'icône ruban
-  - Workflow complet : ouvrir → scanner → valider → pseudonymiser → exporter sans table
-  - Tester le workflow de bout en bout sur `entretien_01.srt` et `entretien_02.cha`
+  - Workflow de bout en bout : ouvrir → scanner → valider → pseudonymiser → exporter sans table
+  - Tester sur `entretien_01.srt` et `entretien_02.cha`
+
+**Testable :** workflow complet depuis l'ouverture d'un fichier jusqu'à l'export pseudonymisé sans table de correspondance.
 
 ---
 
-## ⏳ Phase 10 — Publication
+## ⏳ Phase 9 — Détection NER + dictionnaires de remplacement (v0.1.0)
 
-- [ ] README utilisateur en français avec captures d'écran
-- [ ] Guide de démarrage rapide pour les chercheurs ICAR
-- [ ] Trancher les questions ouvertes de SPECS §20
-- [ ] Publication sur le répertoire communautaire Obsidian
+Objectif : détecter automatiquement les entités identifiantes (prénoms, noms, **lieux**, institutions) sans règle préexistante, en s'appuyant sur un modèle NER pour le français plutôt que sur des dictionnaires de détection.
+
+**Pourquoi NER plutôt que dictionnaire pour les lieux :** un dictionnaire confond "Florence" la personne et "Florence" la ville. Le NER exploite le contexte syntaxique et résout cette ambiguïté sans liste exhaustive.
+
+**Backend retenu : transformers.js** — modèle BERT-NER multilingue (ONNX) exécuté localement dans Obsidian via `@xenova/transformers`. Téléchargement unique ~66 Mo, 100 % hors-ligne ensuite.
+
+> **Piste spaCy (sidecar Python) — feature envisagée** : meilleure précision sur le français (`fr_core_news_sm`), temps de réponse plus rapide, mais requiert Python. Reportée aux features envisagées (voir fin de roadmap).
+
+### Tâches
+
+- [x] `scanner/OnnxNerScanner.ts` : pipeline BERT-NER via `@xenova/transformers`, filtres score et mots fonctionnels
+- [x] Surlignage bleu des entités détectées dans l'éditeur (motivant à créer une règle)
+- [x] Onglet NER dans le panneau latéral : seuil de confiance + liste de mots fonctionnels éditables
+- [x] Wizard onboarding : téléchargement des fichiers WASM + choix du backend
+- [ ] `mappings/ConflictDetector.ts` : détection des chevauchements entre spans NER et règles manuelles (§8.5)
+- [ ] Dictionnaires de **remplacement** pour lieux (`cities.json` avec `sizeClass`) et institutions
+- [ ] `adapters/geoapi.ts` : GeoAPI INSEE → `DictionaryEntry[]` avec `sizeClass`
+- [ ] `ambiguous.json` : tokens historiquement ambigus (Nancy, Florence, Lorraine…) — signalement prioritaire
+- [ ] Amélioration modèle : évaluer un modèle français spécifique (CamemBERT-NER)
+
+**Testable (v0.1.0) :** scan NER → entités surlignées en bleu → clic droit → règle créée → pseudonymisation.
+
+---
+
+## ⏳ Phase 10 — Affinage et stabilisation (v0.2.0)
+
+Objectif : consolider l'ensemble des features en place avant d'aborder les fonctions avancées.
+
+- [ ] Couverture de tests unitaires ≥ 80 % sur parsers, moteur, NER scanner
+- [ ] Tests de non-régression Phase 4 (§18.2) maintenus verts avec les règles NER actives
+- [ ] Correction des conventions Jefferson / ICOR : suggestions au survol, highlighting éditeur
+- [ ] Performance : mesurer et optimiser le temps de scan NER sur un fichier de 500 tours
+- [ ] Documentation utilisateur (README + guide de démarrage rapide pour chercheurs ICAR)
+- [ ] Trancher les questions ouvertes persistantes (SPECS §20)
 - [ ] Licence : MIT ou EUPL (selon contraintes CNRS)
+
+**Testable (v0.2.0) :** workflow de bout en bout stable sur un corpus réel de 10 entretiens.
+
+---
+
+## ⏳ Phase 11 — Fonctions d'analyse interactionnelle et conversationnelle (v1.0.0)
+
+Objectif : aller au-delà de la pseudonymisation pour offrir des fonctions adaptées aux besoins spécifiques de l'EMCA et de l'analyse conversationnelle.
+
+Périmètre à définir lors de la Phase 10 — pistes envisagées :
+
+- Vérification et correction assistée des conventions Jefferson / ICOR (chevauchements `[`, enchaînements `=`, pauses `(0.5)`, allongements `:`, prosodie `.` `,` `?`)
+- Navigation structurée par tour de parole / séquence (vue panoptique inspirée de Sonal)
+- Annotation thématique des tours (codes libres, portée fichier/dossier/vault)
+- Export ELAN (`.eaf`) ou Praat (`.TextGrid`) depuis les fichiers annotés
+- Couplage audio optionnel via fichier local (Obsidian API `app.vault`) — synchronisation tour ↔ segment audio
+- Compatibilité avec le JSON d'échange Whispurge / Sonal pi (SPECS §20.6)
+
+**Testable (v1.0.0) :** un chercheur ICAR peut ouvrir une transcription CHAT, la naviguer tour par tour, corriger les conventions, pseudonymiser, annoter thématiquement, et exporter vers ELAN — sans quitter Obsidian.
+
+---
+
+## Features envisagées (hors phases planifiées)
+
+Ces fonctionnalités sont identifiées comme utiles mais non planifiées dans les phases actuelles.
+
+| Feature | Description | Prérequis |
+|---|---|---|
+| **Backend spaCy** | Serveur Python sidecar (`fr_core_news_sm`) appelé via HTTP — meilleure précision sur le français, pas de téléchargement de modèle, temps de réponse plus rapide. Requiert Python ≥ 3.9 côté utilisateur. | Phase 9 stable |
+| **Modèle CamemBERT-NER** | Remplacer le modèle multilingue BERT par `Jean-Baptiste/camembert-ner` ou `cmarkea/distilcamembert-base-ner` — spécifiquement entraîné sur le français. Nécessite une conversion ONNX et un hébergement HuggingFace. | Phase 9 stable |
+| **Score de confiance spaCy** | Exposer les scores d'entités de spaCy (via `displacy` ou scorer) pour filtrer comme avec transformers.js. | Backend spaCy |
+| **Désambiguïsation interactive** | Modale contextuelle pour les tokens ambigus ville/prénom (Nancy, Florence…) : affichage du contexte + boutons Personne / Lieu / Ignorer. | Phase 9 |
 
 ---
 
@@ -208,7 +260,7 @@ Objectif : scanner un fichier sans règle préexistante et détecter les entité
 | 2 | Tables de correspondance dans le vault ou hors vault par défaut ? | À trancher |
 | 3 | Chiffrement des tables dès la v1 ? | À trancher |
 | 4 | Métadonnées CHAT dès le MVP ou à partir de la v0.3 ? | À trancher |
-| 5 | NER avancé plus tard, ou rester sur dictionnaires + regex + validation humaine ? | À trancher |
+| 5 | NER avancé plus tard, ou rester sur dictionnaires + regex + validation humaine ? | **Décidé : NER (Phase 9)** — les dictionnaires servent au remplacement, pas à la détection |
 | 6 | Compatibilité exacte à viser avec les JSON de Sonal pi / Whispurge ? | À explorer |
 | 7 | Couplage audio optionnel via fichier local (API Obsidian) ? | À explorer |
 | 8 | Export ELAN ou Praat ? | À explorer |

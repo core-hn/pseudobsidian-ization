@@ -140,18 +140,21 @@ export class QuickPseudonymizeModal extends Modal {
       return;
     }
 
-    // 1. Sauvegarder la règle dans le mapping JSON
+    // 1. Sauvegarder la règle dans le mapping JSON (valeur brute, sans marqueurs)
     await this.saveRule(activeFile, replacement);
 
-    // 2. Appliquer dans le fichier
+    // 2. Appliquer dans le fichier — avec marqueurs si activés
+    const s = this.plugin.settings;
+    const marked = s.useMarkerInExport
+      ? `${s.markerOpen}${replacement}${s.markerClose}`
+      : replacement;
+
     if (this.applyScope === 'occurrence') {
-      // Remplacer uniquement la sélection courante dans l'éditeur
-      this.editor.replaceRange(replacement, this.from, this.to);
-      new Notice(`✓ "${this.source}" → "${replacement}" (cette occurrence)`);
+      this.editor.replaceRange(marked, this.from, this.to);
+      new Notice(`✓ "${this.source}" → "${marked}" (cette occurrence)`);
     } else {
-      // Remplacer toutes les occurrences dans le fichier courant
-      const count = await this.plugin.applyRuleToFile(activeFile, this.source, replacement);
-      new Notice(`✓ "${this.source}" → "${replacement}" (${count} occurrence${count > 1 ? 's' : ''})`);
+      const count = await this.plugin.applyRuleToFile(activeFile, this.source, marked);
+      new Notice(`✓ "${this.source}" → "${marked}" (${count} occurrence${count > 1 ? 's' : ''})`);
     }
 
     // Rafraîchir le surlignage immédiatement

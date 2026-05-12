@@ -1,4 +1,4 @@
-import { Plugin, Notice, TFile, TAbstractFile, Editor, Menu, MarkdownView, requestUrl } from 'obsidian';
+import { Plugin, Notice, TFile, TAbstractFile, Editor, Menu, MarkdownView, requestUrl, WorkspaceLeaf } from 'obsidian';
 import { EditorView } from '@codemirror/view';
 import { PseudObsSettings, DEFAULT_SETTINGS, PseudObsSettingTab } from './settings';
 import { RuleModal } from './ui/RuleModal';
@@ -6,6 +6,9 @@ import { QuickPseudonymizeModal } from './ui/QuickPseudonymizeModal';
 import { createPseudonymHighlighter, highlightDataChanged, type HighlightData } from './ui/PseudonymHighlighter';
 import { EditRuleModal } from './ui/EditRuleModal';
 import { OccurrencesModal } from './ui/OccurrencesModal';
+import { PseudonymizationView, VIEW_TYPE_PSEUDOBS } from './ui/PseudonymizationView';
+import { OnboardingModal } from './ui/OnboardingModal';
+import { OnnxNerScanner } from './scanner/OnnxNerScanner';
 import { scanOccurrences } from './scanner/OccurrenceScanner';
 import { SrtParser } from './parsers/SrtParser';
 import { ChatParser } from './parsers/ChatParser';
@@ -22,13 +25,21 @@ const CONVERTIBLE_EXTS = ['srt', 'cha', 'chat'];
 export default class PseudObsPlugin extends Plugin {
   settings!: PseudObsSettings;
   scopeResolver!: ScopeResolver;
+  nerScanner!: OnnxNerScanner;
   // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
-  private highlightData: HighlightData = { sources: [], replacements: [] };
+  private highlightData: HighlightData = { sources: [], replacements: [], nerCandidates: [] };
+  // Candidats NER par fichier (effacés au changement de fichier ou à un nouveau scan)
+  private nerCandidateFile: TFile | null = null;
+  private nerCandidates: string[] = [];
 
   async onload(): Promise<void> {
     await this.loadSettings();
     this.scopeResolver = new ScopeResolver(this.app.vault, this.settings.mappingFolder);
+    this.nerScanner = new OnnxNerScanner(this.app);
     this.addSettingTab(new PseudObsSettingTab(this.app, this));
+
+    this.registerView(VIEW_TYPE_PSEUDOBS, (leaf: WorkspaceLeaf) => new PseudonymizationView(leaf, this));
+    this.addRibbonIcon('eye-off', 'PseudObsidianization', () => void this.activateView());
 
     // Extension CM6 : surlignage des termes sources (orange) et remplacements (vert)
     this.registerEditorExtension(
@@ -41,6 +52,13 @@ export default class PseudObsPlugin extends Plugin {
     );
     // Premier chargement au démarrage
     void this.refreshHighlightData();
+
+    // Onboarding au premier lancement
+    if (!this.settings.onboardingCompleted) {
+      this.app.workspace.onLayoutReady(() => {
+        new OnboardingModal(this.app, this).open();
+      });
+    }
 
     // Watcher : convertir automatiquement tout .srt/.cha/.chat ajouté au vault
     // (drag-and-drop, copie externe, commande "Ajouter une transcription")
@@ -80,6 +98,12 @@ export default class PseudObsPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'scan-ner',
+      name: 'Scanner le fichier avec détection NER',
+      callback: () => void this.scanCurrentFileNer(),
+    });
+
+    this.addCommand({
       id: 'pseudonymize-selection',
       name: 'Pseudonymiser la sélection',
       editorCheckCallback: (checking, editor) => {
@@ -95,19 +119,40 @@ export default class PseudObsPlugin extends Plugin {
         if (!selection) return;
         menu.addSeparator();
 
-        const selLower = selection.toLowerCase();
-        const isKnown =
-          this.highlightData.sources.some((s) => s.toLowerCase() === selLower) ||
-          this.highlightData.replacements.some((r) => r.toLowerCase() === selLower);
+        // Extraire le terme brut : si la sélection inclut les marqueurs, les retirer
+        const { markerOpen: mOpen, markerClose: mClose, useMarkerInExport } = this.settings;
+        const bare = useMarkerInExport && selection.startsWith(mOpen) && selection.endsWith(mClose)
+          ? selection.slice(mOpen.length, selection.length - mClose.length)
+          : selection;
+        const bareLower = bare.toLowerCase();
 
-        if (isKnown) {
-          // Terme connu : proposer la modification en priorité
+        const isSource      = this.highlightData.sources.some((s) => s.toLowerCase() === bareLower);
+        const isReplacement = this.highlightData.replacements.some((r) => r.toLowerCase() === bareLower);
+        const isKnown       = isSource || isReplacement;
+
+        if (isReplacement) {
+          // Terme déjà pseudonymisé : proposer l'annulation en premier
           menu.addItem((item) =>
             item
-              .setTitle(`Modifier la règle pour "${selection.slice(0, 25)}${selection.length > 25 ? '…' : ''}"`)
+              .setTitle(`Annuler la pseudonymisation de "${bare.slice(0, 25)}${bare.length > 25 ? '…' : ''}"`)
+              .setIcon('undo')
+              .onClick(async () => {
+                const location = await this.scopeResolver.findRuleByTerm(bare);
+                if (!location) { new Notice('Règle introuvable dans les mappings.'); return; }
+                // Remplacer la sélection (avec ou sans marqueurs) par la source originale
+                editor.replaceSelection(location.rule.source);
+                void this.refreshHighlightData();
+              })
+          );
+        }
+
+        if (isKnown) {
+          menu.addItem((item) =>
+            item
+              .setTitle(`Modifier la règle pour "${bare.slice(0, 25)}${bare.length > 25 ? '…' : ''}"`)
               .setIcon('settings')
               .onClick(async () => {
-                const location = await this.scopeResolver.findRuleByTerm(selection);
+                const location = await this.scopeResolver.findRuleByTerm(bare);
                 if (location) {
                   new EditRuleModal(this.app, this, location).open();
                 } else {
@@ -149,7 +194,19 @@ export default class PseudObsPlugin extends Plugin {
     );
   }
 
-  onunload(): void {}
+  onunload(): void {
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_PSEUDOBS);
+  }
+
+  private async activateView(): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_PSEUDOBS)[0];
+    if (!leaf) {
+      leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
+      await leaf.setViewState({ type: VIEW_TYPE_PSEUDOBS, active: true });
+    }
+    workspace.revealLeaf(leaf);
+  }
 
   // --- Coulmont ---
 
@@ -184,16 +241,38 @@ export default class PseudObsPlugin extends Plugin {
   async refreshHighlightData(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      this.highlightData = { sources: [], replacements: [] };
+      this.highlightData = { sources: [], replacements: [], nerCandidates: [] };
     } else {
+      // Candidats NER : uniquement si le fichier actif est celui du dernier scan
+      const nerCandidates = file === this.nerCandidateFile ? this.nerCandidates : [];
+
       try {
-        const rules = await this.scopeResolver.getRulesFor(file.path);
+        // Pour les fichiers exportés (*.pseudonymized.*), charger les règles directement
+        // depuis le fichier de mapping de la source : le scope.path ne correspondrait pas
+        // au chemin de l'export, rendant getRulesFor() inutile pour les règles fichier.
+        let rules: MappingRule[];
+        if (file.basename.endsWith('.pseudonymized')) {
+          const originalBasename = file.basename.slice(0, -'.pseudonymized'.length);
+          // Vault/dossier + règles fichier de la source (sans filtre de scope path)
+          const vaultFolderRules = await this.scopeResolver.getRulesFor(file.path);
+          const fileRules = await this.scopeResolver.getRulesFromMappingFile(
+            `${originalBasename}.mapping.json`
+          );
+          const seen = new Set<string>();
+          rules = [...vaultFolderRules, ...fileRules].filter((r) => {
+            const k = `${r.source}||${r.replacement}`;
+            return seen.has(k) ? false : (seen.add(k), true);
+          });
+        } else {
+          rules = await this.scopeResolver.getRulesFor(file.path);
+        }
         this.highlightData = {
           sources: rules.map((r) => r.source).filter(Boolean),
           replacements: rules.map((r) => r.replacement).filter(Boolean),
+          nerCandidates,
         };
       } catch {
-        this.highlightData = { sources: [], replacements: [] };
+        this.highlightData = { sources: [], replacements: [], nerCandidates };
       }
     }
 
@@ -295,7 +374,7 @@ export default class PseudObsPlugin extends Plugin {
 
   // --- Pseudonymisation ---
 
-  private async pseudonymizeActiveFile(): Promise<void> {
+  async pseudonymizeActiveFile(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
     if (!file) { new Notice('Aucun fichier actif.'); return; }
 
@@ -355,6 +434,80 @@ export default class PseudObsPlugin extends Plugin {
     }
 
     new Notice(`✓ ${rules.length} règle(s) appliquée(s)\n→ ${outputPath}`);
+  }
+
+  async scanCurrentFileNer(): Promise<void> {
+    if (this.settings.nerBackend !== 'transformers-js') {
+      new Notice('La détection NER transformers.js n\'est pas activée.\nActivez-la dans Paramètres → Pseudonymizer Tool.');
+      return;
+    }
+
+    const file = this.app.workspace.getActiveFile();
+    if (!file) { new Notice('Aucun fichier actif.'); return; }
+
+    const ext = file.extension.toLowerCase();
+    if (!['srt', 'cha', 'chat', 'md', 'txt'].includes(ext)) {
+      new Notice(`Format non pris en charge : .${ext}`);
+      return;
+    }
+
+    try {
+      const content = await this.app.vault.read(file);
+      const occurrences = await this.nerScanner.scan(content, file.path, {
+        minScore: this.settings.nerMinScore,
+        functionWords: new Set(this.settings.nerFunctionWords.map((w) => w.toLowerCase())),
+      });
+
+      if (occurrences.length === 0) {
+        new Notice('Aucune entité détectée par le NER.');
+        return;
+      }
+
+      // Dédoublonner — un terme peut apparaître plusieurs fois dans le texte
+      const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
+
+      this.nerCandidateFile = file;
+      this.nerCandidates = unique;
+
+      void this.refreshHighlightData();
+
+      new Notice(
+        `✓ ${unique.length} entité${unique.length > 1 ? 's' : ''} détectée${unique.length > 1 ? 's' : ''} — surlignée${unique.length > 1 ? 's' : ''} en bleu.\nClic droit sur un terme pour créer une règle.`,
+        6000
+      );
+    } catch (e) {
+      new Notice(`Erreur NER : ${(e as Error).message}`);
+    }
+  }
+
+  // Efface les candidats NER pour le fichier courant (appelé après création de règle si besoin)
+  clearNerCandidates(): void {
+    this.nerCandidates = [];
+    this.nerCandidateFile = null;
+    void this.refreshHighlightData();
+  }
+
+  async exportMappingForFile(file: TFile): Promise<void> {
+    const mappingPath = `${this.settings.mappingFolder}/${file.basename}.mapping.json`;
+    const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
+
+    if (!(mappingFile instanceof TFile)) {
+      new Notice(`Aucun mapping trouvé pour ${file.name}`);
+      return;
+    }
+
+    const content = await this.app.vault.read(mappingFile);
+    await this.ensureFolder(this.settings.exportsFolder);
+    const destPath = `${this.settings.exportsFolder}/${file.basename}.mapping.json`;
+    const existing = this.app.vault.getAbstractFileByPath(destPath);
+
+    if (existing instanceof TFile) {
+      await this.app.vault.modify(existing, content);
+    } else {
+      await this.app.vault.create(destPath, content);
+    }
+
+    new Notice(`✓ Mapping exporté → ${destPath}`);
   }
 
   private async scanCurrentFile(): Promise<void> {

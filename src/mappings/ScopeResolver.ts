@@ -74,6 +74,50 @@ export class ScopeResolver {
     return null;
   }
 
+  // Retourne toutes les règles (tous statuts) applicables à un fichier, avec leur emplacement.
+  // Utilisé par l'onglet Mappings du panneau latéral pour l'édition et la suppression.
+  async getRulesWithLocation(filePath: string): Promise<RuleLocation[]> {
+    const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
+    if (!(folder instanceof TFolder)) return [];
+
+    const result: RuleLocation[] = [];
+
+    for (const child of folder.children) {
+      if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
+      try {
+        const data: MappingFile = JSON.parse(await this.vault.read(child));
+        const store = MappingStore.fromJSON(data);
+        const applicable = store.getAll().filter((r) => {
+          if (r.scope.type === 'vault') return true;
+          if (r.scope.type === 'folder') return filePath.startsWith(r.scope.path ?? '');
+          return r.scope.path === filePath;
+        });
+        for (const rule of applicable) {
+          result.push({ rule, store, filePath: child.path });
+        }
+      } catch {
+        // ignorer les fichiers de mapping malformés
+      }
+    }
+
+    return result;
+  }
+
+  // Charge les règles validées d'un fichier de mapping spécifique, sans filtre de scope.
+  // Utilisé pour les fichiers exportés (*.pseudonymized.*) dont le scope path ne correspond pas.
+  async getRulesFromMappingFile(mappingFilename: string): Promise<MappingRule[]> {
+    const path = `${this.mappingFolder}/${mappingFilename}`;
+    const file = this.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) return [];
+    try {
+      const data: MappingFile = JSON.parse(await this.vault.read(file));
+      const store = MappingStore.fromJSON(data);
+      return store.getAll().filter((r) => r.status === 'validated');
+    } catch {
+      return [];
+    }
+  }
+
   // Sauvegarde un store modifié dans son fichier JSON.
   async saveStore(store: MappingStore, filePath: string): Promise<void> {
     const file = this.vault.getAbstractFileByPath(filePath);

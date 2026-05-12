@@ -68,13 +68,13 @@ export class OccurrencesModal extends Modal {
     // Boutons globaux
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText('✓ tout valider').onClick(() => {
+        b.setButtonText('Tout valider').setClass('pseudobs-btn-validate-all').onClick(() => {
           for (const occ of this.occurrences) this.decisions.set(occ.id, 'validated');
           this.updateAllCards();
         })
       )
       .addButton((b) =>
-        b.setButtonText('✗ tout ignorer').onClick(() => {
+        b.setButtonText('Tout ignorer').setClass('pseudobs-btn-ignore-all').onClick(() => {
           for (const occ of this.occurrences) this.decisions.set(occ.id, 'ignored');
           this.updateAllCards();
         })
@@ -222,9 +222,14 @@ export class OccurrencesModal extends Modal {
     const validated = this.occurrences.filter((o) => this.decisions.get(o.id) === 'validated');
     const ignored   = this.occurrences.filter((o) => this.decisions.get(o.id) === 'ignored');
 
+    const s = this.plugin.settings;
+    const wrap = (r: string) => s.useMarkerInExport
+      ? `${s.markerOpen}${r}${s.markerClose}`
+      : r;
+
     const spans: ReplacementSpan[] = validated.map((occ) => {
       const rule = this.rules.find((r) => r.id === occ.mappingId)!;
-      return { start: occ.start, end: occ.end, source: occ.text, replacement: rule.replacement, mappingId: occ.mappingId ?? '', priority: rule.priority };
+      return { start: occ.start, end: occ.end, source: occ.text, replacement: wrap(rule.replacement), mappingId: occ.mappingId ?? '', priority: rule.priority };
     });
 
     const updated = applySpans(this.content, resolveSpans(spans));

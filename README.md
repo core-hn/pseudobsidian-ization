@@ -1,113 +1,182 @@
 # PseudObsidian-ization
 
-**Plugin Obsidian de pseudonymisation et de correction de transcriptions d'entretiens et de corpus interactionnels.**
+Plugin Obsidian de **pseudonymisation et de correction de transcriptions** pour chercheurs en sciences du langage. Il comble un manque : les outils existants (Sonal, Whispurge) ne s'intègrent pas dans un environnement de prise de notes et d'analyse, et peu de logiciels acceptent les conventions de transcription multimodales (Jefferson, ICOR).
 
-Conçu pour les chercheurs en **analyse conversationnelle (EMCA)** et en **sciences du langage**, notamment à l'**UMR ICAR** (CNRS / Université Lyon 2 / ENS Lyon), ce plugin permet de travailler directement dans Obsidian sur des transcriptions brutes issues de terrains de recherche, en produisant des versions pseudonymisées exploitables pour l'analyse et l'archivage.
+> **English summary** — An Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson / ICOR conventions, .srt, .cha formats). Designed for qualitative researchers in linguistics and conversation analysis. See [SPECS.md](SPECS.md) for full technical specifications.
 
-> **English summary** — An Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson / ICOR conventions, SRT, CHAT/CHA formats). Designed for qualitative researchers in linguistics and conversation analysis. See [SPECS.md](SPECS.md) for full technical specifications.
+---
+
+## Workflow
+
+```
+Transcription brute (.srt, .cha, .md, .txt)
+        ↓ import automatique
+Obsidian — édition native Markdown
+        ↓ pseudonymisation (manuelle ou NER)
+Fichier source annoté  +  table de correspondance (séparée)
+        ↓ export
+Transcription pseudonymisée (.pseudonymized.*)
+```
+
+Deux approches, combinables librement :
+
+- **Manuelle** — clic droit sur un terme → choisir un pseudonyme → le plugin remplace et enregistre la règle
+- **Automatique (NER)** — un modèle d'IA détecte les entités identifiantes et les surligne en bleu dans l'éditeur → le chercheur valide ou rejette chaque candidat par clic droit
+
+Les pseudonymes sont encadrés de marqueurs `{{...}}` dans le fichier source et l'export pour rester visuellement distincts des données brutes. Les tables de correspondance ne sont jamais incluses dans les exports.
+
+---
+
+## Prise en main
+
+### Premier lancement
+
+Au premier chargement, un assistant de configuration s'ouvre automatiquement en trois étapes :
+
+1. **Bienvenue** — présentation du plugin
+2. **Détection NER** — choisir d'activer le modèle IA local (téléchargement WASM ~19 Mo) ou de travailler uniquement avec des règles manuelles
+3. **Dictionnaires** — importer des fichiers `.dict.json` existants si vous avez déjà des listes de candidats de remplacement
+
+L'assistant est relançable à tout moment : Paramètres → Pseudonymizer tool → Reconfigurer.
+
+### Formats pris en charge
+
+| Format | Extension | Notes |
+|---|---|---|
+| Sous-titres horodatés | `.srt` | Sortie Whisper / IA — horodatages et structure préservés |
+| CHAT / CLAN | `.cha`, `.chat` | Lignes `@`, `*`, `%` préservées |
+| Markdown annoté | `.md` | Conventions Jefferson ou ICOR |
+| Texte brut | `.txt` | Sans marqueurs de convention |
+
+Les fichiers `.srt` et `.cha` sont automatiquement convertis en Markdown à l'import. Un fichier de mapping JSON vide est créé en même temps.
+
+> Installez le plugin [Data Files Editor](https://github.com/zuktol/obsidian-data-files-editor) pour visionner les fichiers de mapping JSON directement depuis votre vault.
+
+### Installation
+
+**Via le répertoire communautaire Obsidian** (validation en cours) :
+1. Obsidian → Paramètres → Extensions communautaires → Parcourir → "Pseudonymizer Tool"
+
+**Installation manuelle** depuis la [dernière release GitHub](https://github.com/core-hn/pseudobsidian-ization/releases) :
+1. Télécharger `main.js`, `manifest.json`, `styles.css`
+2. Copier dans `.obsidian/plugins/pseudonymizer-tool/` de votre vault
+3. Activer dans Paramètres → Extensions communautaires
+
+> Les fichiers WASM (NER) sont téléchargés automatiquement par l'assistant au premier lancement si vous activez la détection automatique. Vous pouvez aussi les télécharger manuellement depuis la release.
 
 ---
 
 ## Fonctionnalités
 
-### Formats pris en charge
-- `.srt` — sous-titres horodatés (sortie Whisper / IA)
-- `.cha` / `.chat` — format CHAT / CLAN (CLAN, corpus de linguistique)
-- `.md` — transcription Markdown (conventions Jefferson ou ICOR)
-- `.txt` — texte brut
+### Pseudonymisation manuelle
 
-Les fichiers `.srt` et `.cha` sont **automatiquement convertis en Markdown** à l'import, pour une édition native dans Obsidian. La structure (horodatages, locuteurs, métadonnées `@`, lignes dépendantes `%`) est préservée.
+Toutes les actions sont disponibles via le **clic droit** sur une sélection dans l'éditeur :
 
-### Pseudonymisation
-- **Sélection → clic droit → Pseudonymiser** : remplace immédiatement dans le fichier
-- **Pseudonymiser avec Coulmont** : interroge l'outil de Baptiste Coulmont ([coulmont.com](https://coulmont.com)) pour proposer des prénoms sociologiquement équivalents (même milieu social, même décennie de popularité) — le chercheur choisit dans la liste proposée
-- **Créer une règle** : ajoute une correspondance dans le mapping JSON sans modifier le texte, pour validation ultérieure
-- **Scanner le fichier courant** : liste toutes les occurrences des règles avec diff avant/après, validation occurrence par occurrence
-- **Portées** : fichier, dossier, vault entier
+| Action | Description |
+|---|---|
+| **Pseudonymiser** | Remplace le terme (cette occurrence ou toutes) avec marqueurs `{{...}}` |
+| **Pseudonymiser avec Pr Baptiste Coulmont** | Interroge [coulmont.com](https://coulmont.com) — propose des prénoms sociologiquement équivalents (même milieu social, même décennie) |
+| **Créer une règle** | Enregistre la correspondance dans le mapping JSON sans modifier le texte |
+| **Modifier la règle** | Modifie une règle existante (disponible sur les termes en orange ou en vert) |
+| **Annuler la pseudonymisation** | Restaure le terme original pour cette occurrence (disponible sur les termes en vert) |
+
+### Détection automatique par NER
+
+Le moteur de **reconnaissance d'entités nommées** détecte prénoms, noms, lieux et institutions sans liste préexistante, en exploitant le contexte syntaxique. Contrairement à une approche par dictionnaire, il distingue "Florence" la personne de "Florence" la ville. Les sous-termes d'une entité composée connue sont filtrés automatiquement (si "Saint-Jean-de-Luz" est une règle, "Jean" et "Luz" ne remontent pas comme candidats NER).
+
+> Pour comprendre ce que sont les modèles NER : [blog Vaniila](https://blog.vaniila.ai/NER/).
+
+**Utilisation :**
+1. Panneau latéral → onglet **Candidats** → **Identifier des candidats**
+2. Les entités apparaissent **surlignées en bleu** dans l'éditeur
+3. Clic droit sur un terme bleu → **Pseudonymiser** ou **Créer une règle**
+
+**Modèle :** `Xenova/bert-base-multilingual-cased-ner-hrl` via `transformers.js`. Exécution 100 % locale. Téléchargements uniques au premier usage : WASM (~19 Mo) + modèle NER (~66 Mo). **Fonctionnement hors-ligne après le premier téléchargement.**
+
+**Paramètres (onglet NER du panneau) :**
+- **Seuil de confiance** (0,50–1,00) : augmenter réduit les faux positifs
+- **Mots fonctionnels exclus** : liste éditable des tokens à toujours ignorer ("de", "du", "la"…)
+
+### Panneau latéral
+
+Accessible via l'icône dans le ruban ou `Ctrl+P → Pseudonymisation : ouvrir le panneau`.
+
+| Onglet | Contenu |
+|---|---|
+| **Candidats** | Scanner (règles existantes) · Identifier des candidats (NER) · Validation · Appliquer |
+| **Mappings** | Règles actives · Modifier · Supprimer · Ajouter |
+| **Dictionnaires** | Import de fichiers `.dict.json` |
+| **Exports** | Pseudonymiser et exporter · Exporter la table de correspondance |
+| **NER** | Visible si NER activé · Seuil de confiance · Mots fonctionnels exclus |
+
+### Surlignage et marqueurs
+
+Le surlignage est actif dans tout fichier ouvert, y compris les fichiers export `.pseudonymized.*` qui héritent automatiquement des règles du fichier source.
+
+| Couleur | Signification |
+|---|---|
+| 🟠 Orange + contour | Terme source encore présent — à pseudonymiser |
+| 🟢 Vert + souligné | Pseudonyme appliqué en direct dans le fichier |
+| 🔵 Bleu + contour | Candidat NER — pas encore de règle |
+
+Dans les fichiers exportés, les pseudonymes sont encadrés de marqueurs `{{Pierre}}` pour les distinguer des données brutes (activé par défaut, configurable dans les paramètres).
 
 ### Tables de correspondance
-- Format JSON structuré (voir `SPECS.md §5`)
-- Trois niveaux : `fichier.mapping.json`, `dossier.mapping.json`, `vault.mapping.json`
-- Statuts : `suggested`, `validated`, `ignored`, `partial`, `conflict`, `needs_review`
-- Priorité z-index : entier libre, comme le `z-index` CSS — les entités longues priment sur les plus courtes par défaut (protection `Saint-Jean-de-Luz` vs `Jean`)
-- Marqueur optionnel dans l'export : `⟦Pierre⟧` pour identifier visuellement les pseudonymes
 
-### Surlignage dans l'éditeur
-- **Orange** : termes sources encore présents (à pseudonymiser)
-- **Vert** : pseudonymes déjà appliqués
+- Trois niveaux de portée : `fichier.mapping.json` · `dossier.mapping.json` · `vault.mapping.json`
+- Statuts par occurrence : `validated`, `ignored`, `partial`, `conflict`, `needs_review`
+- **Priorité z-index** : entier libre — les entités longues priment (`Saint-Jean-de-Luz` > `Jean`)
+- Format JSON documenté dans `SPECS.md §5`
 
-### Sécurité
-- Tout traitement est **local** — aucune donnée de transcription n'est envoyée à un serveur externe
-- Exception documentée : "Pseudonymiser avec Coulmont" envoie le prénom à `coulmont.com` (pas le contenu de la transcription)
-- Tables de correspondance strictement séparées des exports
+### Sécurité et confidentialité
+
+- Tout traitement est **local** — aucun texte de transcription n'est envoyé à un serveur externe
+- Le modèle NER s'exécute dans Obsidian via WASM, sans appel réseau
+- **Exception documentée :** "Pseudonymiser avec Coulmont" envoie le *prénom de remplacement* (pas le contenu de la transcription) à `coulmont.com`
+- Les tables de correspondance ne sont jamais incluses dans les exports pseudonymisés
 
 ---
 
-## Statut actuel
-
-**Version en développement actif — 0.0.1 (alpha)**
-
-| Phase | Statut | Description |
-|---|---|---|
-| 0 — Boilerplate | ✅ | Plugin Obsidian TypeScript, Jest, ESLint |
-| 1 — Parser SRT | ✅ | Round-trip exact, horodatages préservés |
-| 2 — Parser CHAT | ✅ | Lignes `@`, `*`, `%` préservées |
-| 3 — Moteur de pseudonymisation | ✅ | Spans, z-index, protection des chevauchements |
-| 4 — Commandes UI | ✅ | Import, création de règles, export avec marqueur |
-| 5 — Portées + surlignage | ✅ | ScopeResolver, CM6 ViewPlugin |
-| 6 — Validation sélective | ✅ | OccurrencesModal, statuts partiels |
-| **7 — Dictionnaires** | 🔄 **En cours** | Intégration Coulmont opérationnelle — import de dictionnaires JSON/CSV et constitution de ressources lexicales embarquées en cours |
-| 8 — Scan automatique | ⏳ | Détection sans règle préexistante |
-| 9 — Interface complète | ⏳ | Panneau latéral 4 onglets |
-| 10 — Publication | ⏳ | Communauté Obsidian |
-
----
-
-## Installation
-
-### Pour les utilisateurs
-
-1. Télécharger la dernière release (fichiers `main.js`, `manifest.json`, `styles.css`)
-2. Copier ces trois fichiers dans `.obsidian/plugins/pseudobsidianization/` de votre vault
-3. Activer le plugin dans Obsidian → Paramètres → Extensions communautaires
-
-> Le plugin n'est pas encore soumis au répertoire communautaire Obsidian. Publication prévue à partir de la version 0.1.0.
-
-### Pour les développeurs et contributeurs
+## Pour les développeurs
 
 ```bash
-git clone https://gitlab.huma-num.fr/[votre-groupe]/pseudobsidianization.git
-cd pseudobsidianization
+git clone https://gitlab.huma-num.fr/aabbadie/pseudobsidian-ization.git
+cd pseudobsidian-ization
 npm install
 npm run dev      # build en mode watch
 npm test         # suite de tests Jest
 npm run build    # build de production
+npm run deploy   # build + copie dans test_vault/
 ```
 
-Copier `main.js`, `manifest.json` et `styles.css` dans `.obsidian/plugins/pseudobsidianization/` d'un vault Obsidian dédié au développement.  
-Installer [Hot Reload](https://github.com/pjeby/hot-reload) dans ce vault et créer un fichier `.hotreload` dans le dossier du plugin pour le rechargement automatique à chaque build.
-
-#### Structure du dépôt
+Structure du dépôt :
 
 ```
-pseudobsidianization/
-├── src/
-│   ├── main.ts           # Point d'entrée Obsidian
-│   ├── types.ts          # Types partagés (SPECS §11.3)
-│   ├── settings.ts       # Paramètres
-│   ├── parsers/          # SrtParser, ChatParser, TranscriptConverter
-│   ├── mappings/         # MappingStore, ScopeResolver
-│   ├── pseudonymizer/    # Moteur, ReplacementPlanner, SpanProtector
-│   ├── scanner/          # OccurrenceScanner
-│   └── ui/               # Modales, surlignage CM6
-├── tests/                # Tests unitaires Jest
-├── manifest.json         # Métadonnées du plugin Obsidian
-├── versions.json
-├── styles.css
-├── SPECS.md              # Spécifications fonctionnelles complètes
-├── ROADMAP.md            # Feuille de route détaillée
-└── README.md
+src/
+├── main.ts               # Point d'entrée Obsidian
+├── settings.ts           # Paramètres persistants
+├── types.ts              # Types partagés
+├── parsers/              # SrtParser, ChatParser, TranscriptConverter
+├── mappings/             # MappingStore, ScopeResolver
+├── pseudonymizer/        # Moteur, ReplacementPlanner, SpanProtector
+├── scanner/              # OccurrenceScanner, OnnxNerScanner
+└── ui/                   # PseudonymizationView, modales, surlignage CM6
 ```
+
+---
+
+## Statut — v0.1.0
+
+| Phase | Statut | Description |
+|---|---|---|
+| 0–6 | ✅ | Parsers · Moteur · Commandes · Portées · Surlignage · Validation |
+| 7 — Coulmont | ✅ | Suggestions de prénoms équivalents · Import JSON/CSV |
+| 8 — Panneau latéral | ✅ | 4 onglets · NER embarqué · Wizard · Annulation · Surlignage export |
+| 9 — Dictionnaires NER | 🔄 | Dictionnaires de remplacement pour lieux/institutions |
+| 10 — Affinage | ⏳ | Stabilisation v0.2.0 |
+| 11 — Fonctions EMCA | ⏳ | Navigation tours · Correction Jefferson/ICOR · Export ELAN |
+
+Voir [ROADMAP.md](ROADMAP.md) pour le détail des phases et les features envisagées.
 
 ---
 
@@ -115,10 +184,9 @@ pseudobsidianization/
 
 Les contributions sont les bienvenues, en particulier :
 
-- **Dictionnaires** : listes de prénoms, toponymes, institutions adaptés à des corpus spécifiques (langues régionales, périodes historiques, terrains non francophones)
+- **Dictionnaires** : listes de prénoms, toponymes, institutions pour des corpus spécifiques (langues régionales, terrains non francophones, périodes historiques)
 - **Conventions de transcription** : parsers pour d'autres systèmes (ELAN, Praat TextGrid, EXMARaLDA)
-- **Adaptateurs** : connecteurs vers d'autres ressources lexicales ouvertes
-- **Retours d'usage** : issues GitLab pour signaler des cas limites rencontrés sur de vrais corpus
+- **Retours d'usage** : issues pour signaler des cas limites rencontrés sur de vrais corpus
 
 Merci d'ouvrir une issue avant de proposer une pull request pour les fonctionnalités importantes.
 
@@ -126,29 +194,35 @@ Merci d'ouvrir une issue avant de proposer une pull request pour les fonctionnal
 
 ## Licence
 
-### Code — *The Beerware License* (Revision 42)
+### Code
+
+*The Beerware License* (Revision 42)
 
 ```
-Axelle Abbadie <https://cv.hal.science/axelle-abbadie/> a écrit ce logiciel.
-Vous pouvez faire ce que vous voulez avec, tant que vous conservez cette notice.
-Si on se croise un jour et que vous pensez que ça valait le coup,
-vous pouvez m'offrir une bière.
+Axelle Abbadie a conçu ce code. Vous pouvez faire ce que vous voulez avec,
+tant que vous conservez cette notice. Si on se croise un jour et que vous
+pensez que ça valait le coup, vous pouvez m'offrir une bière.
 ```
 
-**Ce plugin est fait pour être modifié.** Si votre terrain de recherche implique des conventions de transcription particulières, un dialecte régional, des corpus multilingues ou des formats d'export spécifiques à votre institution, ne vous gênez pas pour adapter le code à vos besoins. C'est précisément l'esprit de cet outil.
+**Ce plugin est fait pour être modifié.** Si votre terrain implique des conventions de transcription particulières, un dialecte régional, des corpus multilingues ou des formats d'export spécifiques à votre institution, adaptez le code à vos besoins.
 
-### Documentation et spécifications — CC BY 4.0
+### Plugin et dépôt
 
-Les fichiers `SPECS.md`, `ROADMAP.md` et ce `README.md` sont placés sous licence [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
-
-Vous êtes libres de les réutiliser, adapter et redistribuer, y compris à des fins commerciales, à condition de créditer la source.
+[Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
 
 ---
 
 ## Crédits
 
-- **Axelle Abbadie** — conception, spécifications, direction du développement ([HAL](https://cv.hal.science/axelle-abbadie/))
-- **Claude Sonnet 4.6** (Anthropic) — co-développement du code via [Claude Code](https://claude.ai/code)
-- **Baptiste Coulmont** — outil de suggestion de prénoms sociologiquement équivalents ([coulmont.com](https://coulmont.com))
-- **Alex Alber** (Université de Tours / UMR CITERES) — inspiration de la chaîne Whispurge → Sonal pi pour le workflow de pseudonymisation
-- **UMR ICAR** (CNRS / Université Lyon 2 / ENS Lyon) — contexte scientifique et conventions de transcription ICOR
+<!-- Suggestions — à compléter par l'auteure : -->
+### Propriété intellectuelle
+- **Axelle Abbadie** — conception, spécifications, direction du développement, recherche UX. ([cvHAL](https://cv.hal.science/axelle-abbadie))
+- Vibe-coding avec **Claude Sonnet 4.6** (Anthropic)
+
+### Inspiration
+- **Sonal pi** — À la suite d'une rencontre avec [Maxime Beligné](https://umr5600.cnrs.fr/fr/lequipe/name/max-beligne/) au cours de [la journée "Pseudonymiser, Anonymiser ?" organisée par la MSH-Sud](https://www.mshsud.org/agenda/anonymiser-pseudonymiser/). Lien vers le logiciel : [Sonal-pi](https://www.sonal-info.com/), développé par depuis 2008 par Alex Alber.
+
+### Travaux valorisés
+- **Baptiste Coulmont** — outil de pseudonymisation ([coulmont.com/bac](https://coulmont.com/bac)) utilisé pour la suggestion de prénoms.
+- **Stefan Schweter** (Bayerische Staatsbibliothek) — modèle NER multilingue [`bert-base-multilingual-cased-ner-hrl`](https://huggingface.co/stefan-it/bert-base-multilingual-cased-ner-hrl), utilisé pour la détection automatique des entités nommées.
+- **Joshua Lochner / Xenova** — conversion ONNX du modèle et bibliothèque [`transformers.js`](https://github.com/xenova/transformers.js), qui permettent l'exécution locale dans Obsidian sans dépendance Python.
