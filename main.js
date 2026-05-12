@@ -51,7 +51,6 @@ var PseudObsSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Pseudonymizer tool").setHeading();
     new import_obsidian.Setting(containerEl).setName("Dossiers").setHeading();
     new import_obsidian.Setting(containerEl).setName("Transcriptions import\xE9es").setDesc("Dossier de destination des transcriptions import\xE9es").addText(
       (text) => text.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {

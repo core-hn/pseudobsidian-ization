@@ -1,6 +1,6 @@
 {
-  "name": "pseudobsidianization",
-  "version": "0.0.1",
+  "name": "pseudonymizer-tool",
+  "version": "0.0.4",
   "description": "Plugin Obsidian de pseudonymisation de transcriptions",
   "author": "Axelle Abbadie",
   "homepage": "https://cv.hal.science/axelle-abbadie/",
