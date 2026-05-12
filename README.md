@@ -2,7 +2,7 @@
 
 **Plugin Obsidian de pseudonymisation et de correction de transcriptions d'entretiens et de corpus interactionnels.**
 
-Conçu pour les chercheurs en **analyse conversationnelle (EMCA)** et en **sciences du langage**, notamment à l'**UMR ICAR** (CNRS / Université Lyon 2 / ENS Lyon), ce plugin permet de travailler directement dans Obsidian sur des transcriptions brutes issues de terrains de recherche, en produisant des versions pseudonymisées exploitables pour l'analyse et l'archivage.
+Conçu pour les chercheurs en **analyse conversationnelle (EMCA)** et en **sciences du langage**, ce plugin permet de travailler directement dans Obsidian sur des transcriptions brutes issues de terrains de recherche, en produisant des versions pseudonymisées exploitables pour l'analyse et l'archivage éthique.
 
 > **English summary** — An Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson / ICOR conventions, SRT, CHAT/CHA formats). Designed for qualitative researchers in linguistics and conversation analysis. See [SPECS.md](SPECS.md) for full technical specifications.
 
@@ -147,8 +147,12 @@ Vous êtes libres de les réutiliser, adapter et redistribuer, y compris à des 
 
 ## Crédits
 
-- **Axelle Abbadie** — conception, spécifications, direction du développement ([HAL](https://cv.hal.science/axelle-abbadie/))
-- **Claude Sonnet 4.6** (Anthropic) — co-développement du code via [Claude Code](https://claude.ai/code)
-- **Baptiste Coulmont** — outil de suggestion de prénoms sociologiquement équivalents ([coulmont.com](https://coulmont.com))
-- **Alex Alber** (Université de Tours / UMR CITERES) — inspiration de la chaîne Whispurge → Sonal pi pour le workflow de pseudonymisation
-- **UMR ICAR** (CNRS / Université Lyon 2 / ENS Lyon) — contexte scientifique et conventions de transcription ICOR
+### Propriété intellectuelle
+- **Axelle Abbadie** — conception, spécifications, direction du développement, recherche UX ([cvHAL](https://cv.hal.science/axelle-abbadie/))
+- Vibe-coding avec **Claude Sonnet 4.6** (Anthropic)
+
+### Inspiration
+- **Sonal pi** — À la suite d'une rencontre avec [Maxime Beligné](https://umr5600.cnrs.fr/fr/lequipe/name/max-beligne/) au cours de [la journée "Pseudonymiser, Anonymiser ?" organisée par la MSH-Sud](https://www.mshsud.org/agenda/anonymiser-pseudonymiser/). Lien vers le logiciel : [Sonal-pi](https://www.sonal-info.com/), développé depuis 2008 par Alex Alber.
+
+### Travaux valorisés
+- **Baptiste Coulmont** — outil de pseudonymisation ([coulmont.com/bac](https://coulmont.com/bac)) utilisé pour la suggestion de prénoms

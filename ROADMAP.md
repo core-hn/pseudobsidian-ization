@@ -193,10 +193,8 @@ Objectif : scanner un fichier sans règle préexistante et détecter les entité
 ## ⏳ Phase 10 — Publication
 
 - [ ] README utilisateur en français avec captures d'écran
-- [ ] Guide de démarrage rapide pour les chercheurs ICAR
 - [ ] Trancher les questions ouvertes de SPECS §20
 - [ ] Publication sur le répertoire communautaire Obsidian
-- [ ] Licence : MIT ou EUPL (selon contraintes CNRS)
 
 ---
 
