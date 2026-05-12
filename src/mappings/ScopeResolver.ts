@@ -29,7 +29,7 @@ export class ScopeResolver {
 
       try {
         const raw = await this.vault.read(child);
-        const data: MappingFile = JSON.parse(raw);
+        const data = JSON.parse(raw) as MappingFile;
         const store = MappingStore.fromJSON(data);
         allRules.push(...store.getValidatedFor(filePath));
       } catch {

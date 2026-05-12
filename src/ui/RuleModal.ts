@@ -145,7 +145,7 @@ export class RuleModal extends Modal {
 
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
     if (mappingFile instanceof TFile) {
-      const data: MappingFile = JSON.parse(await this.app.vault.read(mappingFile));
+      const data = JSON.parse(await this.app.vault.read(mappingFile)) as MappingFile;
       store = MappingStore.fromJSON(data);
     } else {
       await this.plugin.ensureFolder(this.plugin.settings.mappingFolder);

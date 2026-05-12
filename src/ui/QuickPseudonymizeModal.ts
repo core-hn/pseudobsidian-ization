@@ -164,7 +164,7 @@ export class QuickPseudonymizeModal extends Modal {
 
     const mappingTFile = this.app.vault.getAbstractFileByPath(mappingPath);
     if (mappingTFile instanceof TFile) {
-      const data: MappingFile = JSON.parse(await this.app.vault.read(mappingTFile));
+      const data = JSON.parse(await this.app.vault.read(mappingTFile)) as MappingFile;
       store = MappingStore.fromJSON(data);
     } else {
       await this.plugin.ensureFolder(this.plugin.settings.mappingFolder);

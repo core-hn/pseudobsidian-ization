@@ -239,7 +239,7 @@ export default class PseudObsPlugin extends Plugin {
       }
 
       // Supprimer le fichier source non-Markdown maintenant remplacé par le .md
-      await this.app.fileManager.trashFile(file);
+      await this.app.vault.delete(file);
 
       // Ouvrir le .md
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
@@ -445,7 +445,7 @@ export default class PseudObsPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as PseudObsSettings;
   }
 
   async saveSettings(): Promise<void> {

@@ -1345,7 +1345,7 @@ var PseudObsPlugin = class extends import_obsidian7.Plugin {
         const store = new MappingStore({ type: "file", path: mdPath });
         await this.app.vault.create(mappingPath, JSON.stringify(store.toJSON(), null, 2));
       }
-      await this.app.fileManager.trashFile(file);
+      await this.app.vault.delete(file);
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
       if (mdFile instanceof import_obsidian7.TFile) {
         await this.app.workspace.getLeaf().openFile(mdFile);
