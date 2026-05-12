@@ -1,6 +1,6 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
 import type PseudObsPlugin from '../main';
-import type { EntityCategory, MappingRule, ScopeType } from '../types';
+import type { EntityCategory, ScopeType } from '../types';
 import type { RuleLocation } from '../mappings/ScopeResolver';
 
 export class EditRuleModal extends Modal {

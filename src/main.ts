@@ -18,7 +18,7 @@ import { ScopeResolver } from './mappings/ScopeResolver';
 import { PseudonymizationEngine } from './pseudonymizer/PseudonymizationEngine';
 import { findSpansForRule } from './pseudonymizer/ReplacementPlanner';
 import { applySpans } from './pseudonymizer/SpanProtector';
-import type { MappingFile, MappingRule, MappingStatus, Occurrence } from './types';
+import type { MappingRule, MappingStatus, Occurrence } from './types';
 
 const CONVERTIBLE_EXTS = ['srt', 'cha', 'chat'];
 
@@ -67,7 +67,7 @@ export default class PseudObsPlugin extends Plugin {
         if (!(file instanceof TFile)) return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase())) return;
         // Délai court pour laisser Obsidian finir l'écriture du fichier
-        setTimeout(() => { void this.autoConvert(file); }, 300);
+        window.setTimeout(() => { void this.autoConvert(file); }, 300);
       })
     );
 
@@ -318,7 +318,7 @@ export default class PseudObsPlugin extends Plugin {
       }
 
       // Supprimer le fichier source non-Markdown maintenant remplacé par le .md
-      await this.app.vault.delete(file);
+      await this.app.fileManager.trashFile(file);
 
       // Ouvrir le .md
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
@@ -335,13 +335,13 @@ export default class PseudObsPlugin extends Plugin {
   // --- Commande "Ajouter une transcription" ---
 
   private openFilePicker(): void {
-    const input = document.createElement('input');
+    const input = activeDocument.createElement('input');
     input.type = 'file';
     input.accept = '.srt,.cha,.chat,.txt,.md';
     input.multiple = true;
     // Pas de display:none — bloque le change event dans certaines versions d'Electron
     input.classList.add('pseudobs-hidden-input');
-    document.body.appendChild(input);
+    activeDocument.body.appendChild(input);
 
     input.addEventListener('change', () => { void this.processFilePicker(input); });
 
@@ -598,7 +598,7 @@ export default class PseudObsPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData()) as PseudObsSettings;
   }
 
   async saveSettings(): Promise<void> {

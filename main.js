@@ -31962,7 +31962,7 @@ var QuickPseudonymizeModal = class extends import_obsidian4.Modal {
     new import_obsidian4.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("Pseudonymiser").setCta().onClick(() => this.apply())
     );
-    setTimeout(() => replacementInput?.focus(), 50);
+    window.setTimeout(() => replacementInput?.focus(), 50);
   }
   async apply() {
     const replacement = this.replacement.trim();
@@ -32292,7 +32292,6 @@ var OccurrencesModal = class extends import_obsidian6.Modal {
     }
   }
   buildCard(container, occ, rule) {
-    const decision = this.decisions.get(occ.id) ?? "validated";
     const card = container.createDiv();
     card.addClass("pseudobs-occ-card");
     const srcLine = card.createDiv();
@@ -33427,7 +33426,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
           return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase()))
           return;
-        setTimeout(() => {
+        window.setTimeout(() => {
           void this.autoConvert(file);
         }, 300);
       })
@@ -33621,7 +33620,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
         const store = new MappingStore({ type: "file", path: mdPath });
         await this.app.vault.create(mappingPath, JSON.stringify(store.toJSON(), null, 2));
       }
-      await this.app.vault.delete(file);
+      await this.app.fileManager.trashFile(file);
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
       if (mdFile instanceof import_obsidian10.TFile) {
         await this.app.workspace.getLeaf().openFile(mdFile);
@@ -33633,12 +33632,12 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
   }
   // --- Commande "Ajouter une transcription" ---
   openFilePicker() {
-    const input = document.createElement("input");
+    const input = activeDocument.createElement("input");
     input.type = "file";
     input.accept = ".srt,.cha,.chat,.txt,.md";
     input.multiple = true;
     input.classList.add("pseudobs-hidden-input");
-    document.body.appendChild(input);
+    activeDocument.body.appendChild(input);
     input.addEventListener("change", () => {
       void this.processFilePicker(input);
     });

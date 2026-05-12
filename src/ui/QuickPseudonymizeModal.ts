@@ -1,7 +1,6 @@
 import { App, Editor, EditorPosition, Modal, Notice, Setting, TFile } from 'obsidian';
 import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
-import { PseudonymizationEngine } from '../pseudonymizer/PseudonymizationEngine';
 import type { EntityCategory, MappingFile } from '../types';
 
 type ApplyScope = 'occurrence' | 'file';
@@ -124,7 +123,7 @@ export class QuickPseudonymizeModal extends Modal {
     );
 
     // Focus sur le champ de remplacement à l'ouverture
-    setTimeout(() => replacementInput?.focus(), 50);
+    window.setTimeout(() => replacementInput?.focus(), 50);
   }
 
   private async apply(): Promise<void> {
@@ -168,7 +167,7 @@ export class QuickPseudonymizeModal extends Modal {
 
     const mappingTFile = this.app.vault.getAbstractFileByPath(mappingPath);
     if (mappingTFile instanceof TFile) {
-      const data: MappingFile = JSON.parse(await this.app.vault.read(mappingTFile));
+      const data = JSON.parse(await this.app.vault.read(mappingTFile)) as MappingFile;
       store = MappingStore.fromJSON(data);
     } else {
       await this.plugin.ensureFolder(this.plugin.settings.mappingFolder);
