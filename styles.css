@@ -580,3 +580,22 @@
 .pseudobs-view-add-btn::before     { content: '+ '; }
 .pseudobs-btn-saved::before        { content: '✓ '; color: var(--color-green); }
 .pseudobs-ner-reset-btn { margin-left: 8px; }
+
+/* Onglet Dictionnaires — panneau latéral */
+.pseudobs-dict-list { list-style: none; padding: 0; margin: 6px 0; }
+.pseudobs-dict-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.pseudobs-dict-item:hover { background: var(--background-secondary); }
+.pseudobs-dict-name { flex: 1; font-family: var(--font-monospace); }
+.pseudobs-dict-count { color: var(--text-muted); font-size: 0.8em; white-space: nowrap; }
+.pseudobs-dict-remove {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); padding: 0 4px;
+}
+.pseudobs-dict-remove:hover { color: var(--color-red); }

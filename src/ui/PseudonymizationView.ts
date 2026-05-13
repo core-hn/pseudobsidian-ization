@@ -1,4 +1,5 @@
 import { ItemView, Notice, Setting, TFile, WorkspaceLeaf } from 'obsidian';
+import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
 import type { MappingRule, Occurrence } from '../types';
 import { scanOccurrences } from '../scanner/OccurrenceScanner';
@@ -124,7 +125,7 @@ export class PseudonymizationView extends ItemView {
     pane.empty();
     if (tab === 'occurrences')        await this.renderOccurrencesTab(pane);
     else if (tab === 'mappings')      await this.renderMappingsTab(pane);
-    else if (tab === 'dictionaries')  this.renderDictionariesTab(pane);
+    else if (tab === 'dictionaries')  await this.renderDictionariesTab(pane);
     else if (tab === 'ner')           await this.renderNerTab(pane);
     else                              this.renderExportsTab(pane);
   }
@@ -457,15 +458,91 @@ export class PseudonymizationView extends ItemView {
 
   // ---- Onglet Dictionnaires --------------------------------------
 
-  private renderDictionariesTab(el: HTMLElement): void {
-    el.createEl('p', {
-      text: 'La gestion avancée des dictionnaires (détection NER, listes de lieux et d\'institutions) sera disponible en Phase 9.',
-      cls: 'pseudobs-view-hint',
+  private async renderDictionariesTab(el: HTMLElement): Promise<void> {
+    const toolbar = el.createDiv('pseudobs-view-toolbar');
+    const importBtn = toolbar.createEl('button', {
+      text: 'Importer un dictionnaire (.dict.json)',
+      cls: 'pseudobs-view-add-btn',
     });
-    el.createEl('p', {
-      text: 'Utilisez l\'outil Coulmont via le menu contextuel (clic droit sur un prénom dans la transcription).',
-      cls: 'pseudobs-view-hint',
+    const statusEl = toolbar.createSpan({ cls: 'pseudobs-view-dict-status' });
+
+    importBtn.addEventListener('click', () => {
+      const input = activeDocument.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.multiple = true;
+      input.classList.add('pseudobs-hidden-input');
+      activeDocument.body.appendChild(input);
+      input.addEventListener('change', () => { void (async () => {
+        const files = Array.from(input.files ?? []);
+        input.remove();
+        if (files.length === 0) return;
+
+        await this.plugin.ensureFolder(this.plugin.settings.dictionariesFolder);
+        let ok = 0;
+        for (const f of files) {
+          try {
+            const text = await f.text();
+            const parsed = JSON.parse(text) as DictionaryFile;
+            if (!parsed.entries || !Array.isArray(parsed.entries)) throw new Error('Format invalide');
+            const dest = `${this.plugin.settings.dictionariesFolder}/${f.name}`;
+            const existing = this.app.vault.getAbstractFileByPath(dest);
+            if (existing instanceof TFile) {
+              await this.app.vault.modify(existing, text);
+            } else {
+              await this.app.vault.create(dest, text);
+            }
+            ok++;
+          } catch {
+            new Notice(`Format invalide : ${f.name}`);
+          }
+        }
+        if (ok > 0) new Notice(`✓ ${ok} dictionnaire${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`);
+        await this.renderTab('dictionaries');
+      })(); });
+      input.click();
     });
+
+    // Liste des dictionnaires présents dans le vault
+    const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
+    const files: TFile[] = [];
+    if (folder && 'children' in folder) {
+      for (const child of (folder as { children: unknown[] }).children) {
+        if (child instanceof TFile && child.name.endsWith('.json')) files.push(child);
+      }
+    }
+
+    if (files.length === 0) {
+      el.createEl('p', { text: 'Aucun dictionnaire importé.', cls: 'pseudobs-view-hint' });
+      return;
+    }
+
+    el.createEl('p', {
+      text: `${files.length} dictionnaire${files.length > 1 ? 's' : ''} chargé${files.length > 1 ? 's' : ''} :`,
+      cls: 'pseudobs-view-count',
+    });
+
+    const list = el.createEl('ul', { cls: 'pseudobs-dict-list' });
+    for (const f of files) {
+      let entryCount = '?';
+      try {
+        const raw = await this.app.vault.read(f);
+        const parsed = JSON.parse(raw) as DictionaryFile;
+        entryCount = String(parsed.entries?.length ?? 0);
+      } catch { /* fichier malformé */ }
+
+      const li = list.createEl('li', { cls: 'pseudobs-dict-item' });
+      li.createSpan({ text: f.basename, cls: 'pseudobs-dict-name' });
+      li.createSpan({ text: `${entryCount} entrées`, cls: 'pseudobs-dict-count' });
+      const removeBtn = li.createEl('button', { text: '✕', cls: 'pseudobs-dict-remove' });
+      removeBtn.title = 'Supprimer ce dictionnaire';
+      removeBtn.addEventListener('click', () => { void (async () => {
+        await this.app.fileManager.trashFile(f);
+        await this.renderTab('dictionaries');
+      })(); });
+    }
+
+    void statusEl;
   }
 
   // ---- Onglet Exports --------------------------------------------

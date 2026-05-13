@@ -32598,7 +32598,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     else if (tab === "mappings")
       await this.renderMappingsTab(pane);
     else if (tab === "dictionaries")
-      this.renderDictionariesTab(pane);
+      await this.renderDictionariesTab(pane);
     else if (tab === "ner")
       await this.renderNerTab(pane);
     else
@@ -32893,15 +32893,90 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     }
   }
   // ---- Onglet Dictionnaires --------------------------------------
-  renderDictionariesTab(el) {
-    el.createEl("p", {
-      text: "La gestion avanc\xE9e des dictionnaires (d\xE9tection NER, listes de lieux et d'institutions) sera disponible en Phase 9.",
-      cls: "pseudobs-view-hint"
+  async renderDictionariesTab(el) {
+    const toolbar = el.createDiv("pseudobs-view-toolbar");
+    const importBtn = toolbar.createEl("button", {
+      text: "Importer un dictionnaire (.dict.json)",
+      cls: "pseudobs-view-add-btn"
     });
-    el.createEl("p", {
-      text: "Utilisez l'outil Coulmont via le menu contextuel (clic droit sur un pr\xE9nom dans la transcription).",
-      cls: "pseudobs-view-hint"
+    const statusEl = toolbar.createSpan({ cls: "pseudobs-view-dict-status" });
+    importBtn.addEventListener("click", () => {
+      const input = activeDocument.createElement("input");
+      input.type = "file";
+      input.accept = ".json";
+      input.multiple = true;
+      input.classList.add("pseudobs-hidden-input");
+      activeDocument.body.appendChild(input);
+      input.addEventListener("change", () => {
+        void (async () => {
+          const files2 = Array.from(input.files ?? []);
+          input.remove();
+          if (files2.length === 0)
+            return;
+          await this.plugin.ensureFolder(this.plugin.settings.dictionariesFolder);
+          let ok = 0;
+          for (const f of files2) {
+            try {
+              const text = await f.text();
+              const parsed = JSON.parse(text);
+              if (!parsed.entries || !Array.isArray(parsed.entries))
+                throw new Error("Format invalide");
+              const dest = `${this.plugin.settings.dictionariesFolder}/${f.name}`;
+              const existing = this.app.vault.getAbstractFileByPath(dest);
+              if (existing instanceof import_obsidian7.TFile) {
+                await this.app.vault.modify(existing, text);
+              } else {
+                await this.app.vault.create(dest, text);
+              }
+              ok++;
+            } catch {
+              new import_obsidian7.Notice(`Format invalide : ${f.name}`);
+            }
+          }
+          if (ok > 0)
+            new import_obsidian7.Notice(`\u2713 ${ok} dictionnaire${ok > 1 ? "s" : ""} import\xE9${ok > 1 ? "s" : ""}`);
+          await this.renderTab("dictionaries");
+        })();
+      });
+      input.click();
     });
+    const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
+    const files = [];
+    if (folder && "children" in folder) {
+      for (const child of folder.children) {
+        if (child instanceof import_obsidian7.TFile && child.name.endsWith(".json"))
+          files.push(child);
+      }
+    }
+    if (files.length === 0) {
+      el.createEl("p", { text: "Aucun dictionnaire import\xE9.", cls: "pseudobs-view-hint" });
+      return;
+    }
+    el.createEl("p", {
+      text: `${files.length} dictionnaire${files.length > 1 ? "s" : ""} charg\xE9${files.length > 1 ? "s" : ""} :`,
+      cls: "pseudobs-view-count"
+    });
+    const list = el.createEl("ul", { cls: "pseudobs-dict-list" });
+    for (const f of files) {
+      let entryCount = "?";
+      try {
+        const raw = await this.app.vault.read(f);
+        const parsed = JSON.parse(raw);
+        entryCount = String(parsed.entries?.length ?? 0);
+      } catch {
+      }
+      const li = list.createEl("li", { cls: "pseudobs-dict-item" });
+      li.createSpan({ text: f.basename, cls: "pseudobs-dict-name" });
+      li.createSpan({ text: `${entryCount} entr\xE9es`, cls: "pseudobs-dict-count" });
+      const removeBtn = li.createEl("button", { text: "\u2715", cls: "pseudobs-dict-remove" });
+      removeBtn.title = "Supprimer ce dictionnaire";
+      removeBtn.addEventListener("click", () => {
+        void (async () => {
+          await this.app.fileManager.trashFile(f);
+          await this.renderTab("dictionaries");
+        })();
+      });
+    }
   }
   // ---- Onglet Exports --------------------------------------------
   renderExportsTab(el) {
