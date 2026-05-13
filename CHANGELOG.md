@@ -1,5 +1,39 @@
 # Changelog
 
+## [prod] v0.1.2 — 13 mai 2026
+
+**Branche :** `main` | **Tag :** `0.1.2`
+
+### Corrections
+- `setInterval`/`clearInterval` remplacés par partage de Promise dans `OnnxNerScanner` — plus de polling, appels concurrents correctement gérés
+
+---
+
+## [prod] v0.1.1 — 13 mai 2026
+
+**Branche :** `main` | **Tag :** `0.1.1`
+
+### Nouvelles fonctionnalités
+- **Onglet Dictionnaires** — liste les `.dict.json` du vault avec nombre d'entrées, import et suppression
+
+### Corrections portail communautaire Obsidian
+- `onunload` : suppression de `detachLeavesOfType`
+- `eslint-disable` et `any` : type `TransformersModule` explicite dans `OnnxNerScanner`
+- `window.setInterval`/`clearInterval`, `window.setTimeout`, `activeDocument`
+- `FileManager.trashFile()` à la place de `Vault.delete()`
+- `activeLeaf` déprécié → `getActiveViewOfType(ItemView)`
+- Imports inutilisés supprimés (`Setting`, `RuleLocation`, `fs`)
+- Promises dans les event listeners wrappées avec `void (async () => {})()`
+- CSS `text-decoration-color` → `border-bottom` (support partiel)
+- Workflow `.github/workflows/release.yml` — attestations GitHub Actions
+- Régénération `package-lock.json` (erreur CI `concat-map` 404)
+
+---
+
+## [prod] v0.1.0 — 13 mai 2026
+
+**Branche :** `main` | **Tag :** `0.1.0`
+
 ## [dev] v0.1.0 — en cours
 
 **Branche :** `dev` | **Publié :** non

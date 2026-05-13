@@ -1,4 +1,5 @@
-# PseudObsidian-ization
+# Pseudonymizer Tool
+alias `PseudObsidian-ization` pour les intimes.
 
 Plugin Obsidian de **pseudonymisation et de correction de transcriptions** pour chercheurs en sciences du langage. Il comble un manque : les outils existants (Sonal, Whispurge) ne s'intègrent pas dans un environnement de prise de notes et d'analyse, et peu de logiciels acceptent les conventions de transcription multimodales (Jefferson, ICOR).
 

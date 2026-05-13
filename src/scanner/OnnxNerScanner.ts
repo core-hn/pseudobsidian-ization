@@ -26,9 +26,11 @@ type NerResult = {
   end: number;
 };
 
-// Pipeline chargé une seule fois pour toute la session
+// Pipeline chargé une seule fois pour toute la session.
+// _loadingPromise permet aux appels concurrents d'attendre le même chargement
+// sans polling (setInterval) — ils awaittent directement la même Promise.
 let _pipeline: ((text: string, opts?: object) => Promise<NerResult[]>) | null = null;
-let _loading = false;
+let _loadingPromise: Promise<void> | null = null;
 let _loadError: string | null = null;
 
 let _counter = 0;
@@ -52,21 +54,21 @@ export class OnnxNerScanner {
   }
 
   // Charge le pipeline NER (une seule fois, avec notice de progression).
+  // Les appels concurrents reçoivent la même Promise — pas de polling.
   async loadPipeline(): Promise<void> {
     if (_pipeline) return;
     if (_loadError) throw new Error(_loadError);
-    if (_loading) {
-      // Attendre la fin du chargement en cours
-      await new Promise<void>((resolve, reject) => {
-        const timer = window.setInterval(() => {
-          if (_pipeline) { window.clearInterval(timer); resolve(); }
-          if (_loadError) { window.clearInterval(timer); reject(new Error(_loadError)); }
-        }, 300);
-      });
-      return;
-    }
+    if (_loadingPromise) return _loadingPromise;
 
-    _loading = true;
+    _loadingPromise = this._doLoad();
+    try {
+      await _loadingPromise;
+    } finally {
+      _loadingPromise = null;
+    }
+  }
+
+  private async _doLoad(): Promise<void> {
     const notice = new Notice('Chargement du modèle NER (première utilisation — ~66 Mo)…', 0);
 
     try {
@@ -118,11 +120,8 @@ export class OnnxNerScanner {
       // Stack trace complète dans la console pour diagnostiquer
       console.error('[PseudObs NER] Erreur complète :', err.stack ?? err.message);
       _loadError = err.message;
-      _loading = false;
       throw e;
     }
-
-    _loading = false;
   }
 
   // Retourne true si le pipeline est déjà chargé.
@@ -187,7 +186,7 @@ export class OnnxNerScanner {
   // Réinitialise le pipeline (utile pour changer de modèle ou libérer la mémoire).
   static reset(): void {
     _pipeline = null;
-    _loading = false;
+    _loadingPromise = null;
     _loadError = null;
   }
 }

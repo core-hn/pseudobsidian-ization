@@ -33092,7 +33092,7 @@ var TAG_TO_CATEGORY = {
 };
 var MIN_ENTITY_LENGTH = 2;
 var _pipeline = null;
-var _loading = false;
+var _loadingPromise = null;
 var _loadError = null;
 var _counter2 = 0;
 var OnnxNerScanner = class {
@@ -33111,27 +33111,22 @@ var OnnxNerScanner = class {
     );
   }
   // Charge le pipeline NER (une seule fois, avec notice de progression).
+  // Les appels concurrents reçoivent la même Promise — pas de polling.
   async loadPipeline() {
     if (_pipeline)
       return;
     if (_loadError)
       throw new Error(_loadError);
-    if (_loading) {
-      await new Promise((resolve, reject) => {
-        const timer = window.setInterval(() => {
-          if (_pipeline) {
-            window.clearInterval(timer);
-            resolve();
-          }
-          if (_loadError) {
-            window.clearInterval(timer);
-            reject(new Error(_loadError));
-          }
-        }, 300);
-      });
-      return;
+    if (_loadingPromise)
+      return _loadingPromise;
+    _loadingPromise = this._doLoad();
+    try {
+      await _loadingPromise;
+    } finally {
+      _loadingPromise = null;
     }
-    _loading = true;
+  }
+  async _doLoad() {
     const notice = new import_obsidian8.Notice("Chargement du mod\xE8le NER (premi\xE8re utilisation \u2014 ~66 Mo)\u2026", 0);
     try {
       const t = await Promise.resolve().then(() => (init_transformers(), transformers_exports));
@@ -33157,10 +33152,8 @@ var OnnxNerScanner = class {
       const err = e;
       console.error("[PseudObs NER] Erreur compl\xE8te :", err.stack ?? err.message);
       _loadError = err.message;
-      _loading = false;
       throw e;
     }
-    _loading = false;
   }
   // Retourne true si le pipeline est déjà chargé.
   isReady() {
@@ -33215,7 +33208,7 @@ var OnnxNerScanner = class {
   // Réinitialise le pipeline (utile pour changer de modèle ou libérer la mémoire).
   static reset() {
     _pipeline = null;
-    _loading = false;
+    _loadingPromise = null;
     _loadError = null;
   }
 };
