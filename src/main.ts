@@ -9,6 +9,11 @@ import { OccurrencesModal } from './ui/OccurrencesModal';
 import { PseudonymizationView, VIEW_TYPE_PSEUDOBS } from './ui/PseudonymizationView';
 import { OnboardingModal } from './ui/OnboardingModal';
 import { OnnxNerScanner } from './scanner/OnnxNerScanner';
+import { DictionaryLoader } from './dictionaries/DictionaryLoader';
+import { DictScanReviewModal } from './ui/DictScanReviewModal';
+import type { DictScanResultItem } from './ui/DictScanReviewModal';
+import { MappingScanReviewModal } from './ui/MappingScanReviewModal';
+import type { MappingRuleResult } from './ui/MappingScanReviewModal';
 import { scanOccurrences } from './scanner/OccurrenceScanner';
 import { SrtParser } from './parsers/SrtParser';
 import { ChatParser } from './parsers/ChatParser';
@@ -26,6 +31,7 @@ export default class PseudObsPlugin extends Plugin {
   settings!: PseudObsSettings;
   scopeResolver!: ScopeResolver;
   nerScanner!: OnnxNerScanner;
+  dictionaryLoader!: DictionaryLoader;
   // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
   private highlightData: HighlightData = { sources: [], replacements: [], nerCandidates: [] };
   // Candidats NER par fichier (effacés au changement de fichier ou à un nouveau scan)
@@ -36,6 +42,9 @@ export default class PseudObsPlugin extends Plugin {
     await this.loadSettings();
     this.scopeResolver = new ScopeResolver(this.app.vault, this.settings.mappingFolder);
     this.nerScanner = new OnnxNerScanner(this.app);
+    this.dictionaryLoader = new DictionaryLoader(this.app, this);
+    // Chargement différé : le dossier plugin est accessible après layout ready
+    this.app.workspace.onLayoutReady(() => { void this.dictionaryLoader.load(); });
     this.addSettingTab(new PseudObsSettingTab(this.app, this));
 
     this.registerView(VIEW_TYPE_PSEUDOBS, (leaf: WorkspaceLeaf) => new PseudonymizationView(leaf, this));
@@ -101,6 +110,12 @@ export default class PseudObsPlugin extends Plugin {
       id: 'scan-ner',
       name: 'Scanner le fichier avec détection NER',
       callback: () => void this.scanCurrentFileNer(),
+    });
+
+    this.addCommand({
+      id: 'scan-dictionaries',
+      name: 'Scanner le fichier avec les dictionnaires',
+      callback: () => void this.scanCurrentFileWithDictionaries(),
     });
 
     this.addCommand({
@@ -478,6 +493,89 @@ export default class PseudObsPlugin extends Plugin {
     }
   }
 
+  async scanCurrentFileWithDictionaries(dictIds?: string[]): Promise<void> {
+    if (!this.dictionaryLoader.hasDetection()) {
+      new Notice('Aucun dictionnaire de détection chargé.\nInstallez un dictionnaire depuis le panneau Dictionnaires.');
+      return;
+    }
+
+    const file = this.app.workspace.getActiveFile();
+    if (!file) { new Notice('Aucun fichier actif.'); return; }
+
+    const ext = file.extension.toLowerCase();
+    if (!['srt', 'cha', 'chat', 'md', 'txt'].includes(ext)) {
+      new Notice(`Format non pris en charge : .${ext}`);
+      return;
+    }
+
+    const content = await this.app.vault.read(file);
+    const rules = await this.scopeResolver.getRulesFor(file.path);
+    const existingSources = new Set(rules.map((r) => r.source.toLowerCase()));
+
+    const occurrences = this.dictionaryLoader.scanText(content, file.path, existingSources, dictIds);
+
+    if (occurrences.length === 0) {
+      new Notice('Aucune entité trouvée dans les dictionnaires de détection.');
+      return;
+    }
+
+    // Grouper par terme (ordre d'apparition dans le texte, déjà garanti par scanText)
+    const seenTerms = new Map<string, { occ: typeof occurrences[0]; count: number }>();
+    for (const occ of occurrences) {
+      const key = occ.text.toLowerCase();
+      const existing = seenTerms.get(key);
+      if (existing) { existing.count++; }
+      else { seenTerms.set(key, { occ, count: 1 }); }
+    }
+
+    // Pré-calculer les remplacements en séquence dans l'ordre d'apparition
+    // (garantit Ville_1 → Ville_2 dans l'ordre du texte, pas aléatoire)
+    const existingReplacements = rules.map((r) => r.replacement);
+    const usedReplacements = [...existingReplacements];
+
+    const results: DictScanResultItem[] = [];
+    for (const [, { occ, count }] of seenTerms) {
+      const hits = this.dictionaryLoader.getDetectionHits(occ.text);
+      if (!hits.length) continue;
+      const { entry, dict } = hits.find((h) => !dictIds || dictIds.includes(h.dict.dictionaryId)) ?? hits[0];
+      const entryClass = this.dictionaryLoader.resolveClass(entry, dict);
+
+      let proposedReplacement: string;
+      if (entryClass) {
+        proposedReplacement = this.dictionaryLoader.nextReplacement(dict, entryClass, usedReplacements);
+        usedReplacements.push(proposedReplacement);
+      } else if (entry.replacement) {
+        proposedReplacement = entry.replacement;
+      } else {
+        continue;
+      }
+
+      results.push({
+        term: occ.text,
+        dictId: dict.dictionaryId,
+        dictLabel: dict.label,
+        entryClass,
+        proposedReplacement,
+        occurrenceCount: count,
+        category: occ.category ?? dict.type ?? 'place',
+        contextBefore: occ.contextBefore,
+        contextAfter: occ.contextAfter,
+      });
+    }
+
+    if (results.length === 0) {
+      new Notice('Aucun remplacement disponible pour les entités trouvées.');
+      return;
+    }
+
+    // Surlignage bleu préventif (aperçu pendant que la modale est ouverte)
+    this.nerCandidateFile = file;
+    this.nerCandidates = results.map((r) => r.term);
+    void this.refreshHighlightData();
+
+    new DictScanReviewModal(this.app, this, file, results, existingReplacements).open();
+  }
+
   // Efface les candidats NER pour le fichier courant (appelé après création de règle si besoin)
   clearNerCandidates(): void {
     this.nerCandidates = [];
@@ -529,7 +627,16 @@ export default class PseudObsPlugin extends Plugin {
       return;
     }
 
-    new OccurrencesModal(this.app, this, file, content, occurrences, rules).open();
+    const countByRule = new Map<string, number>();
+    for (const occ of occurrences) {
+      const id = occ.mappingId ?? '';
+      countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+    }
+    const ruleResults: MappingRuleResult[] = rules
+      .filter((r) => countByRule.has(r.id))
+      .map((r) => ({ rule: r, matchCount: countByRule.get(r.id)! }));
+
+    new MappingScanReviewModal(this.app, this, file, content, ruleResults).open();
   }
 
   // Appelé par OccurrencesModal après application — met à jour les statuts des règles.

@@ -99,14 +99,76 @@ export interface MappingFileSettings {
 export interface DictionaryEntry {
   value: string;
   type: EntityCategory;
+  replacement?: string;               // remplacement fixe (mode word-to-word sans classes)
   gender?: 'masculine' | 'feminine' | 'mixed';
   decade?: number;                    // décennie de pic de popularité (ex. 1980)
   socialClass?: 'populaire' | 'intermédiaire' | 'supérieur';
   origin?: string;                    // 'fr' | 'maghreb' | 'afrique-sub' | 'anglo' | …
-  sizeClass?: string;                 // pour les villes : 'village' | 'petite-ville' | …
   frequencyRank?: number;
   replacementCandidates?: string[];
-  ambiguous?: string[];               // types alternatifs possibles (ex. ['place'] pour 'Florence')
+  ambiguous?: boolean;                // true si le token est aussi un autre type (Florence = prénom + lieu)
+  [key: string]: unknown;             // champs libres utilisés par les conditions (population, platform…)
+}
+
+// --- Types pour le système de dictionnaires structurés ---
+
+export interface DictionaryRoles {
+  detection: boolean;   // sert à identifier des entités dans le texte
+  replacement: boolean; // sert à proposer des candidats de substitution
+  classes: boolean;     // utilise un système de classes avec incrémentation
+}
+
+export type ConfigFieldType = 'enum' | 'string' | 'boolean' | 'number';
+
+export interface ConfigSchemaField {
+  key: string;
+  label: string;
+  type: ConfigFieldType;
+  values?: (string | number | boolean)[];   // valeurs possibles pour enum et boolean
+  default: string | number | boolean;
+  recommended?: string | number | boolean;
+  description?: string;
+}
+
+export interface DictionaryCondition {
+  field: string;                            // champ d'une entrée : "population", "platform"…
+  op: 'lt' | 'lte' | 'gt' | 'gte' | 'eq' | 'neq' | 'contains';
+  value: string | number;
+  class: string;                            // classe attribuée si la condition est vraie
+}
+
+export interface DictionaryPattern {
+  pattern: string;                          // expression régulière appliquée à entry.value
+  flags?: string;                           // ex: 'i' pour case-insensitive
+  class: string;
+}
+
+export interface DictionaryConfig {
+  classificationMode: 'word-to-word' | 'regex' | 'conditions';
+  conditions?: DictionaryCondition[];       // actif si classificationMode = 'conditions'
+  patterns?: DictionaryPattern[];           // actif si classificationMode = 'regex'
+  incrementScope?: ScopeType;              // portée de l'index — défaut 'file'
+  replacementPattern?: string;             // ex: '{class}_{index}' — défaut '{class}_{index}'
+  caseSensitive?: boolean;
+  stripPrefix?: string[];                  // préfixes à retirer avant correspondance ex: ['@', '#']
+}
+
+// Manifeste du repo de dictionnaires
+export interface DictionaryManifestEntry {
+  id: string;
+  label: string;
+  description: string;
+  type: EntityCategory;
+  language: string;
+  roles: DictionaryRoles;
+  size: number;        // octets
+  url: string;        // URL de téléchargement du .dict.json
+  recommended?: boolean;
+}
+
+export interface DictionaryManifest {
+  version: string;
+  dictionaries: DictionaryManifestEntry[];
 }
 
 // Format d'un fichier dictionnaire (SPECS §6.3)
@@ -118,5 +180,10 @@ export interface DictionaryFile {
   language: string;
   source: string;
   license?: string;
+  author?: string;
+  doi?: string | null;
+  roles: DictionaryRoles;
+  configSchema?: ConfigSchemaField[];      // décrit les variables configurables et leurs valeurs possibles
+  config?: DictionaryConfig;              // valeurs actives (écrase les defaults du configSchema)
   entries: DictionaryEntry[];
 }

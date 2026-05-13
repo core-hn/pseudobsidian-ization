@@ -104,11 +104,10 @@ Accessible via l'icône dans le ruban ou `Ctrl+P → Pseudonymisation : ouvrir l
 
 | Onglet | Contenu |
 |---|---|
-| **Candidats** | Scanner (règles existantes) · Identifier des candidats (NER) · Validation · Appliquer |
-| **Mappings** | Règles actives · Modifier · Supprimer · Ajouter |
-| **Dictionnaires** | Import de fichiers `.dict.json` |
+| **Mappings** | Règles actives · Modifier · Supprimer · Ajouter · Scanner le fichier |
+| **Dictionnaires** | Mini cards · Scan par dictionnaire · Import local |
 | **Exports** | Pseudonymiser et exporter · Exporter la table de correspondance |
-| **NER** | Visible si NER activé · Seuil de confiance · Mots fonctionnels exclus |
+| **NER** | Visible si NER activé · Identifier des candidats · Seuil de confiance · Mots fonctionnels |
 
 ### Surlignage et marqueurs
 
@@ -128,6 +127,28 @@ Dans les fichiers exportés, les pseudonymes sont encadrés de marqueurs `{{Pier
 - Statuts par occurrence : `validated`, `ignored`, `partial`, `conflict`, `needs_review`
 - **Priorité z-index** : entier libre — les entités longues priment (`Saint-Jean-de-Luz` > `Jean`)
 - Format JSON documenté dans `SPECS.md §5`
+
+### Dictionnaires de pseudonymisation
+
+Les dictionnaires fournissent des **candidats de remplacement** et alimentent la **détection automatique** de termes à pseudonymiser. Ils sont hébergés dans un dépôt dédié et téléchargés dans votre vault — aucun texte de transcription ne quitte Obsidian.
+
+**Installation depuis le catalogue :**
+1. Wizard → étape Dictionnaires → choisir dans le catalogue en ligne
+2. Ou : Paramètres → Reconfigurer → étape Dictionnaires
+
+**Utilisation :**
+1. Panneau latéral → onglet **Dictionnaires**
+2. Cocher les dictionnaires à activer pour le scan
+3. Bouton **Scanner le fichier actif** (ou le bouton loupe sur chaque card pour un dictionnaire seul)
+4. Une modale de révision s'ouvre : chaque entité détectée est présentée avec son extrait de contexte, sa classe proposée et son remplacement calculé automatiquement (`Ville_1`, `Métropole_2`…)
+5. Décocher les faux positifs · modifier le préfixe si besoin · **Créer les règles**
+
+**Dictionnaire disponible — Communes françaises (GeoAPI INSEE) :**
+- 34 957 communes françaises, 5 classes : Village · Petite_Ville · Ville · Grande_Ville · Métropole
+- Rôles : détection + remplacement par classe avec index d'incrémentation
+- Portée recommandée : fichier (chaque fichier reçoit sa propre numérotation)
+
+> Dépôt dédié : [core-hn/pseudobsidian-dictionaries](https://github.com/core-hn/pseudobsidian-dictionaries) — contributions bienvenues.
 
 ### Sécurité et confidentialité
 
@@ -172,8 +193,8 @@ src/
 |---|---|---|
 | 0–6 | ✅ | Parsers · Moteur · Commandes · Portées · Surlignage · Validation |
 | 7 — Coulmont | ✅ | Suggestions de prénoms équivalents · Import JSON/CSV |
-| 8 — Panneau latéral | ✅ | 4 onglets · NER embarqué · Wizard · Annulation · Surlignage export |
-| 9 — Dictionnaires de candidats NER & spaCy | 🔄 | Dictionnaires de d'identification des mots candidats pour lieux/institutions à pseudonymiser |
+| 8 — Panneau latéral | ✅ | 3 onglets · NER embarqué · Wizard · Annulation · Surlignage export |
+| 9 — Dictionnaires structurés | 🔄 | Format v1.1 · DictionaryLoader · Scan par dictionnaire · Modale de révision · Communes françaises |
 | 10 — Affinage | ⏳ | Stabilisation v0.2.0 |
 | 11 — Fonctions EMCA | ⏳ | Navigation tours · Correction Jefferson/ICOR · Export ELAN |
 
@@ -195,6 +216,8 @@ Merci d'ouvrir une issue avant de proposer une pull request pour les fonctionnal
 
 ## Licence
 
+GPL 3.0
+
 ### Code
 
 *The Beerware License* (Revision 42)
@@ -206,10 +229,6 @@ pensez que ça valait le coup, vous pouvez m'offrir une bière.
 ```
 
 **Ce plugin est fait pour être modifié.** Si votre terrain implique des conventions de transcription particulières, un dialecte régional, des corpus multilingues ou des formats d'export spécifiques à votre institution, adaptez le code à vos besoins.
-
-### Plugin et dépôt
-
-[Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) (CC BY 4.0).
 
 ---
 

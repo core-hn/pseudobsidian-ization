@@ -1,13 +1,14 @@
-import { App, FileSystemAdapter, Modal, Notice, TFile, requestUrl } from 'obsidian';
+import { App, FileSystemAdapter, Modal, Notice, TFile, requestUrl, setIcon } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
 import type PseudObsPlugin from '../main';
 import type { NerBackend } from '../settings';
-import type { DictionaryFile } from '../types';
+import type { DictionaryFile, DictionaryManifest, DictionaryManifestEntry } from '../types';
 
 // Version du package @xenova/transformers embarqué — doit rester synchronisée avec package.json
 const TRANSFORMERS_VERSION = '2.17.2';
 const WASM_CDN_BASE = `https://cdn.jsdelivr.net/npm/@xenova/transformers@${TRANSFORMERS_VERSION}/dist`;
+const DICT_MANIFEST_URL = 'https://raw.githubusercontent.com/core-hn/pseudobsidian-dictionaries/main/index.json';
 const WASM_FILES = [
   'ort-wasm-simd-threaded.wasm',
   'ort-wasm-simd.wasm',
@@ -228,21 +229,28 @@ export class OnboardingModal extends Modal {
   private renderDictionaries(el: HTMLElement): void {
     el.createEl('h2', { text: 'Dictionnaires de candidats' });
     el.createEl('p', {
-      text: 'Les dictionnaires (.dict.json) contiennent des listes de candidats de remplacement — prénoms, noms de famille, lieux — classés par genre, époque ou taille de ville. Ils alimentent les suggestions de pseudonymes.',
+      text: 'Les dictionnaires proposent des candidats de remplacement (villes, prénoms…) et alimentent la détection. Ils sont hébergés dans un dépôt dédié et téléchargés dans votre vault — aucune donnée ne quitte Obsidian.',
     });
-    el.createEl('p', {
-      text: 'Si vous n\'avez pas encore de fichier .dict.json, vous pouvez passer cette étape.',
+
+    // Zone catalogue (remplie de façon asynchrone)
+    const catalogueEl = el.createDiv('pseudobs-onboarding-catalogue');
+    catalogueEl.createEl('p', { text: 'Chargement du catalogue…', cls: 'pseudobs-onboarding-hint' });
+    void this.renderCatalogue(catalogueEl);
+
+    // Séparateur
+    el.createEl('hr');
+
+    // Import manuel (fallback offline)
+    const manualRow = el.createDiv('pseudobs-onboarding-import-row');
+    manualRow.createEl('small', {
+      text: 'Vous avez déjà un fichier .dict.json ? Importez-le manuellement :',
       cls: 'pseudobs-onboarding-hint',
     });
-
-    // Bouton import
-    const importRow = el.createDiv('pseudobs-onboarding-import-row');
-    const importBtn = importRow.createEl('button', {
-      text: 'Importer un dictionnaire (.dict.json)',
+    const importBtn = manualRow.createEl('button', {
+      text: 'Importer un fichier local (.dict.json)',
       cls: 'pseudobs-onboarding-import-btn',
     });
-    const importStatus = importRow.createSpan({ cls: 'pseudobs-onboarding-test-status' });
-
+    const importStatus = manualRow.createSpan({ cls: 'pseudobs-onboarding-test-status' });
     importBtn.addEventListener('click', () => {
       const input = activeDocument.createElement('input');
       input.type = 'file';
@@ -255,7 +263,126 @@ export class OnboardingModal extends Modal {
     });
 
     // Liste des dictionnaires déjà présents dans le vault
-    void this.renderDictList(el);
+    void this.renderInstalledDictList(el);
+  }
+
+  private async renderCatalogue(container: HTMLElement): Promise<void> {
+    let manifest: DictionaryManifest;
+    try {
+      const res = await requestUrl({ url: DICT_MANIFEST_URL, method: 'GET' });
+      manifest = res.json as DictionaryManifest;
+    } catch {
+      container.empty();
+      container.createEl('p', {
+        text: 'Impossible de contacter le catalogue en ligne. Vérifiez votre connexion ou importez un fichier local ci-dessous.',
+        cls: 'pseudobs-onboarding-hint',
+      });
+      return;
+    }
+
+    container.empty();
+
+    const scroll = container.createDiv('pseudobs-onboarding-catalogue-scroll');
+    const table = scroll.createEl('table', { cls: 'pseudobs-onboarding-dict-table' });
+
+    const thead = table.createEl('thead');
+    const headerRow = thead.createEl('tr');
+    ['Dictionnaire', 'Langue', 'Rôles', 'Taille', ''].forEach((h) =>
+      headerRow.createEl('th', { text: h })
+    );
+
+    const tbody = table.createEl('tbody');
+    for (const entry of manifest.dictionaries) {
+      this.renderCatalogueRow(tbody, entry);
+    }
+  }
+
+  private renderCatalogueRow(tbody: HTMLElement, entry: DictionaryManifestEntry): void {
+    const alreadyInstalled = this.isDictInstalled(entry.id);
+    const tr = tbody.createEl('tr');
+    if (alreadyInstalled) tr.addClass('pseudobs-onboarding-dict-row-installed');
+
+    // Nom + badge
+    const nameCell = tr.createEl('td', { cls: 'pseudobs-onboarding-dict-name-cell' });
+    nameCell.createEl('span', { text: entry.label });
+    if (entry.recommended) {
+      nameCell.createEl('span', { text: 'Recommandé', cls: 'pseudobs-onboarding-badge' });
+    }
+
+    // Langue
+    tr.createEl('td', { text: entry.language.toUpperCase() });
+
+    // Rôles
+    const roles: string[] = [];
+    if (entry.roles.detection)   roles.push('détection');
+    if (entry.roles.replacement) roles.push('remplacement');
+    if (entry.roles.classes)     roles.push('classes');
+    tr.createEl('td', { text: roles.join(' · '), cls: 'pseudobs-onboarding-dict-roles' });
+
+    // Taille
+    tr.createEl('td', { text: this.formatSize(entry.size), cls: 'pseudobs-onboarding-dict-size' });
+
+    // Bouton icône uniquement
+    const actionCell = tr.createEl('td', { cls: 'pseudobs-onboarding-dict-action' });
+    const btn = actionCell.createEl('button', { cls: 'pseudobs-onboarding-icon-btn' });
+    btn.setAttribute('aria-label', alreadyInstalled ? 'Réinstaller' : 'Installer');
+    setIcon(btn, alreadyInstalled ? 'cloud-check' : 'cloud-download');
+    if (alreadyInstalled) btn.addClass('pseudobs-onboarding-icon-btn-done');
+
+    btn.addEventListener('click', () => { void (async () => {
+      btn.setAttr('disabled', 'true');
+      btn.removeClass('pseudobs-onboarding-icon-btn-done');
+      setIcon(btn, 'refresh-cw');
+      btn.addClass('pseudobs-onboarding-icon-btn-loading');
+
+      const ok = await this.downloadDict(entry);
+
+      btn.removeAttribute('disabled');
+      btn.removeClass('pseudobs-onboarding-icon-btn-loading');
+      if (ok) {
+        setIcon(btn, 'cloud-check');
+        btn.addClass('pseudobs-onboarding-icon-btn-done');
+        tr.addClass('pseudobs-onboarding-dict-row-installed');
+        void this.plugin.dictionaryLoader.load();
+      } else {
+        setIcon(btn, 'cloud-download');
+      }
+    })(); });
+  }
+
+  private isDictInstalled(id: string): boolean {
+    const folder = this.plugin.settings.dictionariesFolder;
+    const path = `${folder}/${id}.dict.json`;
+    return this.app.vault.getAbstractFileByPath(path) instanceof TFile;
+  }
+
+  private async downloadDict(entry: DictionaryManifestEntry): Promise<boolean> {
+    try {
+      const res = await requestUrl({ url: entry.url, method: 'GET' });
+      const text = res.text;
+      const parsed = JSON.parse(text) as DictionaryFile;
+      if (!Array.isArray(parsed.entries)) throw new Error('Format invalide');
+
+      await this.plugin.ensureFolder(this.plugin.settings.dictionariesFolder);
+      const dest = `${this.plugin.settings.dictionariesFolder}/${entry.id}.dict.json`;
+      const existing = this.app.vault.getAbstractFileByPath(dest);
+      if (existing instanceof TFile) {
+        await this.app.vault.modify(existing, text);
+      } else {
+        await this.app.vault.create(dest, text);
+      }
+      this.importedDicts.push(`${entry.id}.dict.json`);
+      return true;
+    } catch (e) {
+      new Notice(`Échec du téléchargement de ${entry.label} : ${(e as Error).message}`);
+      return false;
+    }
+  }
+
+  private formatSize(bytes: number): string {
+    if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} Mo`;
+    if (bytes >= 1_000)     return `${(bytes / 1_000).toFixed(0)} Ko`;
+    return `${bytes} o`;
   }
 
   private async processDictFiles(input: HTMLInputElement, statusEl: HTMLElement): Promise<void> {
@@ -291,17 +418,17 @@ export class OnboardingModal extends Modal {
     if (ok > 0) {
       statusEl.setText(`${ok} dictionnaire${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`);
       statusEl.addClass('pseudobs-onboarding-test-ok');
+      void this.plugin.dictionaryLoader.load();
     }
     if (err > 0) {
       statusEl.setText(`${err} fichier${err > 1 ? 's' : ''} rejeté${err > 1 ? 's' : ''}`);
       statusEl.addClass('pseudobs-onboarding-test-err');
     }
 
-    // Rafraîchir la liste
     this.scheduleRender();
   }
 
-  private async renderDictList(el: HTMLElement): Promise<void> {
+  private async renderInstalledDictList(el: HTMLElement): Promise<void> {
     const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
     const files: TFile[] = [];
 
@@ -313,13 +440,10 @@ export class OnboardingModal extends Modal {
       }
     }
 
-    if (files.length === 0) {
-      el.createEl('p', { text: 'Aucun dictionnaire importé.', cls: 'pseudobs-onboarding-hint' });
-      return;
-    }
+    if (files.length === 0) return;
 
     el.createEl('p', {
-      text: `${files.length} dictionnaire${files.length > 1 ? 's' : ''} dans le vault :`,
+      text: `Dictionnaires installés dans ce vault (${files.length}) :`,
       cls: 'pseudobs-onboarding-dict-count',
     });
 
@@ -331,6 +455,7 @@ export class OnboardingModal extends Modal {
       removeBtn.title = 'Retirer ce dictionnaire du vault';
       removeBtn.addEventListener('click', () => { void (async () => {
         await this.app.fileManager.trashFile(f);
+        void this.plugin.dictionaryLoader.load();
         this.scheduleRender();
       })(); });
     }

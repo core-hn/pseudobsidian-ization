@@ -216,13 +216,26 @@
 
 .pseudobs-view-toolbar { margin-bottom: 10px; }
 
+.pseudobs-view-add-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.pseudobs-view-add-btn:hover { opacity: 0.85; }
+.pseudobs-view-add-btn svg { width: 15px; height: 15px; }
+
 .pseudobs-view-action-btn {
+  margin-left: 10px;
   padding: 4px 12px;
   border-radius: 4px;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-secondary);
   cursor: pointer;
   font-size: 0.85em;
+  gap: 6px;
 }
 .pseudobs-view-action-btn:hover { background: var(--background-secondary-alt); }
 
@@ -577,25 +590,369 @@
 /* Boutons d'action avec icônes via ::before */
 .pseudobs-btn-validate-all::before { content: '✓ '; }
 .pseudobs-btn-ignore-all::before   { content: '✗ '; }
-.pseudobs-view-add-btn::before     { content: '+ '; }
 .pseudobs-btn-saved::before        { content: '✓ '; color: var(--color-green); }
 .pseudobs-ner-reset-btn { margin-left: 8px; }
+/* Le bouton scan groupé a déjà une icône SVG — pas de ::before texte */
 
-/* Onglet Dictionnaires — panneau latéral */
-.pseudobs-dict-list { list-style: none; padding: 0; margin: 6px 0; }
-.pseudobs-dict-item {
+/* ---- Onglet Dictionnaires — panneau latéral (mini cards) ---- */
+
+.pseudobs-dict-card {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 6px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  margin-bottom: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.pseudobs-dict-card:hover {
+  border-color: var(--background-modifier-border-hover);
+  background: var(--background-secondary);
+}
+
+.pseudobs-dict-card-checkbox {
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--interactive-accent);
+}
+
+.pseudobs-dict-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+.pseudobs-dict-card-title {
+  font-size: 0.85em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.pseudobs-dict-card-filename {
+  font-family: var(--font-monospace);
+  font-size: 0.75em;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* Bouton scan individuel — icône uniquement, accentué */
+.pseudobs-dict-card-scan {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 5px;
+  border: none;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.pseudobs-dict-card-scan:hover { opacity: 0.85; }
+.pseudobs-dict-card-scan svg { width: 15px; height: 15px; }
+
+/* Bouton suppression — icône uniquement, discret */
+.pseudobs-dict-card-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border-radius: 4px;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.pseudobs-dict-card-remove:hover { color: var(--color-red); background: var(--background-secondary-alt); }
+.pseudobs-dict-card-remove svg { width: 13px; height: 13px; }
+
+/* Bouton scan groupé */
+.pseudobs-dict-group-scan {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 5px;
+  border: none;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 0.88em;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.pseudobs-dict-group-scan:hover { opacity: 0.88; }
+.pseudobs-dict-group-scan svg { width: 15px; height: 15px; }
+
+/* ---- Wizard — tableau catalogue de dictionnaires ---- */
+
+.pseudobs-onboarding-catalogue-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.pseudobs-onboarding-dict-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.85em;
 }
-.pseudobs-dict-item:hover { background: var(--background-secondary); }
-.pseudobs-dict-name { flex: 1; font-family: var(--font-monospace); }
-.pseudobs-dict-count { color: var(--text-muted); font-size: 0.8em; white-space: nowrap; }
-.pseudobs-dict-remove {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-faint); padding: 0 4px;
+.pseudobs-onboarding-dict-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background-secondary);
 }
-.pseudobs-dict-remove:hover { color: var(--color-red); }
+.pseudobs-onboarding-dict-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+  white-space: nowrap;
+}
+.pseudobs-onboarding-dict-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+  vertical-align: middle;
+}
+.pseudobs-onboarding-dict-table tbody tr:last-child td { border-bottom: none; }
+.pseudobs-onboarding-dict-table tbody tr:hover { background: var(--background-secondary); }
+
+.pseudobs-onboarding-dict-row-installed { background: color-mix(in srgb, var(--color-green) 5%, transparent); }
+.pseudobs-onboarding-dict-row-installed:hover { background: color-mix(in srgb, var(--color-green) 8%, transparent); }
+
+.pseudobs-onboarding-dict-name-cell { max-width: 220px; }
+.pseudobs-onboarding-dict-name-cell span:first-child { display: block; font-weight: 500; }
+.pseudobs-onboarding-dict-roles { color: var(--text-muted); font-size: 0.82em; }
+.pseudobs-onboarding-dict-size  { color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.pseudobs-onboarding-dict-action { text-align: center; width: 44px; }
+
+/* Bouton icône uniquement (téléchargement) */
+.pseudobs-onboarding-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.pseudobs-onboarding-icon-btn:hover { color: var(--text-normal); background: var(--background-secondary-alt); }
+.pseudobs-onboarding-icon-btn svg { width: 15px; height: 15px; }
+
+.pseudobs-onboarding-icon-btn-done {
+  color: var(--color-green);
+  border-color: color-mix(in srgb, var(--color-green) 40%, transparent);
+  background: color-mix(in srgb, var(--color-green) 8%, transparent);
+}
+.pseudobs-onboarding-icon-btn-done:hover { opacity: 0.85; }
+
+/* ---- Modale de révision du scan dictionnaire (cards) ---- */
+
+.pseudobs-dict-review-modal {
+  width: min(620px, 92vw);
+}
+.pseudobs-dict-review-modal .modal-content { width: 100%; }
+.pseudobs-dict-review-modal h2 { margin-top: 0; font-size: 1.15em; }
+.modal:has(.pseudobs-dict-review-modal){ width: fit-content; }
+
+.pseudobs-dict-review-scroll {
+  max-height: min(520px, 60vh);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+  padding-right: 2px;
+}
+
+/* Card individuelle */
+.pseudobs-dict-review-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: border-color 0.12s, opacity 0.12s;
+}
+.pseudobs-dict-review-card:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+.pseudobs-dict-review-card-off { opacity: 0.38; }
+.pseudobs-dict-review-card-off .pseudobs-dict-review-term { text-decoration: line-through; }
+
+/* En-tête */
+.pseudobs-dict-review-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.pseudobs-dict-review-card-term-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pseudobs-dict-review-term {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--color-orange);
+  font-family: var(--font-monospace);
+}
+.pseudobs-dict-review-cat {
+  font-size: 0.68em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.pseudobs-dict-review-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.pseudobs-dict-review-count {
+  font-size: 0.78em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.pseudobs-dict-review-cb {
+  cursor: pointer;
+  accent-color: var(--interactive-accent);
+  width: 15px;
+  height: 15px;
+}
+
+/* Contexte */
+.pseudobs-dict-review-ctx {
+  font-size: 0.82em;
+  line-height: 1.55;
+  color: var(--text-muted);
+  background: var(--background-secondary);
+  border-radius: 5px;
+  padding: 5px 9px;
+  margin-bottom: 8px;
+  font-family: var(--font-monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.pseudobs-dict-review-ctx-side { opacity: 0.6; }
+.pseudobs-dict-review-ctx-term {
+  background: rgba(255, 160, 0, 0.28);
+  border-radius: 3px;
+  padding: 0 3px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+/* Ligne remplacement */
+.pseudobs-dict-review-rep-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pseudobs-dict-review-arrow { color: var(--text-faint); font-size: 0.9em; flex-shrink: 0; }
+.pseudobs-dict-review-rep-cell { display: flex; align-items: center; }
+
+/* Préfixe éditable */
+.pseudobs-dict-review-prefix {
+  width: 130px;
+  padding: 4px 8px;
+  border-radius: 4px 0 0 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-right: none;
+  background: var(--background-primary);
+  color: var(--color-green);
+  font-family: var(--font-monospace);
+  font-size: 0.88em;
+}
+.pseudobs-dict-review-prefix:focus {
+  border-color: var(--interactive-accent);
+  outline: none;
+  z-index: 1;
+  position: relative;
+}
+.pseudobs-dict-review-prefix:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Index calculé — lecture seule */
+.pseudobs-dict-review-index {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  background: var(--background-secondary);
+  color: var(--color-green);
+  font-family: var(--font-monospace);
+  font-size: 0.88em;
+  white-space: nowrap;
+  min-width: 30px;
+  opacity: 0.75;
+  user-select: none;
+}
+
+/* Remplacement statique (MappingScanReviewModal) */
+.pseudobs-dict-review-rep-static {
+  color: var(--color-green);
+  font-family: var(--font-monospace);
+  font-size: 0.88em;
+}
+
+/* Pied de page commun aux deux modales de révision */
+.pseudobs-dict-review-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 4px;
+}
+.pseudobs-dict-review-footer button {
+  padding: 5px 16px;
+  border-radius: 5px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.pseudobs-dict-review-footer .mod-cta {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+  font-weight: 600;
+}
+.pseudobs-dict-review-footer .mod-cta:disabled,
+.pseudobs-dict-review-btn-empty { opacity: 0.5; cursor: not-allowed; }
+
+/* Animation de rotation pendant le téléchargement */
+@keyframes pseudobs-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.pseudobs-onboarding-icon-btn-loading { cursor: wait; }
+.pseudobs-onboarding-icon-btn-loading svg { animation: pseudobs-spin 0.9s linear infinite; }

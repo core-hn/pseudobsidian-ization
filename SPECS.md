@@ -327,62 +327,126 @@ Le plugin doit permettre d’importer au moins les types suivants :
 * institutions ;
 * catégories libres définies par l’utilisateur.
 
-6.3 Format recommandé pour un dictionnaire
+6.3 Format `DictionaryFile` v1.1
 
+Schéma JSON complet. Les champs `roles` et `entries` sont obligatoires.
+
+```json
 {
-  "schemaVersion": "1.0.0",
-  "dictionaryId": "prenoms_coulmont",
-  "label": "Prénoms — Baptiste Coulmont",
-  "type": "first_name",
+  "schemaVersion": "1.1",
+  "dictionaryId": "fr-communes",
+  "label": "Communes françaises (GeoAPI INSEE)",
+  "type": "place",
   "language": "fr",
-  "source": "imported",
-  "license": "à renseigner par l’utilisateur",
-  "entries": [
+  "source": "https://geo.api.gouv.fr/communes",
+  "license": "Licence Ouverte v2.0",
+  "author": "INSEE",
+  "doi": null,
+
+  "roles": {
+    "detection": true,
+    "replacement": true,
+    "classes": true
+  },
+
+  "configSchema": [
     {
-      "value": "Jean",
-      "gender": "masculine",
-      "frequencyRank": 12,
-      "replacementCandidates": ["Pierre", "Paul", "Louis"]
+      "key": "incrementScope",
+      "label": "Portée de l’incrémentation",
+      "type": "enum",
+      "values": ["file", "folder", "vault"],
+      "default": "file",
+      "recommended": "file",
+      "description": "Portée dans laquelle les index ({index}) sont uniques."
     },
     {
-      "value": "Marie",
-      "gender": "feminine",
-      "frequencyRank": 3,
-      "replacementCandidates": ["Claire", "Anne", "Sophie"]
+      "key": "replacementPattern",
+      "label": "Format du pseudonyme généré",
+      "type": "string",
+      "default": "{class}_{index}",
+      "description": "Variables : {class} (classe), {index} (numéro dans la portée)."
+    },
+    {
+      "key": "caseSensitive",
+      "label": "Sensible à la casse",
+      "type": "boolean",
+      "values": [true, false],
+      "default": false
     }
+  ],
+
+  "config": {
+    "classificationMode": "conditions",
+    "conditions": [
+      { "field": "population", "op": "lt",  "value": 2000,   "class": "Village" },
+      { "field": "population", "op": "lt",  "value": 10000,  "class": "Petite_Ville" },
+      { "field": "population", "op": "lt",  "value": 100000, "class": "Ville" },
+      { "field": "population", "op": "lt",  "value": 500000, "class": "Grande_Ville" },
+      { "field": "population", "op": "gte", "value": 500000, "class": "Métropole" }
+    ],
+    "incrementScope": "file",
+    "replacementPattern": "{class}_{index}",
+    "caseSensitive": false
+  },
+
+  "entries": [
+    { "value": "Saint-Jean-de-Luz", "type": "place", "population": 14857, "departement": "64" }
   ]
 }
+```
 
-6.4 Import de dictionnaires
+**Champs de l’en-tête :**
 
-L’interface doit permettre :
+| Champ | Type | Obligatoire | Description |
+|---|---|---|---|
+| `schemaVersion` | string | oui | Version du format — actuellement `"1.1"` |
+| `dictionaryId` | string | oui | Identifiant unique, slug kebab-case |
+| `label` | string | oui | Nom affiché dans l’interface |
+| `type` | EntityCategory | oui | Type principal des entrées (`place`, `first_name`, `institution`…) |
+| `language` | string | oui | Code langue ISO 639-1 (`fr`, `en`…) |
+| `source` | string | oui | URL ou description de la source |
+| `license` | string | non | Licence des données |
+| `author` | string | non | Auteur ou organisme producteur |
+| `doi` | string\|null | non | DOI de la ressource si disponible |
+| `roles.detection` | bool | oui | `true` si les entrées alimentent la détection |
+| `roles.replacement` | bool | oui | `true` si les entrées alimentent les suggestions de remplacement |
+| `roles.classes` | bool | oui | `true` si le remplacement utilise un système de classes avec incrémentation |
+| `configSchema` | array | non | Décrit les variables configurables et leurs valeurs possibles |
+| `config` | object | non | Valeurs actives (modifiables par l’utilisateur) |
 
-* d’importer un dictionnaire JSON ;
-* d’importer un CSV ;
-* de mapper les colonnes d’un CSV vers les champs attendus ;
-* d’activer ou désactiver un dictionnaire ;
-* de choisir son ordre de priorité ;
-* de définir sa portée par défaut.
+**Modes de classification (`config.classificationMode`) :**
 
-6.5 Sélection des dictionnaires actifs
+| Mode | Usage |
+|---|---|
+| `conditions` | Règles sur un champ numérique ou catégoriel des entrées (ex. `population`) |
+| `regex` | Patterns regex sur la valeur de l’entrée (ex. `^CHU`, `^Université`) |
+| `word-to-word` | Remplacement fixe par entrée (champ `replacement` dans l’entrée) |
 
-Dans l’interface de traitement, l’utilisateur doit pouvoir sélectionner les dictionnaires à appliquer.
+**Champs libres dans `DictionaryEntry` :** toute propriété supplémentaire (`population`, `departement`, `platform`…) est transmise aux conditions de classification.
 
-Exemple d’interface :
+6.4 Import et installation de dictionnaires
 
-* [x] Prénoms — Baptiste Coulmont
-* [x] Villes françaises — catégories INSEE
-* [ ] Patronymes — dictionnaire interne
-* [x] Institutions — LIIPPS
+Trois voies d’installation :
 
-Pour chaque dictionnaire, on doit pouvoir choisir :
+1. **Catalogue en ligne** (wizard ou Paramètres → Reconfigurer) — télécharge depuis le dépôt [`pseudobsidian-dictionaries`](https://github.com/core-hn/pseudobsidian-dictionaries) dans `_pseudonymisation/dictionaries/`
+2. **Import local** (onglet Dictionnaires) — importe un fichier `.dict.json` local
+3. **Dépôt dédié** — les dictionnaires sont versionnés dans un repo séparé du plugin ; format et schéma documentés dans ce repo
 
-* appliquer au fichier courant ;
-* appliquer au dossier courant ;
-* appliquer au vault ;
-* utiliser seulement pour les suggestions ;
-* utiliser automatiquement avec validation globale ;
-* désactiver.
+6.5 Sélection et scan
+
+L’onglet **Dictionnaires** du panneau latéral liste les dictionnaires installés sous forme de mini cards. Pour chaque card :
+
+- **Checkbox** — inclure ou exclure du scan groupé
+- **Bouton scan** (loupe) — scanner le fichier actif avec ce seul dictionnaire
+- **Bouton scan groupé** — scanner avec tous les dictionnaires cochés
+
+La **modale de révision** (`DictScanReviewModal`) présente chaque entité détectée avec :
+- son extrait de contexte (±50 caractères) pour aider à distinguer les faux positifs
+- sa classe proposée (ex. `Ville`)
+- son remplacement calculé : préfixe éditable + index en lecture seule (`Ville_1`)
+- une checkbox pour l’inclure ou l’exclure
+
+L’index est recalculé dynamiquement : décocher `Ville_2` redistribue les indices suivants.
 
 ⸻
 

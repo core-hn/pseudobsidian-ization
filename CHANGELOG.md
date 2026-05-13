@@ -1,5 +1,31 @@
 # Changelog
 
+## [dev] v0.1.3 — 14 mai 2026
+
+**Branche :** `main` | **Tag :** à venir
+
+### Nouvelles fonctionnalités
+- **Système de dictionnaires structurés** — format `DictionaryFile` v1.1 : champs `roles` (détection / remplacement / classes), `configSchema` (variables configurables avec valeurs possibles), `config` (valeurs actives), `author`, `doi`
+- **`DictionaryLoader`** — service de chargement, index de détection normalisé, résolution de classes par conditions/regex/word-to-word, calcul d'index incrémental par portée
+- **Repo dédié [`pseudobsidian-dictionaries`](https://github.com/core-hn/pseudobsidian-dictionaries)** — catalogue de dictionnaires téléchargeables, premier dictionnaire : communes françaises GeoAPI INSEE (34 957 entrées, classes Village → Métropole)
+- **Wizard — catalogue de dictionnaires** : tableau scrollable avec bouton icône `cloud-download` → `refresh-cw` (spin) → `cloud-check` ; installation depuis le repo dédié sans quitter Obsidian
+- **`scripts/build-cities.mjs`** — script one-shot de génération du dictionnaire communes depuis GeoAPI INSEE
+- **Scan par dictionnaire** (`Onglet Dictionnaires → Scanner`) : fenêtre glissante de n-grammes, filtre par dictionnaires cochés, commande Ctrl+P disponible
+- **`DictScanReviewModal`** — modale de révision en cards : terme source, catégorie (tiny), extrait de contexte avec terme surligné, préfixe éditable + index calculé en lecture seule (recalcul dynamique si décoché), checkbox par card
+- **`MappingScanReviewModal`** — modale de révision pour le scan par règles : tableau source → remplacement · occurrences, application directe dans le fichier source
+- **Onglet Mappings** — bouton "Scanner le fichier" ouvre `MappingScanReviewModal`
+- **Onglet NER** — bouton "Identifier des candidats" en haut de l'onglet
+- **`RuleModal`** — suggestions de remplacement par classe (dictionnaire) séparées des suggestions Coulmont ; modal Coulmont n'affiche plus les suggestions dictionnaire (prénoms ≠ lieux)
+
+### Suppressions
+- **Onglet "Candidats"** supprimé — le scan par règles est maintenant dans Mappings, le scan NER dans NER
+
+### Corrections
+- `DictScanReviewModal` : l'index n'est plus modifiable manuellement — seul le préfixe l'est, l'index se recalcule quand on coche/décoche des items
+- CSS : animation spin sur l'icône de téléchargement en cours, mini cards dictionnaires dans le panneau
+
+---
+
 ## [prod] v0.1.2 — 13 mai 2026
 
 **Branche :** `main` | **Tag :** `0.1.2`

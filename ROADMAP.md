@@ -181,29 +181,33 @@ Objectif : interface de travail complète pour le workflow pseudonymisation.
 
 ---
 
-## ⏳ Phase 9 — Détection NER + dictionnaires de remplacement (v0.1.0)
+## 🔄 Phase 9 — Dictionnaires structurés (v0.1.3)
 
-Objectif : détecter automatiquement les entités identifiantes (prénoms, noms, **lieux**, institutions) sans règle préexistante, en s'appuyant sur un modèle NER pour le français plutôt que sur des dictionnaires de détection.
+Objectif : permettre la détection et le remplacement automatiques des entités identifiantes à partir de dictionnaires locaux, téléchargeables hors-ligne depuis un dépôt dédié.
 
-**Pourquoi NER plutôt que dictionnaire pour les lieux :** un dictionnaire confond "Florence" la personne et "Florence" la ville. Le NER exploite le contexte syntaxique et résout cette ambiguïté sans liste exhaustive.
-
-**Backend retenu : transformers.js** — modèle BERT-NER multilingue (ONNX) exécuté localement dans Obsidian via `@xenova/transformers`. Téléchargement unique ~66 Mo, 100 % hors-ligne ensuite.
-
-> **Piste spaCy (sidecar Python) — feature envisagée** : meilleure précision sur le français (`fr_core_news_sm`), temps de réponse plus rapide, mais requiert Python. Reportée aux features envisagées (voir fin de roadmap).
+**Décision architecturale :** le NER (transformers.js) reste le moteur de détection principal pour les entités contextuelles (prénoms, noms, institutions). Les dictionnaires ajoutent une détection exhaustive par liste pour les types dénombrables (communes, institutions connues) et fournissent les remplacements structurés (classes + index).
 
 ### Tâches
 
 - [x] `scanner/OnnxNerScanner.ts` : pipeline BERT-NER via `@xenova/transformers`, filtres score et mots fonctionnels
-- [x] Surlignage bleu des entités détectées dans l'éditeur (motivant à créer une règle)
-- [x] Onglet NER dans le panneau latéral : seuil de confiance + liste de mots fonctionnels éditables
-- [x] Wizard onboarding : téléchargement des fichiers WASM + choix du backend
+- [x] Surlignage bleu des entités détectées dans l'éditeur
+- [x] Onglet NER dans le panneau latéral : seuil de confiance + mots fonctionnels · bouton "Identifier des candidats"
+- [x] Wizard : téléchargement WASM + catalogue de dictionnaires depuis le repo dédié
+- [x] Format `DictionaryFile` v1.1 : `roles`, `configSchema`, `config`, `author`, `doi`
+- [x] `src/dictionaries/DictionaryLoader.ts` : chargement, index de détection, résolution de classes (conditions / regex / word-to-word), `nextReplacement()`, `scanText()` (fenêtre glissante n-grammes)
+- [x] Repo dédié [`pseudobsidian-dictionaries`](https://github.com/core-hn/pseudobsidian-dictionaries) + `fr-communes.dict.json` (34 957 communes GeoAPI INSEE)
+- [x] `scripts/build-cities.mjs` : génération du dictionnaire communes depuis GeoAPI
+- [x] Onglet Dictionnaires : mini cards (checkbox · scan individuel · suppression) + scan groupé
+- [x] `DictScanReviewModal` : modale de révision en cards (contexte, préfixe éditable, index calculé)
+- [x] `MappingScanReviewModal` : modale de révision pour le scan par règles existantes
+- [x] Scan par dictionnaire accessible depuis l'onglet Dictionnaires et commande Ctrl+P
+- [x] Suppression onglet "Candidats" — scan règles → Mappings · scan NER → NER
 - [ ] `mappings/ConflictDetector.ts` : détection des chevauchements entre spans NER et règles manuelles (§8.5)
-- [ ] Dictionnaires de **remplacement** pour lieux (`cities.json` avec `sizeClass`) et institutions
-- [ ] `adapters/geoapi.ts` : GeoAPI INSEE → `DictionaryEntry[]` avec `sizeClass`
-- [ ] `ambiguous.json` : tokens historiquement ambigus — signalement prioritaire
-- [ ] Amélioration modèle : évaluer un modèle français spécifique (CamemBERT-NER)
+- [ ] `ambiguous.json` : tokens historiquement ambigus prénom/lieu (Florence, Nancy, Lorraine…) — badge ⚠ dans la modale de révision
+- [ ] Seuil de population minimum configurable pour la détection (exclure les communes < N hab)
+- [ ] Amélioration modèle : évaluer CamemBERT-NER (`Jean-Baptiste/camembert-ner`)
 
-**Testable (v0.1.0) :** scan NER → entités surlignées en bleu → clic droit → règle créée → pseudonymisation.
+**Testable (v0.1.3) :** installer le dictionnaire communes → scanner un fichier → modale de révision → décocher les faux positifs → créer les règles → pseudonymiser.
 
 ---
 

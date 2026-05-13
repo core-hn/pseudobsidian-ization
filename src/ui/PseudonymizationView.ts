@@ -1,25 +1,16 @@
-import { ItemView, Notice, Setting, TFile, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Notice, Setting, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
-import type { MappingRule, Occurrence } from '../types';
+import type { MappingRule } from '../types';
 import { scanOccurrences } from '../scanner/OccurrenceScanner';
-import { resolveSpans, applySpans } from '../pseudonymizer/SpanProtector';
-import type { ReplacementSpan } from '../types';
 import { EditRuleModal } from './EditRuleModal';
 import { RuleModal } from './RuleModal';
+import { MappingScanReviewModal } from './MappingScanReviewModal';
+import type { MappingRuleResult } from './MappingScanReviewModal';
 
 export const VIEW_TYPE_PSEUDOBS = 'pseudonymization-view';
 
-type Tab = 'occurrences' | 'mappings' | 'dictionaries' | 'exports' | 'ner';
-type Decision = 'validated' | 'ignored' | 'false_positive';
-
-interface CardRef {
-  card: HTMLElement;
-  buttons: Map<Decision, HTMLElement>;
-  arrow: HTMLElement;
-  resLine: HTMLElement;
-  statusLabel: HTMLElement;
-}
+type Tab = 'mappings' | 'dictionaries' | 'exports' | 'ner';
 
 const CATEGORY_LABELS: Record<string, string> = {
   first_name: 'Prénom', last_name: 'Nom', full_name: 'Nom complet',
@@ -38,23 +29,16 @@ const STATUS_LABELS: Record<string, string> = {
 
 export class PseudonymizationView extends ItemView {
   private plugin: PseudObsPlugin;
-  private activeTab: Tab = 'occurrences';
+  private activeTab: Tab = 'mappings';
   private panes!: Record<Tab, HTMLElement>;
   private tabBtns!: Record<Tab, HTMLElement>;
 
   // Dernier fichier markdown connu (survit au focus du panneau)
   private lastFile: TFile | null = null;
+  // IDs des dictionnaires cochés pour le scan groupé (tous cochés par défaut)
+  private checkedDicts = new Set<string>();
   // Garde contre la réentrance de onFileChange (le panneau lui-même peut devenir feuille active)
   private _renderingTab = false;
-
-  // État de l'onglet Occurrences
-  private occScanned = false;
-  private occFile: TFile | null = null;
-  private occContent = '';
-  private occurrences: Occurrence[] = [];
-  private occRules: MappingRule[] = [];
-  private occDecisions: Map<string, Decision> = new Map();
-  private occCardRefs: Map<string, CardRef> = new Map();
 
   constructor(leaf: WorkspaceLeaf, plugin: PseudObsPlugin) {
     super(leaf);
@@ -74,7 +58,6 @@ export class PseudonymizationView extends ItemView {
     const content = root.createDiv('pseudobs-view-content');
 
     const tabs: [Tab, string][] = [
-      ['occurrences', 'Candidats'],
       ['mappings', 'Mappings'],
       ['dictionaries', 'Dictionnaires'],
       ['exports', 'Exports'],
@@ -102,7 +85,7 @@ export class PseudonymizationView extends ItemView {
     const f = this.app.workspace.getActiveFile();
     if (f) this.lastFile = f;
 
-    await this.switchTab('occurrences');
+    await this.switchTab('mappings');
   }
 
   private async switchTab(tab: Tab): Promise<void> {
@@ -123,8 +106,7 @@ export class PseudonymizationView extends ItemView {
   private async renderTab(tab: Tab): Promise<void> {
     const pane = this.panes[tab];
     pane.empty();
-    if (tab === 'occurrences')        await this.renderOccurrencesTab(pane);
-    else if (tab === 'mappings')      await this.renderMappingsTab(pane);
+    if (tab === 'mappings')           await this.renderMappingsTab(pane);
     else if (tab === 'dictionaries')  await this.renderDictionariesTab(pane);
     else if (tab === 'ner')           await this.renderNerTab(pane);
     else                              this.renderExportsTab(pane);
@@ -137,15 +119,7 @@ export class PseudonymizationView extends ItemView {
     if (this.app.workspace.getActiveViewOfType(ItemView) === this) return;
 
     const f = this.app.workspace.getActiveFile();
-    if (f && f !== this.lastFile) {
-      this.lastFile = f;
-      this.occScanned = false;
-      this.occurrences = [];
-      this.occDecisions = new Map();
-      this.occCardRefs = new Map();
-    } else if (f) {
-      this.lastFile = f;
-    }
+    if (f) this.lastFile = f;
 
     this._renderingTab = true;
     try {
@@ -159,265 +133,58 @@ export class PseudonymizationView extends ItemView {
     return this.app.workspace.getActiveFile() ?? this.lastFile;
   }
 
-  // ---- Onglet Occurrences ----------------------------------------
+  // ---- Onglet Mappings -------------------------------------------
 
-  private async renderOccurrencesTab(el: HTMLElement): Promise<void> {
+  private async renderMappingsTab(el: HTMLElement): Promise<void> {
     const file = this.getFile();
-    if (!file) {
-      el.createEl('p', { text: 'Aucun fichier actif.', cls: 'pseudobs-view-hint' });
-      return;
-    }
-
-    const ext = file.extension.toLowerCase();
-    if (!['srt', 'cha', 'chat', 'md', 'txt'].includes(ext)) {
-      el.createEl('p', {
-        text: `Format non pris en charge : .${ext}`,
-        cls: 'pseudobs-view-hint',
-      });
-      return;
-    }
 
     const toolbar = el.createDiv('pseudobs-view-toolbar');
-    const scanBtn = toolbar.createEl('button', {
-      text: 'Scanner le fichier',
-      cls: 'pseudobs-view-action-btn',
-    });
-
-    if (this.plugin.settings.nerBackend !== 'none') {
-      const nerBtn = toolbar.createEl('button', {
-        text: 'Identifier des candidats',
-        cls: 'pseudobs-view-action-btn',
-      });
-      nerBtn.title = 'Détecter les entités nommées identifiantes (NER) et les surligner en bleu';
-      nerBtn.addEventListener('click', () => void this.plugin.scanCurrentFileNer());
-    }
-
-    const resultsEl = el.createDiv('pseudobs-view-results');
-
-    if (this.occScanned && this.occFile === file) {
-      // Reconstruire les refs sur les nouveaux éléments DOM
-      this.occCardRefs = new Map();
-      this.renderOccurrenceCards(resultsEl);
-    } else {
-      resultsEl.createEl('p', { text: `Fichier : ${file.name}`, cls: 'pseudobs-view-filename' });
-      resultsEl.createEl('p', {
-        text: 'Cliquez sur "scanner le fichier" pour détecter les occurrences des règles actives.',
-        cls: 'pseudobs-view-hint',
-      });
-    }
-
+    // Bouton ajouter règle
+    const addRuleBtn = toolbar.createEl('button', { cls: 'pseudobs-view-action-btn' });
+    setIcon(addRuleBtn, 'list-plus');
+    addRuleBtn.createSpan({ text: 'Ajouter une règle' });
+    addRuleBtn.addEventListener('click', () => new RuleModal(this.app, this.plugin).open());
+    
+    // Bouton scan — ouvre MappingScanReviewModal
+    const scanBtn = toolbar.createEl('button', { cls: 'pseudobs-view-action-btn' });
+    setIcon(scanBtn, 'scan-search');
+    scanBtn.createSpan({ text: 'Scanner le fichier' });
+    if (!file) scanBtn.setAttr('disabled', 'true');
     scanBtn.addEventListener('click', () => { void (async () => {
+      if (!file) return;
       scanBtn.setAttr('disabled', 'true');
       scanBtn.setText('Scan en cours…');
       try {
         const content = await this.app.vault.read(file);
         const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
-
-        resultsEl.empty();
-
         if (rules.length === 0) {
-          resultsEl.createEl('p', {
-            text: 'Aucune règle active pour ce fichier. Créez des règles via le menu contextuel ou la commande "créer une règle".',
-            cls: 'pseudobs-view-hint',
-          });
-        } else {
-          const occs = scanOccurrences(content, file.path, rules, {
-            caseSensitive: this.plugin.settings.caseSensitive,
-            wholeWordOnly: this.plugin.settings.wholeWordOnly,
-          });
-
-          this.occFile = file;
-          this.occContent = content;
-          this.occurrences = occs;
-          this.occRules = rules;
-          this.occDecisions = new Map();
-          this.occCardRefs = new Map();
-          for (const occ of occs) this.occDecisions.set(occ.id, 'validated');
-          this.occScanned = true;
-
-          this.renderOccurrenceCards(resultsEl);
+          new Notice('Aucune règle active pour ce fichier. Créez des règles via le menu contextuel.');
+          return;
         }
+        const occs = scanOccurrences(content, file.path, rules, {
+          caseSensitive: this.plugin.settings.caseSensitive,
+          wholeWordOnly: this.plugin.settings.wholeWordOnly,
+        });
+        // Grouper par règle
+        const countByRule = new Map<string, number>();
+        for (const occ of occs) {
+          const id = occ.mappingId ?? '';
+          countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+        }
+        const ruleResults: MappingRuleResult[] = rules
+          .filter((r) => countByRule.has(r.id))
+          .map((r) => ({ rule: r, matchCount: countByRule.get(r.id)! }));
+        if (ruleResults.length === 0) {
+          new Notice('Aucune occurrence trouvée pour les règles actives.');
+          return;
+        }
+        new MappingScanReviewModal(this.app, this.plugin, file, content, ruleResults).open();
       } finally {
         scanBtn.removeAttribute('disabled');
         scanBtn.setText('Scanner le fichier');
       }
     })(); });
-  }
 
-  private renderOccurrenceCards(el: HTMLElement): void {
-    if (this.occurrences.length === 0) {
-      el.createEl('p', {
-        text: 'Aucune occurrence trouvée avec les règles actives.',
-        cls: 'pseudobs-view-hint',
-      });
-      return;
-    }
-
-    const n = this.occurrences.length;
-    const nR = new Set(this.occurrences.map((o) => o.mappingId)).size;
-    el.createEl('p', {
-      text: `${n} occurrence${n > 1 ? 's' : ''} — ${nR} règle${nR > 1 ? 's' : ''}`,
-      cls: 'pseudobs-view-count',
-    });
-
-    const legend = el.createDiv();
-    legend.addClass('pseudobs-legend');
-    for (const [icon, label, cls] of [
-      ['✓', 'Valider', 'pseudobs-legend-badge-validate'],
-      ['✗', 'Conserver', 'pseudobs-legend-badge-ignore'],
-      ['⚠', 'Faux positif', 'pseudobs-legend-badge-fp'],
-    ] as [string, string, string][]) {
-      const item = legend.createSpan();
-      item.addClass('pseudobs-legend-item');
-      item.createSpan({ text: icon }).addClass('pseudobs-legend-badge', cls);
-      item.createSpan({ text: ` ${label}` });
-    }
-
-    const globalBtns = el.createDiv('pseudobs-view-global-btns');
-    globalBtns.createEl('button', { text: 'Tout valider', cls: 'pseudobs-btn-validate-all' }).addEventListener('click', () => {
-      for (const occ of this.occurrences) this.occDecisions.set(occ.id, 'validated');
-      for (const id of this.occCardRefs.keys()) this.updateCard(id);
-    });
-    globalBtns.createEl('button', { text: 'Tout ignorer', cls: 'pseudobs-btn-ignore-all' }).addEventListener('click', () => {
-      for (const occ of this.occurrences) this.occDecisions.set(occ.id, 'ignored');
-      for (const id of this.occCardRefs.keys()) this.updateCard(id);
-    });
-
-    const byRule = new Map<string, Occurrence[]>();
-    for (const occ of this.occurrences) {
-      const k = occ.mappingId ?? '';
-      if (!byRule.has(k)) byRule.set(k, []);
-      byRule.get(k)!.push(occ);
-    }
-    for (const [mid, occs] of byRule) {
-      const rule = this.occRules.find((r) => r.id === mid);
-      if (!rule) continue;
-      el.createDiv({
-        text: `${rule.source}  →  ${rule.replacement}`,
-        cls: 'pseudobs-occ-rule-header',
-      });
-      for (const occ of occs) this.buildCard(el, occ, rule);
-    }
-
-    el.createEl('hr');
-    el
-      .createEl('button', {
-        text: 'Appliquer les remplacements',
-        cls: 'pseudobs-view-apply-btn',
-      })
-      .addEventListener('click', () => void this.applyOccurrences());
-  }
-
-  private buildCard(container: HTMLElement, occ: Occurrence, rule: MappingRule): void {
-    const card = container.createDiv('pseudobs-occ-card');
-
-    const srcLine = card.createDiv();
-    srcLine.addClass('pseudobs-occ-line');
-    srcLine.createSpan({ text: occ.contextBefore, cls: 'pseudobs-ctx-side' });
-    srcLine.createSpan({ text: occ.text, cls: 'pseudobs-occ-term' });
-    srcLine.createSpan({ text: occ.contextAfter, cls: 'pseudobs-ctx-side' });
-
-    const arrow = card.createDiv({ text: '↓' });
-    arrow.addClass('pseudobs-occ-arrow');
-
-    const resLine = card.createDiv();
-    resLine.addClass('pseudobs-occ-line', 'pseudobs-occ-result-line');
-    resLine.createSpan({ text: occ.contextBefore, cls: 'pseudobs-ctx-side' });
-    resLine.createSpan({ text: rule.replacement, cls: 'pseudobs-occ-replacement' });
-    resLine.createSpan({ text: occ.contextAfter, cls: 'pseudobs-ctx-side' });
-
-    const statusLabel = card.createDiv();
-    statusLabel.addClass('pseudobs-occ-status-label');
-
-    card.createEl('small', { text: `ligne ${occ.line}`, cls: 'pseudobs-occ-meta' });
-
-    const actions = card.createDiv('pseudobs-occ-actions');
-    const btnRefs = new Map<Decision, HTMLElement>();
-    for (const [label, value, title] of [
-      ['✓', 'validated',     'Valider'],
-      ['✗', 'ignored',       'Ignorer'],
-      ['⚠', 'false_positive','Faux positif'],
-    ] as [string, Decision, string][]) {
-      const btn = actions.createEl('button', { text: label });
-      btn.title = title;
-      btn.addClass('pseudobs-occ-btn');
-      btn.addEventListener('click', () => {
-        this.occDecisions.set(occ.id, value);
-        this.updateCard(occ.id);
-      });
-      btnRefs.set(value, btn);
-    }
-
-    this.occCardRefs.set(occ.id, { card, buttons: btnRefs, arrow, resLine, statusLabel });
-    this.updateCard(occ.id);
-  }
-
-  private updateCard(occId: string): void {
-    const ref = this.occCardRefs.get(occId);
-    if (!ref) return;
-    const decision = this.occDecisions.get(occId) ?? 'validated';
-
-    ref.card.removeClass('pseudobs-occ-validated', 'pseudobs-occ-ignored', 'pseudobs-occ-false_positive');
-    ref.card.addClass(`pseudobs-occ-${decision}`);
-
-    for (const [value, btn] of ref.buttons) {
-      btn.toggleClass('pseudobs-occ-btn-active', value === decision);
-    }
-
-    const show = decision === 'validated';
-    ref.arrow.toggle(show);
-    ref.resLine.toggle(show);
-    ref.statusLabel.toggle(!show);
-
-    const labels: Record<Decision, string> = {
-      validated:      '',
-      ignored:        'Conservé tel quel',
-      false_positive: 'Faux positif — exclu',
-    };
-    ref.statusLabel.setText(labels[decision]);
-  }
-
-  private async applyOccurrences(): Promise<void> {
-    if (!this.occFile) return;
-
-    const s = this.plugin.settings;
-    const wrap = (r: string) => s.useMarkerInExport
-      ? `${s.markerOpen}${r}${s.markerClose}`
-      : r;
-
-    const validated = this.occurrences.filter((o) => this.occDecisions.get(o.id) === 'validated');
-    const spans: ReplacementSpan[] = validated.map((occ) => {
-      const rule = this.occRules.find((r) => r.id === occ.mappingId)!;
-      return {
-        start: occ.start, end: occ.end,
-        source: occ.text, replacement: wrap(rule.replacement),
-        mappingId: occ.mappingId ?? '', priority: rule.priority,
-      };
-    });
-
-    const updated = applySpans(this.occContent, resolveSpans(spans));
-    await this.app.vault.modify(this.occFile, updated);
-    await this.plugin.updateMappingStatuses(
-      this.occFile.path, this.occRules, this.occurrences, this.occDecisions
-    );
-
-    const nv = validated.length;
-    new Notice(`✓ ${nv} remplacement${nv > 1 ? 's' : ''} appliqué${nv > 1 ? 's' : ''}`);
-
-    this.occScanned = false;
-    void this.plugin.refreshHighlightData();
-    await this.renderTab('occurrences');
-  }
-
-  // ---- Onglet Mappings -------------------------------------------
-
-  private async renderMappingsTab(el: HTMLElement): Promise<void> {
-    const toolbar = el.createDiv('pseudobs-view-toolbar');
-    toolbar
-      .createEl('button', { text: 'Ajouter une règle', cls: 'pseudobs-view-add-btn' })
-      .addEventListener('click', () => new RuleModal(this.app, this.plugin).open());
-
-    const file = this.getFile();
     if (!file) {
       el.createEl('p', { text: 'Aucun fichier actif.', cls: 'pseudobs-view-hint' });
       return;
@@ -447,10 +214,8 @@ export class PseudonymizationView extends ItemView {
       row.createEl('td', { text: String(rule.priority) });
       row.createEl('td', { text: STATUS_LABELS[rule.status]     ?? rule.status });
 
-      const editBtn = row.createEl('td').createEl('button', {
-        text: '✎',
-        cls: 'pseudobs-mappings-edit-btn',
-      });
+      const editBtn = row.createEl('td').createEl('button', { cls: 'pseudobs-mappings-edit-btn' });
+      setIcon(editBtn, "pencil");
       editBtn.title = 'Modifier';
       editBtn.addEventListener('click', () => new EditRuleModal(this.app, this.plugin, loc).open());
     }
@@ -459,13 +224,84 @@ export class PseudonymizationView extends ItemView {
   // ---- Onglet Dictionnaires --------------------------------------
 
   private async renderDictionariesTab(el: HTMLElement): Promise<void> {
-    const toolbar = el.createDiv('pseudobs-view-toolbar');
-    const importBtn = toolbar.createEl('button', {
-      text: 'Importer un dictionnaire (.dict.json)',
+    const dicts = this.plugin.dictionaryLoader.getAll();
+
+    // Initialiser checkedDicts avec tous les IDs au premier rendu
+    if (this.checkedDicts.size === 0 && dicts.length > 0) {
+      dicts.forEach((d) => this.checkedDicts.add(d.dictionaryId));
+    }
+
+    if (dicts.length === 0) {
+      el.createEl('p', {
+        text: 'Aucun dictionnaire installé. Installez-en un depuis le wizard (Paramètres → Reconfigurer) ou importez un fichier local.',
+        cls: 'pseudobs-view-hint',
+      });
+    } else {
+      // Mini cards
+      for (const dict of dicts) {
+        const card = el.createDiv('pseudobs-dict-card');
+
+        // Checkbox scan groupé
+        const checkbox = card.createEl('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = this.checkedDicts.has(dict.dictionaryId);
+        checkbox.addClass('pseudobs-dict-card-checkbox');
+        checkbox.title = 'Inclure dans le scan groupé';
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) this.checkedDicts.add(dict.dictionaryId);
+          else this.checkedDicts.delete(dict.dictionaryId);
+        });
+
+        // Infos
+        const info = card.createDiv('pseudobs-dict-card-info');
+        info.createEl('strong', { text: dict.label, cls: 'pseudobs-dict-card-title' });
+        info.createEl('small', { text: `${dict.dictionaryId}.dict.json`, cls: 'pseudobs-dict-card-filename' });
+
+        // Bouton scan individuel
+        if (dict.roles?.detection) {
+          const scanBtn = card.createEl('button', { cls: 'pseudobs-dict-card-scan mod-cta' });
+          setIcon(scanBtn, 'scan-search');
+          scanBtn.setAttribute('aria-label', `Scanner avec ${dict.label}`);
+          scanBtn.title = `Scanner le fichier actif avec "${dict.label}"`;
+          scanBtn.addEventListener('click', () => {
+            void this.plugin.scanCurrentFileWithDictionaries([dict.dictionaryId]);
+          });
+        }
+
+        // Bouton suppression
+        const removeBtn = card.createEl('button', { cls: 'pseudobs-dict-card-remove' });
+        setIcon(removeBtn, 'trash-2');
+        removeBtn.setAttribute('aria-label', 'Supprimer ce dictionnaire');
+        removeBtn.title = 'Supprimer ce dictionnaire du vault';
+        removeBtn.addEventListener('click', () => { void (async () => {
+          const f = this.app.vault.getAbstractFileByPath(
+            `${this.plugin.settings.dictionariesFolder}/${dict.dictionaryId}.dict.json`
+          );
+          if (f instanceof TFile) await this.app.fileManager.trashFile(f);
+          this.checkedDicts.delete(dict.dictionaryId);
+          await this.plugin.dictionaryLoader.load();
+          await this.renderTab('dictionaries');
+        })(); });
+      }
+
+      // Bouton scan groupé
+      el.createEl('hr');
+      const groupScanBtn = el.createEl('button', { cls: 'pseudobs-dict-group-scan mod-cta' });
+      setIcon(groupScanBtn, 'scan-search');
+      groupScanBtn.createSpan({ text: 'Scanner les dictionnaires cochés' });
+      groupScanBtn.addEventListener('click', () => {
+        const ids = [...this.checkedDicts];
+        if (ids.length === 0) { new Notice('Aucun dictionnaire coché.'); return; }
+        void this.plugin.scanCurrentFileWithDictionaries(ids);
+      });
+    }
+
+    // Import manuel
+    el.createEl('hr');
+    const importBtn = el.createEl('button', {
+      text: 'Importer un fichier local (.dict.json)',
       cls: 'pseudobs-view-add-btn',
     });
-    const statusEl = toolbar.createSpan({ cls: 'pseudobs-view-dict-status' });
-
     importBtn.addEventListener('click', () => {
       const input = activeDocument.createElement('input');
       input.type = 'file';
@@ -477,7 +313,6 @@ export class PseudonymizationView extends ItemView {
         const files = Array.from(input.files ?? []);
         input.remove();
         if (files.length === 0) return;
-
         await this.plugin.ensureFolder(this.plugin.settings.dictionariesFolder);
         let ok = 0;
         for (const f of files) {
@@ -493,56 +328,16 @@ export class PseudonymizationView extends ItemView {
               await this.app.vault.create(dest, text);
             }
             ok++;
-          } catch {
-            new Notice(`Format invalide : ${f.name}`);
-          }
+          } catch { new Notice(`Format invalide : ${f.name}`); }
         }
-        if (ok > 0) new Notice(`✓ ${ok} dictionnaire${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`);
+        if (ok > 0) {
+          new Notice(`✓ ${ok} dictionnaire${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`);
+          await this.plugin.dictionaryLoader.load();
+        }
         await this.renderTab('dictionaries');
       })(); });
       input.click();
     });
-
-    // Liste des dictionnaires présents dans le vault
-    const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
-    const files: TFile[] = [];
-    if (folder && 'children' in folder) {
-      for (const child of (folder as { children: unknown[] }).children) {
-        if (child instanceof TFile && child.name.endsWith('.json')) files.push(child);
-      }
-    }
-
-    if (files.length === 0) {
-      el.createEl('p', { text: 'Aucun dictionnaire importé.', cls: 'pseudobs-view-hint' });
-      return;
-    }
-
-    el.createEl('p', {
-      text: `${files.length} dictionnaire${files.length > 1 ? 's' : ''} chargé${files.length > 1 ? 's' : ''} :`,
-      cls: 'pseudobs-view-count',
-    });
-
-    const list = el.createEl('ul', { cls: 'pseudobs-dict-list' });
-    for (const f of files) {
-      let entryCount = '?';
-      try {
-        const raw = await this.app.vault.read(f);
-        const parsed = JSON.parse(raw) as DictionaryFile;
-        entryCount = String(parsed.entries?.length ?? 0);
-      } catch { /* fichier malformé */ }
-
-      const li = list.createEl('li', { cls: 'pseudobs-dict-item' });
-      li.createSpan({ text: f.basename, cls: 'pseudobs-dict-name' });
-      li.createSpan({ text: `${entryCount} entrées`, cls: 'pseudobs-dict-count' });
-      const removeBtn = li.createEl('button', { text: '✕', cls: 'pseudobs-dict-remove' });
-      removeBtn.title = 'Supprimer ce dictionnaire';
-      removeBtn.addEventListener('click', () => { void (async () => {
-        await this.app.fileManager.trashFile(f);
-        await this.renderTab('dictionaries');
-      })(); });
-    }
-
-    void statusEl;
   }
 
   // ---- Onglet Exports --------------------------------------------
@@ -580,6 +375,15 @@ export class PseudonymizationView extends ItemView {
 
   private async renderNerTab(el: HTMLElement): Promise<void> {
     const s = this.plugin.settings;
+
+    // Bouton scan NER
+    const nerScanBtn = el.createEl('button', { cls: 'pseudobs-view-action-btn mod-cta' });
+    setIcon(nerScanBtn, 'scan-search');
+    nerScanBtn.createSpan({ text: 'Identifier des candidats' });
+    nerScanBtn.title = 'Détecter les entités nommées dans le fichier actif et les surligner en bleu';
+    nerScanBtn.addEventListener('click', () => void this.plugin.scanCurrentFileNer());
+
+    el.createEl('hr');
 
     el.createEl('p', {
       text: 'Paramètres du scanner de détection automatique des entités nommées.',
@@ -644,10 +448,9 @@ export class PseudonymizationView extends ItemView {
       window.setTimeout(() => { saveBtn.removeClass('pseudobs-btn-saved'); saveBtn.setText('Enregistrer'); }, 2000);
     })(); });
 
-    const resetBtn = fwSection.createEl('button', {
-      text: 'Réinitialiser par défaut',
-      cls: 'pseudobs-view-action-btn',
-    });
+    const resetBtn = fwSection.createEl('button', { cls: 'pseudobs-view-action-btn' });
+    setIcon(resetBtn, 'rotate-ccw');
+    resetBtn.createSpan({ text: 'Réinitialiser par défaut' });
     resetBtn.addClass('pseudobs-ner-reset-btn');
     resetBtn.addEventListener('click', () => { void (async () => {
       const { DEFAULT_SETTINGS } = await import('../settings');

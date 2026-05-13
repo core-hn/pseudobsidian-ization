@@ -40,7 +40,7 @@ var __publicField = (obj, key, value) => {
 };
 
 // src/ui/OnboardingModal.ts
-var import_obsidian, fs, path, TRANSFORMERS_VERSION, WASM_CDN_BASE, WASM_FILES, STEPS, STEP_LABELS, OnboardingModal;
+var import_obsidian, fs, path, TRANSFORMERS_VERSION, WASM_CDN_BASE, DICT_MANIFEST_URL, WASM_FILES, STEPS, STEP_LABELS, OnboardingModal;
 var init_OnboardingModal = __esm({
   "src/ui/OnboardingModal.ts"() {
     "use strict";
@@ -49,6 +49,7 @@ var init_OnboardingModal = __esm({
     path = __toESM(require("path"));
     TRANSFORMERS_VERSION = "2.17.2";
     WASM_CDN_BASE = `https://cdn.jsdelivr.net/npm/@xenova/transformers@${TRANSFORMERS_VERSION}/dist`;
+    DICT_MANIFEST_URL = "https://raw.githubusercontent.com/core-hn/pseudobsidian-dictionaries/main/index.json";
     WASM_FILES = [
       "ort-wasm-simd-threaded.wasm",
       "ort-wasm-simd.wasm",
@@ -232,18 +233,22 @@ var init_OnboardingModal = __esm({
       renderDictionaries(el) {
         el.createEl("h2", { text: "Dictionnaires de candidats" });
         el.createEl("p", {
-          text: "Les dictionnaires (.dict.json) contiennent des listes de candidats de remplacement \u2014 pr\xE9noms, noms de famille, lieux \u2014 class\xE9s par genre, \xE9poque ou taille de ville. Ils alimentent les suggestions de pseudonymes."
+          text: "Les dictionnaires proposent des candidats de remplacement (villes, pr\xE9noms\u2026) et alimentent la d\xE9tection. Ils sont h\xE9berg\xE9s dans un d\xE9p\xF4t d\xE9di\xE9 et t\xE9l\xE9charg\xE9s dans votre vault \u2014 aucune donn\xE9e ne quitte Obsidian."
         });
-        el.createEl("p", {
-          text: "Si vous n'avez pas encore de fichier .dict.json, vous pouvez passer cette \xE9tape.",
+        const catalogueEl = el.createDiv("pseudobs-onboarding-catalogue");
+        catalogueEl.createEl("p", { text: "Chargement du catalogue\u2026", cls: "pseudobs-onboarding-hint" });
+        void this.renderCatalogue(catalogueEl);
+        el.createEl("hr");
+        const manualRow = el.createDiv("pseudobs-onboarding-import-row");
+        manualRow.createEl("small", {
+          text: "Vous avez d\xE9j\xE0 un fichier .dict.json ? Importez-le manuellement :",
           cls: "pseudobs-onboarding-hint"
         });
-        const importRow = el.createDiv("pseudobs-onboarding-import-row");
-        const importBtn = importRow.createEl("button", {
-          text: "Importer un dictionnaire (.dict.json)",
+        const importBtn = manualRow.createEl("button", {
+          text: "Importer un fichier local (.dict.json)",
           cls: "pseudobs-onboarding-import-btn"
         });
-        const importStatus = importRow.createSpan({ cls: "pseudobs-onboarding-test-status" });
+        const importStatus = manualRow.createSpan({ cls: "pseudobs-onboarding-test-status" });
         importBtn.addEventListener("click", () => {
           const input = activeDocument.createElement("input");
           input.type = "file";
@@ -254,7 +259,113 @@ var init_OnboardingModal = __esm({
           input.addEventListener("change", () => void this.processDictFiles(input, importStatus));
           input.click();
         });
-        void this.renderDictList(el);
+        void this.renderInstalledDictList(el);
+      }
+      async renderCatalogue(container) {
+        let manifest;
+        try {
+          const res = await (0, import_obsidian.requestUrl)({ url: DICT_MANIFEST_URL, method: "GET" });
+          manifest = res.json;
+        } catch {
+          container.empty();
+          container.createEl("p", {
+            text: "Impossible de contacter le catalogue en ligne. V\xE9rifiez votre connexion ou importez un fichier local ci-dessous.",
+            cls: "pseudobs-onboarding-hint"
+          });
+          return;
+        }
+        container.empty();
+        const scroll = container.createDiv("pseudobs-onboarding-catalogue-scroll");
+        const table = scroll.createEl("table", { cls: "pseudobs-onboarding-dict-table" });
+        const thead = table.createEl("thead");
+        const headerRow = thead.createEl("tr");
+        ["Dictionnaire", "Langue", "R\xF4les", "Taille", ""].forEach(
+          (h) => headerRow.createEl("th", { text: h })
+        );
+        const tbody = table.createEl("tbody");
+        for (const entry of manifest.dictionaries) {
+          this.renderCatalogueRow(tbody, entry);
+        }
+      }
+      renderCatalogueRow(tbody, entry) {
+        const alreadyInstalled = this.isDictInstalled(entry.id);
+        const tr = tbody.createEl("tr");
+        if (alreadyInstalled)
+          tr.addClass("pseudobs-onboarding-dict-row-installed");
+        const nameCell = tr.createEl("td", { cls: "pseudobs-onboarding-dict-name-cell" });
+        nameCell.createEl("span", { text: entry.label });
+        if (entry.recommended) {
+          nameCell.createEl("span", { text: "Recommand\xE9", cls: "pseudobs-onboarding-badge" });
+        }
+        tr.createEl("td", { text: entry.language.toUpperCase() });
+        const roles = [];
+        if (entry.roles.detection)
+          roles.push("d\xE9tection");
+        if (entry.roles.replacement)
+          roles.push("remplacement");
+        if (entry.roles.classes)
+          roles.push("classes");
+        tr.createEl("td", { text: roles.join(" \xB7 "), cls: "pseudobs-onboarding-dict-roles" });
+        tr.createEl("td", { text: this.formatSize(entry.size), cls: "pseudobs-onboarding-dict-size" });
+        const actionCell = tr.createEl("td", { cls: "pseudobs-onboarding-dict-action" });
+        const btn = actionCell.createEl("button", { cls: "pseudobs-onboarding-icon-btn" });
+        btn.setAttribute("aria-label", alreadyInstalled ? "R\xE9installer" : "Installer");
+        (0, import_obsidian.setIcon)(btn, alreadyInstalled ? "cloud-check" : "cloud-download");
+        if (alreadyInstalled)
+          btn.addClass("pseudobs-onboarding-icon-btn-done");
+        btn.addEventListener("click", () => {
+          void (async () => {
+            btn.setAttr("disabled", "true");
+            btn.removeClass("pseudobs-onboarding-icon-btn-done");
+            (0, import_obsidian.setIcon)(btn, "refresh-cw");
+            btn.addClass("pseudobs-onboarding-icon-btn-loading");
+            const ok = await this.downloadDict(entry);
+            btn.removeAttribute("disabled");
+            btn.removeClass("pseudobs-onboarding-icon-btn-loading");
+            if (ok) {
+              (0, import_obsidian.setIcon)(btn, "cloud-check");
+              btn.addClass("pseudobs-onboarding-icon-btn-done");
+              tr.addClass("pseudobs-onboarding-dict-row-installed");
+              void this.plugin.dictionaryLoader.load();
+            } else {
+              (0, import_obsidian.setIcon)(btn, "cloud-download");
+            }
+          })();
+        });
+      }
+      isDictInstalled(id) {
+        const folder = this.plugin.settings.dictionariesFolder;
+        const path5 = `${folder}/${id}.dict.json`;
+        return this.app.vault.getAbstractFileByPath(path5) instanceof import_obsidian.TFile;
+      }
+      async downloadDict(entry) {
+        try {
+          const res = await (0, import_obsidian.requestUrl)({ url: entry.url, method: "GET" });
+          const text = res.text;
+          const parsed = JSON.parse(text);
+          if (!Array.isArray(parsed.entries))
+            throw new Error("Format invalide");
+          await this.plugin.ensureFolder(this.plugin.settings.dictionariesFolder);
+          const dest = `${this.plugin.settings.dictionariesFolder}/${entry.id}.dict.json`;
+          const existing = this.app.vault.getAbstractFileByPath(dest);
+          if (existing instanceof import_obsidian.TFile) {
+            await this.app.vault.modify(existing, text);
+          } else {
+            await this.app.vault.create(dest, text);
+          }
+          this.importedDicts.push(`${entry.id}.dict.json`);
+          return true;
+        } catch (e) {
+          new import_obsidian.Notice(`\xC9chec du t\xE9l\xE9chargement de ${entry.label} : ${e.message}`);
+          return false;
+        }
+      }
+      formatSize(bytes) {
+        if (bytes >= 1e6)
+          return `${(bytes / 1e6).toFixed(1)} Mo`;
+        if (bytes >= 1e3)
+          return `${(bytes / 1e3).toFixed(0)} Ko`;
+        return `${bytes} o`;
       }
       async processDictFiles(input, statusEl) {
         const files = Array.from(input.files ?? []);
@@ -287,6 +398,7 @@ var init_OnboardingModal = __esm({
         if (ok > 0) {
           statusEl.setText(`${ok} dictionnaire${ok > 1 ? "s" : ""} import\xE9${ok > 1 ? "s" : ""}`);
           statusEl.addClass("pseudobs-onboarding-test-ok");
+          void this.plugin.dictionaryLoader.load();
         }
         if (err > 0) {
           statusEl.setText(`${err} fichier${err > 1 ? "s" : ""} rejet\xE9${err > 1 ? "s" : ""}`);
@@ -294,7 +406,7 @@ var init_OnboardingModal = __esm({
         }
         this.scheduleRender();
       }
-      async renderDictList(el) {
+      async renderInstalledDictList(el) {
         const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
         const files = [];
         if (folder && "children" in folder) {
@@ -304,12 +416,10 @@ var init_OnboardingModal = __esm({
             }
           }
         }
-        if (files.length === 0) {
-          el.createEl("p", { text: "Aucun dictionnaire import\xE9.", cls: "pseudobs-onboarding-hint" });
+        if (files.length === 0)
           return;
-        }
         el.createEl("p", {
-          text: `${files.length} dictionnaire${files.length > 1 ? "s" : ""} dans le vault :`,
+          text: `Dictionnaires install\xE9s dans ce vault (${files.length}) :`,
           cls: "pseudobs-onboarding-dict-count"
         });
         const list = el.createEl("ul", { cls: "pseudobs-onboarding-dict-list" });
@@ -321,6 +431,7 @@ var init_OnboardingModal = __esm({
           removeBtn.addEventListener("click", () => {
             void (async () => {
               await this.app.fileManager.trashFile(f);
+              void this.plugin.dictionaryLoader.load();
               this.scheduleRender();
             })();
           });
@@ -31659,7 +31770,7 @@ __export(main_exports, {
   default: () => PseudObsPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 init_settings();
 
 // src/ui/RuleModal.ts
@@ -31756,15 +31867,49 @@ var MappingStore = class _MappingStore {
 
 // src/ui/RuleModal.ts
 var RuleModal = class extends import_obsidian3.Modal {
-  constructor(app, plugin, prefillSource = "", prefillReplacement = "", suggestions = []) {
+  constructor(app, plugin, prefillSource = "", prefillReplacement = "", coulomontSuggestions = []) {
     super(app);
     this.scopeType = "file";
     this.priority = 0;
+    // Suggestions dictionnaire
+    this.useClass = false;
+    this.dictEntryClass = null;
+    this.dictId = null;
     this.plugin = plugin;
     this.source = prefillSource;
     this.replacement = prefillReplacement;
-    this.suggestions = suggestions;
-    this.category = suggestions.length > 0 ? "first_name" : "custom";
+    this.coulomontSuggestions = coulomontSuggestions;
+    this.category = coulomontSuggestions.length > 0 ? "first_name" : "custom";
+    if (prefillSource && coulomontSuggestions.length === 0) {
+      this.resolveDictSuggestion(prefillSource);
+    }
+  }
+  resolveDictSuggestion(value) {
+    const loader = this.plugin.dictionaryLoader;
+    if (!loader)
+      return;
+    const hits = loader.getDetectionHits(value);
+    for (const { entry, dict } of hits) {
+      if (!dict.roles?.replacement)
+        continue;
+      const cls = loader.resolveClass(entry, dict);
+      if (cls) {
+        this.dictEntryClass = cls;
+        this.dictId = dict.dictionaryId;
+        if (this.category === "custom" && dict.type === "place") {
+          this.category = "place";
+        }
+        return;
+      }
+      if (entry.replacement) {
+        this.replacement = entry.replacement;
+        this.dictId = dict.dictionaryId;
+        if (this.category === "custom" && dict.type === "place") {
+          this.category = "place";
+        }
+        return;
+      }
+    }
   }
   onOpen() {
     const { contentEl } = this;
@@ -31775,18 +31920,19 @@ var RuleModal = class extends import_obsidian3.Modal {
       })
     );
     let replacementInput;
-    if (this.suggestions.length > 0) {
+    if (this.coulomontSuggestions.length > 0) {
       const box = contentEl.createDiv();
       box.addClass("pseudobs-suggestions-box");
       box.createEl("small", { text: "Suggestions de pr\xE9noms \xE9quivalents \u2014 choisissez :" }).addClass("pseudobs-suggestions-label");
       const tags = box.createDiv();
       tags.addClass("pseudobs-suggestions-tags");
       const btnEls = [];
-      for (const name2 of this.suggestions) {
+      for (const name2 of this.coulomontSuggestions) {
         const btn = tags.createEl("button", { text: name2 });
         btn.addClass("pseudobs-suggestion-btn");
         btn.addEventListener("click", () => {
           this.replacement = name2;
+          this.useClass = false;
           if (replacementInput)
             replacementInput.value = name2;
           btnEls.forEach((b) => b.removeClass("pseudobs-suggestion-btn-selected"));
@@ -31795,9 +31941,40 @@ var RuleModal = class extends import_obsidian3.Modal {
         btnEls.push(btn);
       }
     }
-    new import_obsidian3.Setting(contentEl).setName("Remplacement").setDesc("Pseudonyme ou cat\xE9gorie analytique").addText((t) => {
-      t.setValue(this.replacement).onChange((v) => {
+    if (this.dictEntryClass && this.dictId) {
+      const dict = this.plugin.dictionaryLoader?.getById(this.dictId);
+      const pattern = dict?.config?.replacementPattern ?? "{class}_{index}";
+      const preview = pattern.replace("{class}", this.dictEntryClass).replace("{index}", "N");
+      const scope = dict?.config?.incrementScope ?? "file";
+      const box = contentEl.createDiv();
+      box.addClass("pseudobs-suggestions-box");
+      const label = box.createEl("small");
+      label.addClass("pseudobs-suggestions-label");
+      label.setText(`Dictionnaire : "${this.source}" \u2192 classe ${this.dictEntryClass}`);
+      const row = box.createDiv();
+      row.addClass("pseudobs-suggestions-tags");
+      const classBtn = row.createEl("button", { text: `Utiliser "${preview}" (port\xE9e : ${scope})` });
+      classBtn.addClass("pseudobs-suggestion-btn");
+      classBtn.addEventListener("click", () => {
+        this.useClass = true;
+        if (replacementInput)
+          replacementInput.value = preview;
+        classBtn.addClass("pseudobs-suggestion-btn-selected");
+      });
+      if (this.coulomontSuggestions.length === 0) {
+        this.useClass = true;
+        if (replacementInput)
+          replacementInput.value = preview;
+        classBtn.addClass("pseudobs-suggestion-btn-selected");
+      }
+    }
+    new import_obsidian3.Setting(contentEl).setName("Remplacement").setDesc(
+      this.dictEntryClass ? "L'index exact sera calcul\xE9 \xE0 la cr\xE9ation selon les r\xE8gles existantes dans la port\xE9e." : "Pseudonyme ou cat\xE9gorie analytique"
+    ).addText((t) => {
+      const preview = this.dictEntryClass ? (this.plugin.dictionaryLoader?.getById(this.dictId ?? "")?.config?.replacementPattern ?? "{class}_{index}").replace("{class}", this.dictEntryClass).replace("{index}", "N") : this.replacement;
+      t.setValue(preview).onChange((v) => {
         this.replacement = v;
+        this.useClass = false;
       });
       replacementInput = t.inputEl;
     });
@@ -31820,7 +31997,7 @@ var RuleModal = class extends import_obsidian3.Modal {
       d.onChange((v) => {
         this.category = v;
       });
-      if (this.suggestions.length > 0) {
+      if (this.coulomontSuggestions.length > 0) {
         const settingItem = d.selectEl.closest(".setting-item");
         if (settingItem instanceof HTMLElement)
           settingItem.hide();
@@ -31841,17 +32018,33 @@ var RuleModal = class extends import_obsidian3.Modal {
       })
     );
     new import_obsidian3.Setting(contentEl).addButton(
-      (btn) => btn.setButtonText("Cr\xE9er la r\xE8gle").setCta().onClick(() => this.createRule())
+      (btn) => btn.setButtonText("Cr\xE9er la r\xE8gle").setCta().onClick(() => void this.createRule())
     );
   }
   async createRule() {
-    if (!this.source.trim() || !this.replacement.trim()) {
-      new import_obsidian3.Notice("La source et le remplacement sont obligatoires.");
+    if (!this.source.trim()) {
+      new import_obsidian3.Notice("La source est obligatoire.");
       return;
     }
     const activeFile = this.app.workspace.getActiveFile();
     if (!activeFile) {
       new import_obsidian3.Notice("Aucun fichier actif.");
+      return;
+    }
+    if (this.useClass && this.dictEntryClass && this.dictId) {
+      const dict = this.plugin.dictionaryLoader?.getById(this.dictId);
+      if (dict) {
+        const incrementScope = dict.config?.incrementScope ?? "file";
+        const existingReplacements = await this.collectExistingReplacements(activeFile, incrementScope);
+        this.replacement = this.plugin.dictionaryLoader.nextReplacement(
+          dict,
+          this.dictEntryClass,
+          existingReplacements
+        );
+      }
+    }
+    if (!this.replacement.trim()) {
+      new import_obsidian3.Notice("Le remplacement est obligatoire.");
       return;
     }
     const mappingPath = `${this.plugin.settings.mappingFolder}/${activeFile.basename}.mapping.json`;
@@ -31872,7 +32065,8 @@ var RuleModal = class extends import_obsidian3.Modal {
       scope: { type: this.scopeType, path: scopePath },
       status: "validated",
       priority: this.priority,
-      createdBy: "user"
+      createdBy: "dictionary",
+      sourceDictionary: this.dictId ?? void 0
     });
     const json = JSON.stringify(store.toJSON(), null, 2);
     if (mappingFile instanceof import_obsidian3.TFile) {
@@ -31883,6 +32077,38 @@ var RuleModal = class extends import_obsidian3.Modal {
     new import_obsidian3.Notice(`\u2713 R\xE8gle cr\xE9\xE9e : "${this.source.trim()}" \u2192 "${this.replacement.trim()}"`);
     void this.plugin.refreshHighlightData();
     this.close();
+  }
+  /**
+   * Collecte les remplacements déjà utilisés dans la portée d'incrémentation du dictionnaire.
+   * Utilisé pour calculer le prochain index de classe ({class}_{N}).
+   */
+  async collectExistingReplacements(activeFile, incrementScope) {
+    const mappingFolder = this.plugin.settings.mappingFolder;
+    let mappingPaths = [];
+    if (incrementScope === "file") {
+      mappingPaths = [`${mappingFolder}/${activeFile.basename}.mapping.json`];
+    } else if (incrementScope === "folder") {
+      const folderName = activeFile.parent?.name ?? "folder";
+      mappingPaths = [`${mappingFolder}/${folderName}.mapping.json`];
+    } else {
+      mappingPaths = [`${mappingFolder}/vault.mapping.json`];
+    }
+    const replacements = [];
+    for (const p of mappingPaths) {
+      const f = this.app.vault.getAbstractFileByPath(p);
+      if (!(f instanceof import_obsidian3.TFile))
+        continue;
+      try {
+        const data = JSON.parse(await this.app.vault.read(f));
+        for (const rule of data.mappings) {
+          if (rule.sourceDictionary === this.dictId && rule.replacement) {
+            replacements.push(rule.replacement);
+          }
+        }
+      } catch {
+      }
+    }
+    return replacements;
   }
   onClose() {
     this.contentEl.empty();
@@ -32186,215 +32412,6 @@ var EditRuleModal = class extends import_obsidian5.Modal {
   }
 };
 
-// src/ui/OccurrencesModal.ts
-var import_obsidian6 = require("obsidian");
-
-// src/pseudonymizer/SpanProtector.ts
-function resolveSpans(candidates) {
-  const sorted = [...candidates].sort((a, b) => {
-    if (b.priority !== a.priority)
-      return b.priority - a.priority;
-    const lenB = b.end - b.start;
-    const lenA = a.end - a.start;
-    if (lenB !== lenA)
-      return lenB - lenA;
-    return a.start - b.start;
-  });
-  const accepted = [];
-  for (const candidate of sorted) {
-    const overlaps = accepted.some(
-      (s) => candidate.start < s.end && candidate.end > s.start
-    );
-    if (!overlaps)
-      accepted.push(candidate);
-  }
-  return accepted.sort((a, b) => b.start - a.start);
-}
-function applySpans(text, spans, marker) {
-  let output = text;
-  for (const span of spans) {
-    const value = marker ? `${marker.open}${span.replacement}${marker.close}` : span.replacement;
-    output = output.slice(0, span.start) + value + output.slice(span.end);
-  }
-  return output;
-}
-
-// src/ui/OccurrencesModal.ts
-var OccurrencesModal = class extends import_obsidian6.Modal {
-  constructor(app, plugin, file, content, occurrences, rules) {
-    super(app);
-    this.decisions = /* @__PURE__ */ new Map();
-    // Références stables — on ne recrée jamais les cartes
-    this.cardRefs = /* @__PURE__ */ new Map();
-    this.plugin = plugin;
-    this.file = file;
-    this.content = content;
-    this.occurrences = occurrences;
-    this.rules = rules;
-    for (const occ of occurrences)
-      this.decisions.set(occ.id, "validated");
-  }
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl("h2", { text: `Scanner \u2014 ${this.file.name}` });
-    const n = this.occurrences.length;
-    contentEl.createEl("p", {
-      text: `${n} occurrence${n > 1 ? "s" : ""} trouv\xE9e${n > 1 ? "s" : ""} pour ${this.countRules()} r\xE8gle${this.countRules() > 1 ? "s" : ""}.`
-    });
-    const legend = contentEl.createDiv();
-    legend.addClass("pseudobs-legend");
-    for (const [icon, label, cls] of [
-      ["\u2713", "Valider le remplacement", "pseudobs-legend-badge-validate"],
-      ["\u2717", "Conserver l'original", "pseudobs-legend-badge-ignore"],
-      ["\u26A0", "Faux positif \u2014 exclure", "pseudobs-legend-badge-fp"]
-    ]) {
-      const item = legend.createSpan();
-      item.addClass("pseudobs-legend-item");
-      const badge = item.createSpan({ text: icon });
-      badge.addClass("pseudobs-legend-badge", cls);
-      item.createSpan({ text: ` ${label}` });
-    }
-    new import_obsidian6.Setting(contentEl).addButton(
-      (b) => b.setButtonText("Tout valider").setClass("pseudobs-btn-validate-all").onClick(() => {
-        for (const occ of this.occurrences)
-          this.decisions.set(occ.id, "validated");
-        this.updateAllCards();
-      })
-    ).addButton(
-      (b) => b.setButtonText("Tout ignorer").setClass("pseudobs-btn-ignore-all").onClick(() => {
-        for (const occ of this.occurrences)
-          this.decisions.set(occ.id, "ignored");
-        this.updateAllCards();
-      })
-    );
-    this.renderAllCards(contentEl);
-    contentEl.createEl("hr");
-    new import_obsidian6.Setting(contentEl).addButton(
-      (b) => b.setButtonText("Appliquer").setCta().onClick(() => this.apply())
-    );
-  }
-  countRules() {
-    return new Set(this.occurrences.map((o) => o.mappingId)).size;
-  }
-  // Construit toutes les cartes une seule fois — ne sera plus jamais appelé après
-  renderAllCards(container) {
-    const byRule = /* @__PURE__ */ new Map();
-    for (const occ of this.occurrences) {
-      const key = occ.mappingId ?? "";
-      if (!byRule.has(key))
-        byRule.set(key, []);
-      byRule.get(key).push(occ);
-    }
-    for (const [mappingId, occs] of byRule) {
-      const rule = this.rules.find((r) => r.id === mappingId);
-      if (!rule)
-        continue;
-      const group = container.createDiv();
-      group.createEl("div", {
-        text: `${rule.source}  \u2192  ${rule.replacement}`,
-        cls: "pseudobs-occ-rule-header"
-      });
-      for (const occ of occs) {
-        this.buildCard(group, occ, rule);
-      }
-    }
-  }
-  buildCard(container, occ, rule) {
-    const card = container.createDiv();
-    card.addClass("pseudobs-occ-card");
-    const srcLine = card.createDiv();
-    srcLine.addClass("pseudobs-occ-line");
-    this.ctxSpan(srcLine, occ.contextBefore);
-    const termSpan = srcLine.createSpan({ text: occ.text });
-    termSpan.addClass("pseudobs-occ-term");
-    this.ctxSpan(srcLine, occ.contextAfter);
-    const arrow = card.createDiv();
-    arrow.addClass("pseudobs-occ-arrow");
-    arrow.setText("\u2193");
-    const resLine = card.createDiv();
-    resLine.addClass("pseudobs-occ-line", "pseudobs-occ-result-line");
-    this.ctxSpan(resLine, occ.contextBefore);
-    const replSpan = resLine.createSpan({ text: rule.replacement });
-    replSpan.addClass("pseudobs-occ-replacement");
-    this.ctxSpan(resLine, occ.contextAfter);
-    const statusLabel = card.createDiv();
-    statusLabel.addClass("pseudobs-occ-status-label");
-    const meta = card.createEl("small");
-    meta.addClass("pseudobs-occ-meta");
-    meta.setText(`ligne ${occ.line}`);
-    const actions = card.createDiv();
-    actions.addClass("pseudobs-occ-actions");
-    const btnRefs = /* @__PURE__ */ new Map();
-    for (const [label, value, title] of [
-      ["\u2713", "validated", "Valider"],
-      ["\u2717", "ignored", "Ignorer"],
-      ["\u26A0", "false_positive", "Faux positif"]
-    ]) {
-      const btn = actions.createEl("button", { text: label });
-      btn.title = title;
-      btn.addClass("pseudobs-occ-btn");
-      btn.addEventListener("click", () => {
-        this.decisions.set(occ.id, value);
-        this.updateCard(occ.id);
-      });
-      btnRefs.set(value, btn);
-    }
-    this.cardRefs.set(occ.id, { card, buttons: btnRefs, arrow, resLine, statusLabel });
-    this.updateCard(occ.id);
-  }
-  // Met à jour UNE carte sans toucher au DOM — styles + résultat en direct
-  updateCard(occId) {
-    const ref = this.cardRefs.get(occId);
-    if (!ref)
-      return;
-    const decision = this.decisions.get(occId) ?? "validated";
-    ref.card.removeClass("pseudobs-occ-validated", "pseudobs-occ-ignored", "pseudobs-occ-false_positive");
-    ref.card.addClass(`pseudobs-occ-${decision}`);
-    for (const [value, btn] of ref.buttons) {
-      btn.toggleClass("pseudobs-occ-btn-active", value === decision);
-    }
-    const show = decision === "validated";
-    ref.arrow.toggle(show);
-    ref.resLine.toggle(show);
-    ref.statusLabel.toggle(!show);
-    const labels = {
-      validated: "",
-      ignored: "Conserv\xE9 tel quel dans ce fichier",
-      false_positive: "Faux positif \u2014 exclu du remplacement"
-    };
-    ref.statusLabel.setText(labels[decision]);
-  }
-  // Met à jour TOUTES les cartes
-  updateAllCards() {
-    for (const occId of this.cardRefs.keys()) {
-      this.updateCard(occId);
-    }
-  }
-  ctxSpan(parent, text) {
-    parent.createSpan({ text, cls: "pseudobs-ctx-side" });
-  }
-  async apply() {
-    const validated = this.occurrences.filter((o) => this.decisions.get(o.id) === "validated");
-    const ignored = this.occurrences.filter((o) => this.decisions.get(o.id) === "ignored");
-    const s = this.plugin.settings;
-    const wrap = (r) => s.useMarkerInExport ? `${s.markerOpen}${r}${s.markerClose}` : r;
-    const spans = validated.map((occ) => {
-      const rule = this.rules.find((r) => r.id === occ.mappingId);
-      return { start: occ.start, end: occ.end, source: occ.text, replacement: wrap(rule.replacement), mappingId: occ.mappingId ?? "", priority: rule.priority };
-    });
-    const updated = applySpans(this.content, resolveSpans(spans));
-    await this.app.vault.modify(this.file, updated);
-    await this.plugin.updateMappingStatuses(this.file.path, this.rules, this.occurrences, this.decisions);
-    const nv = validated.length, ni = ignored.length;
-    new import_obsidian6.Notice(`\u2713 ${nv} remplacement${nv > 1 ? "s" : ""} appliqu\xE9${nv > 1 ? "s" : ""}` + (ni > 0 ? `, ${ni} ignor\xE9${ni > 1 ? "s" : ""}` : ""));
-    void this.plugin.refreshHighlightData();
-    this.close();
-  }
-  onClose() {
-    this.contentEl.empty();
-  }
-};
-
 // src/ui/PseudonymizationView.ts
 var import_obsidian7 = require("obsidian");
 
@@ -32494,6 +32511,135 @@ function scanOccurrences(content, filePath, rules, settings = DEFAULT_PLANNER_SE
   return occurrences.sort((a, b) => a.start - b.start);
 }
 
+// src/ui/MappingScanReviewModal.ts
+var import_obsidian6 = require("obsidian");
+
+// src/pseudonymizer/SpanProtector.ts
+function resolveSpans(candidates) {
+  const sorted = [...candidates].sort((a, b) => {
+    if (b.priority !== a.priority)
+      return b.priority - a.priority;
+    const lenB = b.end - b.start;
+    const lenA = a.end - a.start;
+    if (lenB !== lenA)
+      return lenB - lenA;
+    return a.start - b.start;
+  });
+  const accepted = [];
+  for (const candidate of sorted) {
+    const overlaps = accepted.some(
+      (s) => candidate.start < s.end && candidate.end > s.start
+    );
+    if (!overlaps)
+      accepted.push(candidate);
+  }
+  return accepted.sort((a, b) => b.start - a.start);
+}
+function applySpans(text, spans, marker) {
+  let output = text;
+  for (const span of spans) {
+    const value = marker ? `${marker.open}${span.replacement}${marker.close}` : span.replacement;
+    output = output.slice(0, span.start) + value + output.slice(span.end);
+  }
+  return output;
+}
+
+// src/ui/MappingScanReviewModal.ts
+var MappingScanReviewModal = class extends import_obsidian6.Modal {
+  constructor(app, plugin, file, content, ruleResults) {
+    super(app);
+    this.plugin = plugin;
+    this.file = file;
+    this.content = content;
+    this.ruleResults = ruleResults;
+    this.checked = ruleResults.map(() => true);
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.addClass("pseudobs-dict-review-modal");
+    contentEl.createEl("h2", { text: "R\xE9vision du scan \u2014 mappings" });
+    contentEl.createEl("p", {
+      text: `${this.ruleResults.length} r\xE8gle${this.ruleResults.length > 1 ? "s" : ""} active${this.ruleResults.length > 1 ? "s" : ""} avec des occurrences dans "${this.file.name}"`,
+      cls: "pseudobs-scan-summary"
+    });
+    contentEl.createEl("p", {
+      text: "D\xE9cochez les r\xE8gles \xE0 ne pas appliquer. Les remplacements seront \xE9crits dans le fichier source.",
+      cls: "pseudobs-view-hint"
+    });
+    const scroll = contentEl.createDiv("pseudobs-dict-review-scroll");
+    const table = scroll.createEl("table", { cls: "pseudobs-dict-review-table" });
+    const thead = table.createEl("thead");
+    const hr = thead.createEl("tr");
+    ["", "Source", "", "Remplacement", "Occ."].forEach(
+      (h) => hr.createEl("th", { text: h })
+    );
+    const tbody = table.createEl("tbody");
+    this.ruleResults.forEach(({ rule, matchCount }, i2) => {
+      const tr = tbody.createEl("tr", { cls: "pseudobs-dict-review-row" });
+      const cb = tr.createEl("td").createEl("input");
+      cb.type = "checkbox";
+      cb.checked = true;
+      cb.addClass("pseudobs-dict-review-cb");
+      cb.addEventListener("change", () => {
+        this.checked[i2] = cb.checked;
+        tr.toggleClass("pseudobs-dict-review-row-off", !cb.checked);
+        this.updateApplyLabel();
+      });
+      tr.createEl("td", { text: rule.source, cls: "pseudobs-dict-review-term" });
+      tr.createEl("td", { text: "\u2192", cls: "pseudobs-dict-review-arrow" });
+      const repCell = tr.createEl("td");
+      const s = this.plugin.settings;
+      const displayRep = s.useMarkerInExport ? `${s.markerOpen}${rule.replacement}${s.markerClose}` : rule.replacement;
+      repCell.createEl("span", { text: displayRep, cls: "pseudobs-dict-review-rep-static" });
+      tr.createEl("td", { text: String(matchCount), cls: "pseudobs-dict-review-count" });
+    });
+    const footer = contentEl.createDiv("pseudobs-dict-review-footer");
+    footer.createEl("button", { text: "Annuler" }).addEventListener("click", () => this.close());
+    this.applyBtn = footer.createEl("button", { cls: "mod-cta" });
+    this.applyBtn.addEventListener("click", () => void this.apply());
+    this.updateApplyLabel();
+  }
+  updateApplyLabel() {
+    const n = this.checked.filter(Boolean).length;
+    const total = this.ruleResults.filter((_, i2) => this.checked[i2]).reduce((sum, r) => sum + r.matchCount, 0);
+    this.applyBtn.textContent = n === 0 ? "Aucune r\xE8gle \xE0 appliquer" : `Pseudonymiser (${n} r\xE8gle${n > 1 ? "s" : ""}, ${total} occurrence${total > 1 ? "s" : ""})`;
+    this.applyBtn.toggleClass("pseudobs-dict-review-btn-empty", n === 0);
+  }
+  async apply() {
+    const checkedRules = this.ruleResults.filter((_, i2) => this.checked[i2]).map((r) => r.rule);
+    if (checkedRules.length === 0) {
+      this.close();
+      return;
+    }
+    this.applyBtn.setAttr("disabled", "true");
+    const s = this.plugin.settings;
+    const marker = s.useMarkerInExport ? { open: s.markerOpen, close: s.markerClose } : void 0;
+    const allSpans = checkedRules.flatMap(
+      (rule) => findSpansForRule(this.content, rule, {
+        caseSensitive: s.caseSensitive,
+        wholeWordOnly: s.wholeWordOnly
+      }).map(
+        (span) => marker ? { ...span, replacement: `${marker.open}${span.replacement}${marker.close}` } : span
+      )
+    );
+    const resolved = resolveSpans(allSpans);
+    if (resolved.length === 0) {
+      new import_obsidian6.Notice("Aucune occurrence \xE0 remplacer.");
+      this.close();
+      return;
+    }
+    const modified = applySpans(this.content, resolved);
+    await this.app.vault.modify(this.file, modified);
+    void this.plugin.refreshHighlightData();
+    const total = resolved.length;
+    new import_obsidian6.Notice(`\u2713 ${total} occurrence${total > 1 ? "s" : ""} pseudonymis\xE9e${total > 1 ? "s" : ""} dans "${this.file.name}"`);
+    this.close();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
 // src/ui/PseudonymizationView.ts
 var VIEW_TYPE_PSEUDOBS = "pseudonymization-view";
 var CATEGORY_LABELS = {
@@ -32524,19 +32670,13 @@ var STATUS_LABELS = {
 var PseudonymizationView = class extends import_obsidian7.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
-    this.activeTab = "occurrences";
+    this.activeTab = "mappings";
     // Dernier fichier markdown connu (survit au focus du panneau)
     this.lastFile = null;
+    // IDs des dictionnaires cochés pour le scan groupé (tous cochés par défaut)
+    this.checkedDicts = /* @__PURE__ */ new Set();
     // Garde contre la réentrance de onFileChange (le panneau lui-même peut devenir feuille active)
     this._renderingTab = false;
-    // État de l'onglet Occurrences
-    this.occScanned = false;
-    this.occFile = null;
-    this.occContent = "";
-    this.occurrences = [];
-    this.occRules = [];
-    this.occDecisions = /* @__PURE__ */ new Map();
-    this.occCardRefs = /* @__PURE__ */ new Map();
     this.plugin = plugin;
   }
   getViewType() {
@@ -32555,7 +32695,6 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     const tabBar = root.createDiv("pseudobs-view-tabs");
     const content = root.createDiv("pseudobs-view-content");
     const tabs = [
-      ["occurrences", "Candidats"],
       ["mappings", "Mappings"],
       ["dictionaries", "Dictionnaires"],
       ["exports", "Exports"]
@@ -32578,7 +32717,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     const f = this.app.workspace.getActiveFile();
     if (f)
       this.lastFile = f;
-    await this.switchTab("occurrences");
+    await this.switchTab("mappings");
   }
   async switchTab(tab) {
     this.activeTab = tab;
@@ -32593,9 +32732,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
   async renderTab(tab) {
     const pane = this.panes[tab];
     pane.empty();
-    if (tab === "occurrences")
-      await this.renderOccurrencesTab(pane);
-    else if (tab === "mappings")
+    if (tab === "mappings")
       await this.renderMappingsTab(pane);
     else if (tab === "dictionaries")
       await this.renderDictionariesTab(pane);
@@ -32610,15 +32747,8 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     if (this.app.workspace.getActiveViewOfType(import_obsidian7.ItemView) === this)
       return;
     const f = this.app.workspace.getActiveFile();
-    if (f && f !== this.lastFile) {
+    if (f)
       this.lastFile = f;
-      this.occScanned = false;
-      this.occurrences = [];
-      this.occDecisions = /* @__PURE__ */ new Map();
-      this.occCardRefs = /* @__PURE__ */ new Map();
-    } else if (f) {
-      this.lastFile = f;
-    }
     this._renderingTab = true;
     try {
       await this.renderTab(this.activeTab);
@@ -32629,237 +32759,53 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
   getFile() {
     return this.app.workspace.getActiveFile() ?? this.lastFile;
   }
-  // ---- Onglet Occurrences ----------------------------------------
-  async renderOccurrencesTab(el) {
+  // ---- Onglet Mappings -------------------------------------------
+  async renderMappingsTab(el) {
     const file = this.getFile();
-    if (!file) {
-      el.createEl("p", { text: "Aucun fichier actif.", cls: "pseudobs-view-hint" });
-      return;
-    }
-    const ext = file.extension.toLowerCase();
-    if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      el.createEl("p", {
-        text: `Format non pris en charge : .${ext}`,
-        cls: "pseudobs-view-hint"
-      });
-      return;
-    }
     const toolbar = el.createDiv("pseudobs-view-toolbar");
-    const scanBtn = toolbar.createEl("button", {
-      text: "Scanner le fichier",
-      cls: "pseudobs-view-action-btn"
-    });
-    if (this.plugin.settings.nerBackend !== "none") {
-      const nerBtn = toolbar.createEl("button", {
-        text: "Identifier des candidats",
-        cls: "pseudobs-view-action-btn"
-      });
-      nerBtn.title = "D\xE9tecter les entit\xE9s nomm\xE9es identifiantes (NER) et les surligner en bleu";
-      nerBtn.addEventListener("click", () => void this.plugin.scanCurrentFileNer());
-    }
-    const resultsEl = el.createDiv("pseudobs-view-results");
-    if (this.occScanned && this.occFile === file) {
-      this.occCardRefs = /* @__PURE__ */ new Map();
-      this.renderOccurrenceCards(resultsEl);
-    } else {
-      resultsEl.createEl("p", { text: `Fichier : ${file.name}`, cls: "pseudobs-view-filename" });
-      resultsEl.createEl("p", {
-        text: 'Cliquez sur "scanner le fichier" pour d\xE9tecter les occurrences des r\xE8gles actives.',
-        cls: "pseudobs-view-hint"
-      });
-    }
+    const addRuleBtn = toolbar.createEl("button", { cls: "pseudobs-view-action-btn" });
+    (0, import_obsidian7.setIcon)(addRuleBtn, "list-plus");
+    addRuleBtn.createSpan({ text: "Ajouter une r\xE8gle" });
+    addRuleBtn.addEventListener("click", () => new RuleModal(this.app, this.plugin).open());
+    const scanBtn = toolbar.createEl("button", { cls: "pseudobs-view-action-btn" });
+    (0, import_obsidian7.setIcon)(scanBtn, "scan-search");
+    scanBtn.createSpan({ text: "Scanner le fichier" });
+    if (!file)
+      scanBtn.setAttr("disabled", "true");
     scanBtn.addEventListener("click", () => {
       void (async () => {
+        if (!file)
+          return;
         scanBtn.setAttr("disabled", "true");
         scanBtn.setText("Scan en cours\u2026");
         try {
           const content = await this.app.vault.read(file);
           const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
-          resultsEl.empty();
           if (rules.length === 0) {
-            resultsEl.createEl("p", {
-              text: 'Aucune r\xE8gle active pour ce fichier. Cr\xE9ez des r\xE8gles via le menu contextuel ou la commande "cr\xE9er une r\xE8gle".',
-              cls: "pseudobs-view-hint"
-            });
-          } else {
-            const occs = scanOccurrences(content, file.path, rules, {
-              caseSensitive: this.plugin.settings.caseSensitive,
-              wholeWordOnly: this.plugin.settings.wholeWordOnly
-            });
-            this.occFile = file;
-            this.occContent = content;
-            this.occurrences = occs;
-            this.occRules = rules;
-            this.occDecisions = /* @__PURE__ */ new Map();
-            this.occCardRefs = /* @__PURE__ */ new Map();
-            for (const occ of occs)
-              this.occDecisions.set(occ.id, "validated");
-            this.occScanned = true;
-            this.renderOccurrenceCards(resultsEl);
+            new import_obsidian7.Notice("Aucune r\xE8gle active pour ce fichier. Cr\xE9ez des r\xE8gles via le menu contextuel.");
+            return;
           }
+          const occs = scanOccurrences(content, file.path, rules, {
+            caseSensitive: this.plugin.settings.caseSensitive,
+            wholeWordOnly: this.plugin.settings.wholeWordOnly
+          });
+          const countByRule = /* @__PURE__ */ new Map();
+          for (const occ of occs) {
+            const id = occ.mappingId ?? "";
+            countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+          }
+          const ruleResults = rules.filter((r) => countByRule.has(r.id)).map((r) => ({ rule: r, matchCount: countByRule.get(r.id) }));
+          if (ruleResults.length === 0) {
+            new import_obsidian7.Notice("Aucune occurrence trouv\xE9e pour les r\xE8gles actives.");
+            return;
+          }
+          new MappingScanReviewModal(this.app, this.plugin, file, content, ruleResults).open();
         } finally {
           scanBtn.removeAttribute("disabled");
           scanBtn.setText("Scanner le fichier");
         }
       })();
     });
-  }
-  renderOccurrenceCards(el) {
-    if (this.occurrences.length === 0) {
-      el.createEl("p", {
-        text: "Aucune occurrence trouv\xE9e avec les r\xE8gles actives.",
-        cls: "pseudobs-view-hint"
-      });
-      return;
-    }
-    const n = this.occurrences.length;
-    const nR = new Set(this.occurrences.map((o) => o.mappingId)).size;
-    el.createEl("p", {
-      text: `${n} occurrence${n > 1 ? "s" : ""} \u2014 ${nR} r\xE8gle${nR > 1 ? "s" : ""}`,
-      cls: "pseudobs-view-count"
-    });
-    const legend = el.createDiv();
-    legend.addClass("pseudobs-legend");
-    for (const [icon, label, cls] of [
-      ["\u2713", "Valider", "pseudobs-legend-badge-validate"],
-      ["\u2717", "Conserver", "pseudobs-legend-badge-ignore"],
-      ["\u26A0", "Faux positif", "pseudobs-legend-badge-fp"]
-    ]) {
-      const item = legend.createSpan();
-      item.addClass("pseudobs-legend-item");
-      item.createSpan({ text: icon }).addClass("pseudobs-legend-badge", cls);
-      item.createSpan({ text: ` ${label}` });
-    }
-    const globalBtns = el.createDiv("pseudobs-view-global-btns");
-    globalBtns.createEl("button", { text: "Tout valider", cls: "pseudobs-btn-validate-all" }).addEventListener("click", () => {
-      for (const occ of this.occurrences)
-        this.occDecisions.set(occ.id, "validated");
-      for (const id of this.occCardRefs.keys())
-        this.updateCard(id);
-    });
-    globalBtns.createEl("button", { text: "Tout ignorer", cls: "pseudobs-btn-ignore-all" }).addEventListener("click", () => {
-      for (const occ of this.occurrences)
-        this.occDecisions.set(occ.id, "ignored");
-      for (const id of this.occCardRefs.keys())
-        this.updateCard(id);
-    });
-    const byRule = /* @__PURE__ */ new Map();
-    for (const occ of this.occurrences) {
-      const k = occ.mappingId ?? "";
-      if (!byRule.has(k))
-        byRule.set(k, []);
-      byRule.get(k).push(occ);
-    }
-    for (const [mid, occs] of byRule) {
-      const rule = this.occRules.find((r) => r.id === mid);
-      if (!rule)
-        continue;
-      el.createDiv({
-        text: `${rule.source}  \u2192  ${rule.replacement}`,
-        cls: "pseudobs-occ-rule-header"
-      });
-      for (const occ of occs)
-        this.buildCard(el, occ, rule);
-    }
-    el.createEl("hr");
-    el.createEl("button", {
-      text: "Appliquer les remplacements",
-      cls: "pseudobs-view-apply-btn"
-    }).addEventListener("click", () => void this.applyOccurrences());
-  }
-  buildCard(container, occ, rule) {
-    const card = container.createDiv("pseudobs-occ-card");
-    const srcLine = card.createDiv();
-    srcLine.addClass("pseudobs-occ-line");
-    srcLine.createSpan({ text: occ.contextBefore, cls: "pseudobs-ctx-side" });
-    srcLine.createSpan({ text: occ.text, cls: "pseudobs-occ-term" });
-    srcLine.createSpan({ text: occ.contextAfter, cls: "pseudobs-ctx-side" });
-    const arrow = card.createDiv({ text: "\u2193" });
-    arrow.addClass("pseudobs-occ-arrow");
-    const resLine = card.createDiv();
-    resLine.addClass("pseudobs-occ-line", "pseudobs-occ-result-line");
-    resLine.createSpan({ text: occ.contextBefore, cls: "pseudobs-ctx-side" });
-    resLine.createSpan({ text: rule.replacement, cls: "pseudobs-occ-replacement" });
-    resLine.createSpan({ text: occ.contextAfter, cls: "pseudobs-ctx-side" });
-    const statusLabel = card.createDiv();
-    statusLabel.addClass("pseudobs-occ-status-label");
-    card.createEl("small", { text: `ligne ${occ.line}`, cls: "pseudobs-occ-meta" });
-    const actions = card.createDiv("pseudobs-occ-actions");
-    const btnRefs = /* @__PURE__ */ new Map();
-    for (const [label, value, title] of [
-      ["\u2713", "validated", "Valider"],
-      ["\u2717", "ignored", "Ignorer"],
-      ["\u26A0", "false_positive", "Faux positif"]
-    ]) {
-      const btn = actions.createEl("button", { text: label });
-      btn.title = title;
-      btn.addClass("pseudobs-occ-btn");
-      btn.addEventListener("click", () => {
-        this.occDecisions.set(occ.id, value);
-        this.updateCard(occ.id);
-      });
-      btnRefs.set(value, btn);
-    }
-    this.occCardRefs.set(occ.id, { card, buttons: btnRefs, arrow, resLine, statusLabel });
-    this.updateCard(occ.id);
-  }
-  updateCard(occId) {
-    const ref = this.occCardRefs.get(occId);
-    if (!ref)
-      return;
-    const decision = this.occDecisions.get(occId) ?? "validated";
-    ref.card.removeClass("pseudobs-occ-validated", "pseudobs-occ-ignored", "pseudobs-occ-false_positive");
-    ref.card.addClass(`pseudobs-occ-${decision}`);
-    for (const [value, btn] of ref.buttons) {
-      btn.toggleClass("pseudobs-occ-btn-active", value === decision);
-    }
-    const show = decision === "validated";
-    ref.arrow.toggle(show);
-    ref.resLine.toggle(show);
-    ref.statusLabel.toggle(!show);
-    const labels = {
-      validated: "",
-      ignored: "Conserv\xE9 tel quel",
-      false_positive: "Faux positif \u2014 exclu"
-    };
-    ref.statusLabel.setText(labels[decision]);
-  }
-  async applyOccurrences() {
-    if (!this.occFile)
-      return;
-    const s = this.plugin.settings;
-    const wrap = (r) => s.useMarkerInExport ? `${s.markerOpen}${r}${s.markerClose}` : r;
-    const validated = this.occurrences.filter((o) => this.occDecisions.get(o.id) === "validated");
-    const spans = validated.map((occ) => {
-      const rule = this.occRules.find((r) => r.id === occ.mappingId);
-      return {
-        start: occ.start,
-        end: occ.end,
-        source: occ.text,
-        replacement: wrap(rule.replacement),
-        mappingId: occ.mappingId ?? "",
-        priority: rule.priority
-      };
-    });
-    const updated = applySpans(this.occContent, resolveSpans(spans));
-    await this.app.vault.modify(this.occFile, updated);
-    await this.plugin.updateMappingStatuses(
-      this.occFile.path,
-      this.occRules,
-      this.occurrences,
-      this.occDecisions
-    );
-    const nv = validated.length;
-    new import_obsidian7.Notice(`\u2713 ${nv} remplacement${nv > 1 ? "s" : ""} appliqu\xE9${nv > 1 ? "s" : ""}`);
-    this.occScanned = false;
-    void this.plugin.refreshHighlightData();
-    await this.renderTab("occurrences");
-  }
-  // ---- Onglet Mappings -------------------------------------------
-  async renderMappingsTab(el) {
-    const toolbar = el.createDiv("pseudobs-view-toolbar");
-    toolbar.createEl("button", { text: "Ajouter une r\xE8gle", cls: "pseudobs-view-add-btn" }).addEventListener("click", () => new RuleModal(this.app, this.plugin).open());
-    const file = this.getFile();
     if (!file) {
       el.createEl("p", { text: "Aucun fichier actif.", cls: "pseudobs-view-hint" });
       return;
@@ -32884,22 +32830,84 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       row.createEl("td", { text: SCOPE_LABELS[rule.scope.type] ?? rule.scope.type });
       row.createEl("td", { text: String(rule.priority) });
       row.createEl("td", { text: STATUS_LABELS[rule.status] ?? rule.status });
-      const editBtn = row.createEl("td").createEl("button", {
-        text: "\u270E",
-        cls: "pseudobs-mappings-edit-btn"
-      });
+      const editBtn = row.createEl("td").createEl("button", { cls: "pseudobs-mappings-edit-btn" });
+      (0, import_obsidian7.setIcon)(editBtn, "pencil");
       editBtn.title = "Modifier";
       editBtn.addEventListener("click", () => new EditRuleModal(this.app, this.plugin, loc).open());
     }
   }
   // ---- Onglet Dictionnaires --------------------------------------
   async renderDictionariesTab(el) {
-    const toolbar = el.createDiv("pseudobs-view-toolbar");
-    const importBtn = toolbar.createEl("button", {
-      text: "Importer un dictionnaire (.dict.json)",
+    const dicts = this.plugin.dictionaryLoader.getAll();
+    if (this.checkedDicts.size === 0 && dicts.length > 0) {
+      dicts.forEach((d) => this.checkedDicts.add(d.dictionaryId));
+    }
+    if (dicts.length === 0) {
+      el.createEl("p", {
+        text: "Aucun dictionnaire install\xE9. Installez-en un depuis le wizard (Param\xE8tres \u2192 Reconfigurer) ou importez un fichier local.",
+        cls: "pseudobs-view-hint"
+      });
+    } else {
+      for (const dict of dicts) {
+        const card = el.createDiv("pseudobs-dict-card");
+        const checkbox = card.createEl("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = this.checkedDicts.has(dict.dictionaryId);
+        checkbox.addClass("pseudobs-dict-card-checkbox");
+        checkbox.title = "Inclure dans le scan group\xE9";
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked)
+            this.checkedDicts.add(dict.dictionaryId);
+          else
+            this.checkedDicts.delete(dict.dictionaryId);
+        });
+        const info = card.createDiv("pseudobs-dict-card-info");
+        info.createEl("strong", { text: dict.label, cls: "pseudobs-dict-card-title" });
+        info.createEl("small", { text: `${dict.dictionaryId}.dict.json`, cls: "pseudobs-dict-card-filename" });
+        if (dict.roles?.detection) {
+          const scanBtn = card.createEl("button", { cls: "pseudobs-dict-card-scan mod-cta" });
+          (0, import_obsidian7.setIcon)(scanBtn, "scan-search");
+          scanBtn.setAttribute("aria-label", `Scanner avec ${dict.label}`);
+          scanBtn.title = `Scanner le fichier actif avec "${dict.label}"`;
+          scanBtn.addEventListener("click", () => {
+            void this.plugin.scanCurrentFileWithDictionaries([dict.dictionaryId]);
+          });
+        }
+        const removeBtn = card.createEl("button", { cls: "pseudobs-dict-card-remove" });
+        (0, import_obsidian7.setIcon)(removeBtn, "trash-2");
+        removeBtn.setAttribute("aria-label", "Supprimer ce dictionnaire");
+        removeBtn.title = "Supprimer ce dictionnaire du vault";
+        removeBtn.addEventListener("click", () => {
+          void (async () => {
+            const f = this.app.vault.getAbstractFileByPath(
+              `${this.plugin.settings.dictionariesFolder}/${dict.dictionaryId}.dict.json`
+            );
+            if (f instanceof import_obsidian7.TFile)
+              await this.app.fileManager.trashFile(f);
+            this.checkedDicts.delete(dict.dictionaryId);
+            await this.plugin.dictionaryLoader.load();
+            await this.renderTab("dictionaries");
+          })();
+        });
+      }
+      el.createEl("hr");
+      const groupScanBtn = el.createEl("button", { cls: "pseudobs-dict-group-scan mod-cta" });
+      (0, import_obsidian7.setIcon)(groupScanBtn, "scan-search");
+      groupScanBtn.createSpan({ text: "Scanner les dictionnaires coch\xE9s" });
+      groupScanBtn.addEventListener("click", () => {
+        const ids = [...this.checkedDicts];
+        if (ids.length === 0) {
+          new import_obsidian7.Notice("Aucun dictionnaire coch\xE9.");
+          return;
+        }
+        void this.plugin.scanCurrentFileWithDictionaries(ids);
+      });
+    }
+    el.createEl("hr");
+    const importBtn = el.createEl("button", {
+      text: "Importer un fichier local (.dict.json)",
       cls: "pseudobs-view-add-btn"
     });
-    const statusEl = toolbar.createSpan({ cls: "pseudobs-view-dict-status" });
     importBtn.addEventListener("click", () => {
       const input = activeDocument.createElement("input");
       input.type = "file";
@@ -32909,13 +32917,13 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       activeDocument.body.appendChild(input);
       input.addEventListener("change", () => {
         void (async () => {
-          const files2 = Array.from(input.files ?? []);
+          const files = Array.from(input.files ?? []);
           input.remove();
-          if (files2.length === 0)
+          if (files.length === 0)
             return;
           await this.plugin.ensureFolder(this.plugin.settings.dictionariesFolder);
           let ok = 0;
-          for (const f of files2) {
+          for (const f of files) {
             try {
               const text = await f.text();
               const parsed = JSON.parse(text);
@@ -32933,50 +32941,15 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
               new import_obsidian7.Notice(`Format invalide : ${f.name}`);
             }
           }
-          if (ok > 0)
+          if (ok > 0) {
             new import_obsidian7.Notice(`\u2713 ${ok} dictionnaire${ok > 1 ? "s" : ""} import\xE9${ok > 1 ? "s" : ""}`);
+            await this.plugin.dictionaryLoader.load();
+          }
           await this.renderTab("dictionaries");
         })();
       });
       input.click();
     });
-    const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
-    const files = [];
-    if (folder && "children" in folder) {
-      for (const child of folder.children) {
-        if (child instanceof import_obsidian7.TFile && child.name.endsWith(".json"))
-          files.push(child);
-      }
-    }
-    if (files.length === 0) {
-      el.createEl("p", { text: "Aucun dictionnaire import\xE9.", cls: "pseudobs-view-hint" });
-      return;
-    }
-    el.createEl("p", {
-      text: `${files.length} dictionnaire${files.length > 1 ? "s" : ""} charg\xE9${files.length > 1 ? "s" : ""} :`,
-      cls: "pseudobs-view-count"
-    });
-    const list = el.createEl("ul", { cls: "pseudobs-dict-list" });
-    for (const f of files) {
-      let entryCount = "?";
-      try {
-        const raw = await this.app.vault.read(f);
-        const parsed = JSON.parse(raw);
-        entryCount = String(parsed.entries?.length ?? 0);
-      } catch {
-      }
-      const li = list.createEl("li", { cls: "pseudobs-dict-item" });
-      li.createSpan({ text: f.basename, cls: "pseudobs-dict-name" });
-      li.createSpan({ text: `${entryCount} entr\xE9es`, cls: "pseudobs-dict-count" });
-      const removeBtn = li.createEl("button", { text: "\u2715", cls: "pseudobs-dict-remove" });
-      removeBtn.title = "Supprimer ce dictionnaire";
-      removeBtn.addEventListener("click", () => {
-        void (async () => {
-          await this.app.fileManager.trashFile(f);
-          await this.renderTab("dictionaries");
-        })();
-      });
-    }
   }
   // ---- Onglet Exports --------------------------------------------
   renderExportsTab(el) {
@@ -33000,6 +32973,12 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
   // ---- Onglet NER ---------------------------------------------------
   async renderNerTab(el) {
     const s = this.plugin.settings;
+    const nerScanBtn = el.createEl("button", { cls: "pseudobs-view-action-btn mod-cta" });
+    (0, import_obsidian7.setIcon)(nerScanBtn, "scan-search");
+    nerScanBtn.createSpan({ text: "Identifier des candidats" });
+    nerScanBtn.title = "D\xE9tecter les entit\xE9s nomm\xE9es dans le fichier actif et les surligner en bleu";
+    nerScanBtn.addEventListener("click", () => void this.plugin.scanCurrentFileNer());
+    el.createEl("hr");
     el.createEl("p", {
       text: "Param\xE8tres du scanner de d\xE9tection automatique des entit\xE9s nomm\xE9es.",
       cls: "pseudobs-view-hint"
@@ -33057,10 +33036,9 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
         }, 2e3);
       })();
     });
-    const resetBtn = fwSection.createEl("button", {
-      text: "R\xE9initialiser par d\xE9faut",
-      cls: "pseudobs-view-action-btn"
-    });
+    const resetBtn = fwSection.createEl("button", { cls: "pseudobs-view-action-btn" });
+    (0, import_obsidian7.setIcon)(resetBtn, "rotate-ccw");
+    resetBtn.createSpan({ text: "R\xE9initialiser par d\xE9faut" });
     resetBtn.addClass("pseudobs-ner-reset-btn");
     resetBtn.addEventListener("click", () => {
       void (async () => {
@@ -33213,6 +33191,517 @@ var OnnxNerScanner = class {
   }
 };
 
+// src/dictionaries/DictionaryLoader.ts
+var MAX_NGRAM = 4;
+var _dictScanCounter = 0;
+var DictionaryLoader = class {
+  constructor(app, plugin) {
+    this.app = app;
+    this.plugin = plugin;
+    this.dictionaries = [];
+    // clé : valeur normalisée → toutes les entrées de détection correspondantes
+    this.detectionIndex = /* @__PURE__ */ new Map();
+  }
+  // --- Chargement ---
+  async load() {
+    this.dictionaries = [];
+    this.detectionIndex.clear();
+    const loaded = await this.readDictFilesFrom(this.plugin.settings.dictionariesFolder);
+    this.dictionaries = loaded;
+    this.buildDetectionIndex();
+  }
+  async readDictFilesFrom(dir) {
+    const result = [];
+    try {
+      const listing = await this.app.vault.adapter.list(dir);
+      for (const filePath of listing.files) {
+        if (!filePath.endsWith(".dict.json"))
+          continue;
+        try {
+          const raw = await this.app.vault.adapter.read(filePath);
+          const dict = JSON.parse(raw);
+          if (dict.dictionaryId && Array.isArray(dict.entries)) {
+            result.push(dict);
+          }
+        } catch {
+        }
+      }
+    } catch {
+    }
+    return result;
+  }
+  buildDetectionIndex() {
+    for (const dict of this.dictionaries) {
+      if (!dict.roles?.detection)
+        continue;
+      const cs = dict.config?.caseSensitive ?? false;
+      const strip = dict.config?.stripPrefix ?? [];
+      for (const entry of dict.entries) {
+        const key = this.normalizeKey(entry.value, cs, strip);
+        const hits = this.detectionIndex.get(key) ?? [];
+        hits.push({ entry, dict });
+        this.detectionIndex.set(key, hits);
+      }
+    }
+  }
+  normalizeKey(value, caseSensitive, stripPrefix) {
+    let v = value;
+    for (const prefix of stripPrefix) {
+      if (v.startsWith(prefix)) {
+        v = v.slice(prefix.length);
+        break;
+      }
+    }
+    return caseSensitive ? v : v.toLowerCase();
+  }
+  // --- Détection ---
+  contains(value) {
+    for (const dict of this.dictionaries) {
+      if (!dict.roles?.detection)
+        continue;
+      const cs = dict.config?.caseSensitive ?? false;
+      const strip = dict.config?.stripPrefix ?? [];
+      const key = this.normalizeKey(value, cs, strip);
+      if (this.detectionIndex.has(key))
+        return true;
+    }
+    return false;
+  }
+  getDetectionHits(value) {
+    const all = [];
+    for (const dict of this.dictionaries) {
+      if (!dict.roles?.detection)
+        continue;
+      const cs = dict.config?.caseSensitive ?? false;
+      const strip = dict.config?.stripPrefix ?? [];
+      const key = this.normalizeKey(value, cs, strip);
+      const hits = this.detectionIndex.get(key);
+      if (hits)
+        all.push(...hits);
+    }
+    return all;
+  }
+  // --- Classification et remplacement ---
+  /**
+   * Résout la classe d'une entrée selon le classificationMode du dictionnaire.
+   * Retourne null si aucune classe n'est trouvée ou si le dictionnaire n'utilise pas les classes.
+   */
+  resolveClass(entry, dict) {
+    if (!dict.roles?.classes || !dict.config)
+      return null;
+    const { classificationMode, conditions, patterns } = dict.config;
+    if (classificationMode === "conditions" && conditions) {
+      return this.resolveByConditions(entry, conditions);
+    }
+    if (classificationMode === "regex" && patterns) {
+      return this.resolveByRegex(entry.value, patterns, dict.config);
+    }
+    return null;
+  }
+  resolveByConditions(entry, conditions) {
+    for (const cond of conditions) {
+      const v = entry[cond.field];
+      if (v == null)
+        continue;
+      if (this.applyOp(v, cond.op, cond.value))
+        return cond.class;
+    }
+    return null;
+  }
+  resolveByRegex(value, patterns, config) {
+    for (const p of patterns) {
+      const flags = p.flags ?? (config.caseSensitive === false ? "i" : "");
+      try {
+        if (new RegExp(p.pattern, flags).test(value))
+          return p.class;
+      } catch {
+      }
+    }
+    return null;
+  }
+  applyOp(entryVal, op, condVal) {
+    switch (op) {
+      case "lt":
+        return entryVal < condVal;
+      case "lte":
+        return entryVal <= condVal;
+      case "gt":
+        return entryVal > condVal;
+      case "gte":
+        return entryVal >= condVal;
+      case "eq":
+        return entryVal === condVal;
+      case "neq":
+        return entryVal !== condVal;
+      case "contains":
+        return String(entryVal).includes(String(condVal));
+    }
+  }
+  /**
+   * Génère le prochain remplacement pour une classe donnée.
+   * existingReplacements : liste des remplacements déjà utilisés dans la portée concernée.
+   * Format résultant : '{class}_{index}' ou le pattern configuré dans dict.config.
+   */
+  nextReplacement(dict, entryClass, existingReplacements) {
+    const pattern = dict.config?.replacementPattern ?? "{class}_{index}";
+    const prefix = pattern.replace("{class}", entryClass).replace("_{index}", "_");
+    let maxIndex = 0;
+    for (const r of existingReplacements) {
+      if (r.startsWith(prefix)) {
+        const suffix = r.slice(prefix.length);
+        const n = parseInt(suffix, 10);
+        if (!isNaN(n) && n > maxIndex)
+          maxIndex = n;
+      }
+    }
+    const nextIndex = maxIndex + 1;
+    return pattern.replace("{class}", entryClass).replace("{index}", String(nextIndex));
+  }
+  /**
+   * Résout le remplacement d'une valeur source depuis un dictionnaire de remplacement.
+   * - Si word-to-word et entry.replacement présent → retourne entry.replacement directement.
+   * - Si classes → génère via nextReplacement.
+   * - Si word-to-word sans remplacement fixe → retourne null (l'utilisateur saisit manuellement).
+   */
+  resolveReplacement(sourceValue, existingReplacements) {
+    for (const dict of this.dictionaries) {
+      if (!dict.roles?.replacement)
+        continue;
+      const cs = dict.config?.caseSensitive ?? false;
+      const strip = dict.config?.stripPrefix ?? [];
+      const key = this.normalizeKey(sourceValue, cs, strip);
+      const hits = this.detectionIndex.get(key) ?? [];
+      const hit = hits.find((h) => h.dict.dictionaryId === dict.dictionaryId);
+      if (!hit)
+        continue;
+      const entryClass = this.resolveClass(hit.entry, dict);
+      if (entryClass) {
+        const replacement = this.nextReplacement(dict, entryClass, existingReplacements);
+        return { replacement, dictionaryId: dict.dictionaryId, entryClass };
+      }
+      if (hit.entry.replacement) {
+        return { replacement: hit.entry.replacement, dictionaryId: dict.dictionaryId, entryClass: null };
+      }
+    }
+    return null;
+  }
+  /**
+   * Retourne des suggestions de remplacement (pour l'UI de RuleModal).
+   * Pour les dictionnaires avec classes : liste les classes disponibles + exemples.
+   * Pour word-to-word : retourne les replacementCandidates de l'entrée correspondante.
+   */
+  getSuggestions(sourceValue, count = 8) {
+    const results = [];
+    for (const dict of this.dictionaries) {
+      if (!dict.roles?.replacement)
+        continue;
+      const cs = dict.config?.caseSensitive ?? false;
+      const strip = dict.config?.stripPrefix ?? [];
+      const key = this.normalizeKey(sourceValue, cs, strip);
+      const hits = this.detectionIndex.get(key) ?? [];
+      const hit = hits.find((h) => h.dict.dictionaryId === dict.dictionaryId);
+      if (hit) {
+        const entryClass = this.resolveClass(hit.entry, dict);
+        if (entryClass) {
+          results.push({
+            label: `${entryClass}_N (${dict.label})`,
+            value: entryClass,
+            fromClass: true
+          });
+        }
+        if (hit.entry.replacementCandidates) {
+          for (const c of hit.entry.replacementCandidates.slice(0, count)) {
+            results.push({ label: c, value: c, fromClass: false });
+          }
+        }
+      }
+      if (results.length >= count)
+        break;
+    }
+    return results.slice(0, count);
+  }
+  // --- Accès aux dictionnaires chargés ---
+  getAll() {
+    return this.dictionaries;
+  }
+  getById(id) {
+    return this.dictionaries.find((d) => d.dictionaryId === id);
+  }
+  /** Retourne vrai si au moins un dictionnaire de détection est chargé. */
+  hasDetection() {
+    return this.dictionaries.some((d) => d.roles?.detection);
+  }
+  /** Retourne vrai si au moins un dictionnaire de remplacement est chargé. */
+  hasReplacement() {
+    return this.dictionaries.some((d) => d.roles?.replacement);
+  }
+  get size() {
+    return this.dictionaries.length;
+  }
+  // --- Scan de texte ---
+  /**
+   * Scanne un texte complet et retourne les entités trouvées dans les dictionnaires
+   * dont `roles.detection = true`. Fenêtre glissante de n-grammes (1..MAX_NGRAM tokens)
+   * pour couvrir les noms composés ("La Rochelle", "Le Puy-en-Velay"…).
+   * Les entités déjà couvertes par `existingSources` sont exclues (déjà en orange).
+   */
+  scanText(text, filePath, existingSources = /* @__PURE__ */ new Set(), dictIds) {
+    if (!this.hasDetection())
+      return [];
+    const results = [];
+    const seen = /* @__PURE__ */ new Set();
+    const lines = text.split("\n");
+    let lineOffset = 0;
+    for (const line of lines) {
+      const tokens = this.tokenize(line);
+      for (let i2 = 0; i2 < tokens.length; i2++) {
+        let matched = false;
+        for (let n = Math.min(MAX_NGRAM, tokens.length - i2); n >= 1; n--) {
+          const phrase = tokens.slice(i2, i2 + n).map((t) => t.word).join(" ");
+          const allHits = this.getDetectionHits(phrase);
+          const hits = dictIds ? allHits.filter((h) => dictIds.includes(h.dict.dictionaryId)) : allHits;
+          if (hits.length === 0)
+            continue;
+          const hit = hits[0];
+          const valueNorm = hit.dict.config?.caseSensitive ?? false ? phrase : phrase.toLowerCase();
+          if (existingSources.has(valueNorm)) {
+            matched = true;
+            break;
+          }
+          if (seen.has(valueNorm)) {
+            matched = true;
+            break;
+          }
+          seen.add(valueNorm);
+          const startInLine = tokens[i2].start;
+          const endInLine = tokens[i2 + n - 1].end;
+          const start = lineOffset + startInLine;
+          const end = lineOffset + endInLine;
+          const ctxLen = 45;
+          results.push({
+            id: `dict_${Date.now()}_${++_dictScanCounter}`,
+            file: filePath,
+            line: lines.indexOf(line) + 1,
+            start,
+            end,
+            text: phrase,
+            contextBefore: text.slice(Math.max(0, start - ctxLen), start),
+            contextAfter: text.slice(end, Math.min(text.length, end + ctxLen)),
+            category: hit.dict.type ?? "place",
+            status: "needs_review"
+          });
+          i2 += n - 1;
+          matched = true;
+          break;
+        }
+      }
+      lineOffset += line.length + 1;
+    }
+    return results;
+  }
+  tokenize(line) {
+    const tokens = [];
+    const re = /\S+/g;
+    let m;
+    while ((m = re.exec(line)) !== null) {
+      tokens.push({ word: m[0], start: m.index, end: m.index + m[0].length });
+    }
+    return tokens;
+  }
+};
+
+// src/ui/DictScanReviewModal.ts
+var import_obsidian9 = require("obsidian");
+var DictScanReviewModal = class extends import_obsidian9.Modal {
+  constructor(app, plugin, file, results, existingReplacements) {
+    super(app);
+    // remplacement fixe pour les entrées word-to-word
+    // Références DOM pour les mises à jour dynamiques
+    this.indexSpans = [];
+    this.plugin = plugin;
+    this.file = file;
+    this.results = results;
+    this.existingReplacements = existingReplacements;
+    this.checked = results.map(() => true);
+    this.prefixes = results.map((r) => r.entryClass ?? r.proposedReplacement);
+    this.fixedReps = results.map((r) => r.proposedReplacement);
+    this.indexSpans = results.map(() => null);
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.addClass("pseudobs-dict-review-modal");
+    contentEl.createEl("h2", { text: "R\xE9vision du scan \u2014 dictionnaires" });
+    const dicts = [...new Set(this.results.map((r) => r.dictLabel))];
+    contentEl.createEl("p", {
+      text: `${this.results.length} entit\xE9${this.results.length > 1 ? "s" : ""} d\xE9tect\xE9e${this.results.length > 1 ? "s" : ""} \xB7 ${dicts.join(", ")}`,
+      cls: "pseudobs-scan-summary"
+    });
+    const scroll = contentEl.createDiv("pseudobs-dict-review-scroll");
+    this.results.forEach((item, i2) => {
+      const card = scroll.createDiv("pseudobs-dict-review-card");
+      const header = card.createDiv("pseudobs-dict-review-card-header");
+      const termWrap = header.createDiv("pseudobs-dict-review-card-term-wrap");
+      termWrap.createEl("span", { text: item.term, cls: "pseudobs-dict-review-term" });
+      termWrap.createEl("span", {
+        text: item.category.replace("_", " "),
+        cls: "pseudobs-dict-review-cat"
+      });
+      const meta = header.createDiv("pseudobs-dict-review-card-meta");
+      meta.createEl("span", {
+        text: `${item.occurrenceCount}\xD7`,
+        cls: "pseudobs-dict-review-count"
+      });
+      const cb = meta.createEl("input");
+      cb.type = "checkbox";
+      cb.checked = true;
+      cb.addClass("pseudobs-dict-review-cb");
+      if (item.contextBefore !== void 0 || item.contextAfter !== void 0) {
+        const ctx = card.createDiv("pseudobs-dict-review-ctx");
+        ctx.createEl("span", {
+          text: (item.contextBefore ?? "").slice(-50),
+          cls: "pseudobs-dict-review-ctx-side"
+        });
+        ctx.createEl("mark", { text: item.term, cls: "pseudobs-dict-review-ctx-term" });
+        ctx.createEl("span", {
+          text: (item.contextAfter ?? "").slice(0, 50),
+          cls: "pseudobs-dict-review-ctx-side"
+        });
+      }
+      const repRow = card.createDiv("pseudobs-dict-review-rep-row");
+      repRow.createEl("span", { text: "\u2192", cls: "pseudobs-dict-review-arrow" });
+      const repCell = repRow.createDiv("pseudobs-dict-review-rep-cell");
+      if (item.entryClass) {
+        const prefixInput = repCell.createEl("input");
+        prefixInput.type = "text";
+        prefixInput.value = item.entryClass;
+        prefixInput.addClass("pseudobs-dict-review-prefix");
+        prefixInput.addEventListener("input", () => {
+          this.prefixes[i2] = prefixInput.value.trim() || item.entryClass;
+          this.recomputeIndices();
+        });
+        const indexSpan = repCell.createEl("span", { cls: "pseudobs-dict-review-index" });
+        this.indexSpans[i2] = indexSpan;
+      } else {
+        const inp = repCell.createEl("input");
+        inp.type = "text";
+        inp.value = item.proposedReplacement;
+        inp.addClass("pseudobs-dict-review-prefix");
+        inp.addEventListener("input", () => {
+          this.fixedReps[i2] = inp.value;
+        });
+      }
+      cb.addEventListener("change", () => {
+        this.checked[i2] = cb.checked;
+        card.toggleClass("pseudobs-dict-review-card-off", !cb.checked);
+        card.querySelectorAll('input[type="text"]').forEach((el) => {
+          el.disabled = !cb.checked;
+        });
+        this.recomputeIndices();
+        this.updateApplyLabel();
+      });
+    });
+    const footer = contentEl.createDiv("pseudobs-dict-review-footer");
+    footer.createEl("button", { text: "Annuler" }).addEventListener("click", () => this.close());
+    this.applyBtn = footer.createEl("button", { cls: "mod-cta" });
+    this.applyBtn.addEventListener("click", () => void this.apply());
+    this.recomputeIndices();
+    this.updateApplyLabel();
+  }
+  /**
+   * Recalcule les index de chaque item coché dans l'ordre d'apparition.
+   * Les items décochés n'incrémentent pas le compteur — si Village_2 est
+   * décoché, le Village suivant devient Village_2, pas Village_3.
+   */
+  recomputeIndices() {
+    const usedCounts = {};
+    for (const r of this.existingReplacements) {
+      const m = /^(.+?)_(\d+)$/.exec(r);
+      if (m) {
+        const prefix = m[1];
+        const idx = parseInt(m[2], 10);
+        usedCounts[prefix] = Math.max(usedCounts[prefix] ?? 0, idx);
+      }
+    }
+    const sessionCounts = {};
+    for (let i2 = 0; i2 < this.results.length; i2++) {
+      const span = this.indexSpans[i2];
+      if (!span)
+        continue;
+      if (!this.checked[i2]) {
+        span.setText("");
+        continue;
+      }
+      const prefix = this.prefixes[i2];
+      sessionCounts[prefix] = (sessionCounts[prefix] ?? 0) + 1;
+      const base = usedCounts[prefix] ?? 0;
+      const idx = base + sessionCounts[prefix];
+      span.setText(`_${idx}`);
+    }
+  }
+  /** Replacement final pour l'item i (préfixe + index calculé ou mot-à-mot). */
+  getFinalReplacement(i2) {
+    if (this.results[i2].entryClass && this.indexSpans[i2]) {
+      const indexText = this.indexSpans[i2].getText();
+      return (this.prefixes[i2] || this.results[i2].entryClass) + indexText;
+    }
+    return this.fixedReps[i2];
+  }
+  updateApplyLabel() {
+    const n = this.checked.filter(Boolean).length;
+    this.applyBtn.textContent = n === 0 ? "Aucune r\xE8gle \xE0 appliquer" : `Cr\xE9er ${n} r\xE8gle${n > 1 ? "s" : ""}`;
+    this.applyBtn.toggleClass("pseudobs-dict-review-btn-empty", n === 0);
+  }
+  async apply() {
+    const toCreate = this.results.filter((_, i2) => this.checked[i2]);
+    if (toCreate.length === 0) {
+      this.close();
+      return;
+    }
+    this.applyBtn.setAttr("disabled", "true");
+    const mappingPath = `${this.plugin.settings.mappingFolder}/${this.file.basename}.mapping.json`;
+    let store;
+    const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
+    if (mappingFile instanceof import_obsidian9.TFile) {
+      const data = JSON.parse(await this.app.vault.read(mappingFile));
+      store = MappingStore.fromJSON(data);
+    } else {
+      await this.plugin.ensureFolder(this.plugin.settings.mappingFolder);
+      store = new MappingStore({ type: "file", path: this.file.path });
+    }
+    for (let i2 = 0; i2 < this.results.length; i2++) {
+      if (!this.checked[i2])
+        continue;
+      const replacement = this.getFinalReplacement(i2);
+      if (!replacement.trim())
+        continue;
+      const item = this.results[i2];
+      store.add({
+        source: item.term,
+        replacement: replacement.trim(),
+        category: item.category,
+        scope: { type: "file", path: this.file.path },
+        status: "validated",
+        priority: 0,
+        createdBy: "dictionary",
+        sourceDictionary: item.dictId
+      });
+    }
+    const json = JSON.stringify(store.toJSON(), null, 2);
+    if (mappingFile instanceof import_obsidian9.TFile) {
+      await this.app.vault.modify(mappingFile, json);
+    } else {
+      await this.app.vault.create(mappingPath, json);
+    }
+    const n = toCreate.length;
+    new import_obsidian9.Notice(`\u2713 ${n} r\xE8gle${n > 1 ? "s" : ""} cr\xE9\xE9e${n > 1 ? "s" : ""}`);
+    void this.plugin.refreshHighlightData();
+    this.close();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
 // src/parsers/SrtParser.ts
 var SrtParser = class {
   parse(content) {
@@ -33345,7 +33834,7 @@ function lineGroup(line) {
 }
 
 // src/mappings/ScopeResolver.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var ScopeResolver = class {
   constructor(vault, mappingFolder) {
     this.vault = vault;
@@ -33353,11 +33842,11 @@ var ScopeResolver = class {
   }
   async getRulesFor(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian9.TFolder))
+    if (!(folder instanceof import_obsidian10.TFolder))
       return [];
     const allRules = [];
     for (const child of folder.children) {
-      if (!(child instanceof import_obsidian9.TFile))
+      if (!(child instanceof import_obsidian10.TFile))
         continue;
       if (!child.name.endsWith(".mapping.json"))
         continue;
@@ -33382,11 +33871,11 @@ var ScopeResolver = class {
   // Retourne aussi le store et le chemin JSON pour permettre la modification.
   async findRuleByTerm(term) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian9.TFolder))
+    if (!(folder instanceof import_obsidian10.TFolder))
       return null;
     const needle = term.toLowerCase();
     for (const child of folder.children) {
-      if (!(child instanceof import_obsidian9.TFile) || !child.name.endsWith(".mapping.json"))
+      if (!(child instanceof import_obsidian10.TFile) || !child.name.endsWith(".mapping.json"))
         continue;
       try {
         const data = JSON.parse(await this.vault.read(child));
@@ -33405,11 +33894,11 @@ var ScopeResolver = class {
   // Utilisé par l'onglet Mappings du panneau latéral pour l'édition et la suppression.
   async getRulesWithLocation(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian9.TFolder))
+    if (!(folder instanceof import_obsidian10.TFolder))
       return [];
     const result = [];
     for (const child of folder.children) {
-      if (!(child instanceof import_obsidian9.TFile) || !child.name.endsWith(".mapping.json"))
+      if (!(child instanceof import_obsidian10.TFile) || !child.name.endsWith(".mapping.json"))
         continue;
       try {
         const data = JSON.parse(await this.vault.read(child));
@@ -33434,7 +33923,7 @@ var ScopeResolver = class {
   async getRulesFromMappingFile(mappingFilename) {
     const path5 = `${this.mappingFolder}/${mappingFilename}`;
     const file = this.vault.getAbstractFileByPath(path5);
-    if (!(file instanceof import_obsidian9.TFile))
+    if (!(file instanceof import_obsidian10.TFile))
       return [];
     try {
       const data = JSON.parse(await this.vault.read(file));
@@ -33448,7 +33937,7 @@ var ScopeResolver = class {
   async saveStore(store, filePath) {
     const file = this.vault.getAbstractFileByPath(filePath);
     const json = JSON.stringify(store.toJSON(), null, 2);
-    if (file instanceof import_obsidian9.TFile) {
+    if (file instanceof import_obsidian10.TFile) {
       await this.vault.modify(file, json);
     }
   }
@@ -33471,7 +33960,7 @@ var PseudonymizationEngine = class {
 
 // src/main.ts
 var CONVERTIBLE_EXTS = ["srt", "cha", "chat"];
-var PseudObsPlugin = class extends import_obsidian10.Plugin {
+var PseudObsPlugin = class extends import_obsidian11.Plugin {
   constructor() {
     super(...arguments);
     // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
@@ -33484,6 +33973,10 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
     await this.loadSettings();
     this.scopeResolver = new ScopeResolver(this.app.vault, this.settings.mappingFolder);
     this.nerScanner = new OnnxNerScanner(this.app);
+    this.dictionaryLoader = new DictionaryLoader(this.app, this);
+    this.app.workspace.onLayoutReady(() => {
+      void this.dictionaryLoader.load();
+    });
     this.addSettingTab(new PseudObsSettingTab(this.app, this));
     this.registerView(VIEW_TYPE_PSEUDOBS, (leaf) => new PseudonymizationView(leaf, this));
     this.addRibbonIcon("eye-off", "PseudObsidianization", () => void this.activateView());
@@ -33503,7 +33996,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
     }
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if (!(file instanceof import_obsidian10.TFile))
+        if (!(file instanceof import_obsidian11.TFile))
           return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase()))
           return;
@@ -33540,6 +34033,11 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
       callback: () => void this.scanCurrentFileNer()
     });
     this.addCommand({
+      id: "scan-dictionaries",
+      name: "Scanner le fichier avec les dictionnaires",
+      callback: () => void this.scanCurrentFileWithDictionaries()
+    });
+    this.addCommand({
       id: "pseudonymize-selection",
       name: "Pseudonymiser la s\xE9lection",
       editorCheckCallback: (checking, editor) => {
@@ -33567,7 +34065,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
             (item) => item.setTitle(`Annuler la pseudonymisation de "${bare.slice(0, 25)}${bare.length > 25 ? "\u2026" : ""}"`).setIcon("undo").onClick(async () => {
               const location = await this.scopeResolver.findRuleByTerm(bare);
               if (!location) {
-                new import_obsidian10.Notice("R\xE8gle introuvable dans les mappings.");
+                new import_obsidian11.Notice("R\xE8gle introuvable dans les mappings.");
                 return;
               }
               editor.replaceSelection(location.rule.source);
@@ -33582,7 +34080,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
               if (location) {
                 new EditRuleModal(this.app, this, location).open();
               } else {
-                new import_obsidian10.Notice("R\xE8gle introuvable dans les mappings.");
+                new import_obsidian11.Notice("R\xE8gle introuvable dans les mappings.");
               }
             })
           );
@@ -33592,11 +34090,11 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
         );
         menu.addItem(
           (item) => item.setTitle(`Pseudonymiser avec Pr Baptiste Coulmont`).setIcon("book-user").onClick(async () => {
-            const notice = new import_obsidian10.Notice("Recherche sur coulmont.com\u2026", 0);
+            const notice = new import_obsidian11.Notice("Recherche sur coulmont.com\u2026", 0);
             const suggestions = await this.fetchCoulmont(selection);
             notice.hide();
             if (suggestions.length === 0) {
-              new import_obsidian10.Notice(`Aucun r\xE9sultat Coulmont pour "${selection}".`);
+              new import_obsidian11.Notice(`Aucun r\xE9sultat Coulmont pour "${selection}".`);
               return;
             }
             new RuleModal(this.app, this, selection, "", suggestions).open();
@@ -33628,7 +34126,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
   async fetchCoulmont(prenom) {
     try {
       const url2 = `https://coulmont.com/bac/results.php?search=${encodeURIComponent(prenom)}`;
-      const response = await (0, import_obsidian10.requestUrl)({ url: url2, method: "GET" });
+      const response = await (0, import_obsidian11.requestUrl)({ url: url2, method: "GET" });
       const doc = new DOMParser().parseFromString(response.text, "text/html");
       const els = doc.querySelectorAll(
         "#hero > div > div > div > div > p.mb-1.mb-md-1 > a"
@@ -33671,7 +34169,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
         this.highlightData = { sources: [], replacements: [], nerCandidates };
       }
     }
-    const view = this.app.workspace.getActiveViewOfType(import_obsidian10.MarkdownView);
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian11.MarkdownView);
     const cm = view?.editor && view.editor.cm;
     cm?.dispatch({ effects: highlightDataChanged.of(void 0) });
   }
@@ -33689,8 +34187,8 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
       } else {
         mdContent = chatToMarkdown(new ChatParser().parse(raw), file.name);
       }
-      if (this.app.vault.getAbstractFileByPath(mdPath) instanceof import_obsidian10.TFile) {
-        new import_obsidian10.Notice(`\u26A0 ${basename}.md existe d\xE9j\xE0 \u2014 conversion ignor\xE9e pour ${file.name}`);
+      if (this.app.vault.getAbstractFileByPath(mdPath) instanceof import_obsidian11.TFile) {
+        new import_obsidian11.Notice(`\u26A0 ${basename}.md existe d\xE9j\xE0 \u2014 conversion ignor\xE9e pour ${file.name}`);
         return;
       }
       await this.app.vault.create(mdPath, mdContent);
@@ -33702,12 +34200,12 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
       }
       await this.app.fileManager.trashFile(file);
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
-      if (mdFile instanceof import_obsidian10.TFile) {
+      if (mdFile instanceof import_obsidian11.TFile) {
         await this.app.workspace.getLeaf().openFile(mdFile);
       }
-      new import_obsidian10.Notice(`\u2713 ${file.name} \u2192 ${basename}.md`);
+      new import_obsidian11.Notice(`\u2713 ${file.name} \u2192 ${basename}.md`);
     } catch (e) {
-      new import_obsidian10.Notice(`Erreur de conversion de ${file.name} : ${e.message}`);
+      new import_obsidian11.Notice(`Erreur de conversion de ${file.name} : ${e.message}`);
     }
   }
   // --- Commande "Ajouter une transcription" ---
@@ -33735,8 +34233,8 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
     const destFolder = this.settings.transcriptionsFolder;
     await this.ensureFolder(destFolder);
     const destPath = `${destFolder}/${browserFile.name}`;
-    if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian10.TFile) {
-      new import_obsidian10.Notice(`Le fichier existe d\xE9j\xE0 dans le vault : ${browserFile.name}`);
+    if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian11.TFile) {
+      new import_obsidian11.Notice(`Le fichier existe d\xE9j\xE0 dans le vault : ${browserFile.name}`);
       return;
     }
     await this.app.vault.create(destPath, raw);
@@ -33745,18 +34243,18 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
   async pseudonymizeActiveFile() {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian10.Notice("Aucun fichier actif.");
+      new import_obsidian11.Notice("Aucun fichier actif.");
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian10.Notice(`Format non pris en charge : .${ext}`);
+      new import_obsidian11.Notice(`Format non pris en charge : .${ext}`);
       return;
     }
     const content = await this.app.vault.read(file);
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new import_obsidian10.Notice(
+      new import_obsidian11.Notice(
         `Aucune r\xE8gle valid\xE9e.
 Cr\xE9ez des r\xE8gles via Ctrl+P \u2192 "Cr\xE9er une r\xE8gle".
 Mapping attendu : ${this.settings.mappingFolder}/${file.basename}.mapping.json`
@@ -33791,27 +34289,27 @@ Mapping attendu : ${this.settings.mappingFolder}/${file.basename}.mapping.json`
     await this.ensureFolder(this.settings.exportsFolder);
     const outputPath = `${this.settings.exportsFolder}/${file.basename}.pseudonymized.${ext}`;
     const existing = this.app.vault.getAbstractFileByPath(outputPath);
-    if (existing instanceof import_obsidian10.TFile) {
+    if (existing instanceof import_obsidian11.TFile) {
       await this.app.vault.modify(existing, pseudonymized);
     } else {
       await this.app.vault.create(outputPath, pseudonymized);
     }
-    new import_obsidian10.Notice(`\u2713 ${rules.length} r\xE8gle(s) appliqu\xE9e(s)
+    new import_obsidian11.Notice(`\u2713 ${rules.length} r\xE8gle(s) appliqu\xE9e(s)
 \u2192 ${outputPath}`);
   }
   async scanCurrentFileNer() {
     if (this.settings.nerBackend !== "transformers-js") {
-      new import_obsidian10.Notice("La d\xE9tection NER transformers.js n'est pas activ\xE9e.\nActivez-la dans Param\xE8tres \u2192 Pseudonymizer Tool.");
+      new import_obsidian11.Notice("La d\xE9tection NER transformers.js n'est pas activ\xE9e.\nActivez-la dans Param\xE8tres \u2192 Pseudonymizer Tool.");
       return;
     }
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian10.Notice("Aucun fichier actif.");
+      new import_obsidian11.Notice("Aucun fichier actif.");
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian10.Notice(`Format non pris en charge : .${ext}`);
+      new import_obsidian11.Notice(`Format non pris en charge : .${ext}`);
       return;
     }
     try {
@@ -33821,21 +34319,93 @@ Mapping attendu : ${this.settings.mappingFolder}/${file.basename}.mapping.json`
         functionWords: new Set(this.settings.nerFunctionWords.map((w) => w.toLowerCase()))
       });
       if (occurrences.length === 0) {
-        new import_obsidian10.Notice("Aucune entit\xE9 d\xE9tect\xE9e par le NER.");
+        new import_obsidian11.Notice("Aucune entit\xE9 d\xE9tect\xE9e par le NER.");
         return;
       }
       const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
       this.nerCandidateFile = file;
       this.nerCandidates = unique;
       void this.refreshHighlightData();
-      new import_obsidian10.Notice(
+      new import_obsidian11.Notice(
         `\u2713 ${unique.length} entit\xE9${unique.length > 1 ? "s" : ""} d\xE9tect\xE9e${unique.length > 1 ? "s" : ""} \u2014 surlign\xE9e${unique.length > 1 ? "s" : ""} en bleu.
 Clic droit sur un terme pour cr\xE9er une r\xE8gle.`,
         6e3
       );
     } catch (e) {
-      new import_obsidian10.Notice(`Erreur NER : ${e.message}`);
+      new import_obsidian11.Notice(`Erreur NER : ${e.message}`);
     }
+  }
+  async scanCurrentFileWithDictionaries(dictIds) {
+    if (!this.dictionaryLoader.hasDetection()) {
+      new import_obsidian11.Notice("Aucun dictionnaire de d\xE9tection charg\xE9.\nInstallez un dictionnaire depuis le panneau Dictionnaires.");
+      return;
+    }
+    const file = this.app.workspace.getActiveFile();
+    if (!file) {
+      new import_obsidian11.Notice("Aucun fichier actif.");
+      return;
+    }
+    const ext = file.extension.toLowerCase();
+    if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
+      new import_obsidian11.Notice(`Format non pris en charge : .${ext}`);
+      return;
+    }
+    const content = await this.app.vault.read(file);
+    const rules = await this.scopeResolver.getRulesFor(file.path);
+    const existingSources = new Set(rules.map((r) => r.source.toLowerCase()));
+    const occurrences = this.dictionaryLoader.scanText(content, file.path, existingSources, dictIds);
+    if (occurrences.length === 0) {
+      new import_obsidian11.Notice("Aucune entit\xE9 trouv\xE9e dans les dictionnaires de d\xE9tection.");
+      return;
+    }
+    const seenTerms = /* @__PURE__ */ new Map();
+    for (const occ of occurrences) {
+      const key = occ.text.toLowerCase();
+      const existing = seenTerms.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        seenTerms.set(key, { occ, count: 1 });
+      }
+    }
+    const existingReplacements = rules.map((r) => r.replacement);
+    const usedReplacements = [...existingReplacements];
+    const results = [];
+    for (const [, { occ, count }] of seenTerms) {
+      const hits = this.dictionaryLoader.getDetectionHits(occ.text);
+      if (!hits.length)
+        continue;
+      const { entry, dict } = hits.find((h) => !dictIds || dictIds.includes(h.dict.dictionaryId)) ?? hits[0];
+      const entryClass = this.dictionaryLoader.resolveClass(entry, dict);
+      let proposedReplacement;
+      if (entryClass) {
+        proposedReplacement = this.dictionaryLoader.nextReplacement(dict, entryClass, usedReplacements);
+        usedReplacements.push(proposedReplacement);
+      } else if (entry.replacement) {
+        proposedReplacement = entry.replacement;
+      } else {
+        continue;
+      }
+      results.push({
+        term: occ.text,
+        dictId: dict.dictionaryId,
+        dictLabel: dict.label,
+        entryClass,
+        proposedReplacement,
+        occurrenceCount: count,
+        category: occ.category ?? dict.type ?? "place",
+        contextBefore: occ.contextBefore,
+        contextAfter: occ.contextAfter
+      });
+    }
+    if (results.length === 0) {
+      new import_obsidian11.Notice("Aucun remplacement disponible pour les entit\xE9s trouv\xE9es.");
+      return;
+    }
+    this.nerCandidateFile = file;
+    this.nerCandidates = results.map((r) => r.term);
+    void this.refreshHighlightData();
+    new DictScanReviewModal(this.app, this, file, results, existingReplacements).open();
   }
   // Efface les candidats NER pour le fichier courant (appelé après création de règle si besoin)
   clearNerCandidates() {
@@ -33846,30 +34416,30 @@ Clic droit sur un terme pour cr\xE9er une r\xE8gle.`,
   async exportMappingForFile(file) {
     const mappingPath = `${this.settings.mappingFolder}/${file.basename}.mapping.json`;
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
-    if (!(mappingFile instanceof import_obsidian10.TFile)) {
-      new import_obsidian10.Notice(`Aucun mapping trouv\xE9 pour ${file.name}`);
+    if (!(mappingFile instanceof import_obsidian11.TFile)) {
+      new import_obsidian11.Notice(`Aucun mapping trouv\xE9 pour ${file.name}`);
       return;
     }
     const content = await this.app.vault.read(mappingFile);
     await this.ensureFolder(this.settings.exportsFolder);
     const destPath = `${this.settings.exportsFolder}/${file.basename}.mapping.json`;
     const existing = this.app.vault.getAbstractFileByPath(destPath);
-    if (existing instanceof import_obsidian10.TFile) {
+    if (existing instanceof import_obsidian11.TFile) {
       await this.app.vault.modify(existing, content);
     } else {
       await this.app.vault.create(destPath, content);
     }
-    new import_obsidian10.Notice(`\u2713 Mapping export\xE9 \u2192 ${destPath}`);
+    new import_obsidian11.Notice(`\u2713 Mapping export\xE9 \u2192 ${destPath}`);
   }
   async scanCurrentFile() {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian10.Notice("Aucun fichier actif.");
+      new import_obsidian11.Notice("Aucun fichier actif.");
       return;
     }
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new import_obsidian10.Notice('Aucune r\xE8gle pour ce fichier.\nCr\xE9ez des r\xE8gles via Ctrl+P \u2192 "Cr\xE9er une r\xE8gle".');
+      new import_obsidian11.Notice('Aucune r\xE8gle pour ce fichier.\nCr\xE9ez des r\xE8gles via Ctrl+P \u2192 "Cr\xE9er une r\xE8gle".');
       return;
     }
     const content = await this.app.vault.read(file);
@@ -33878,10 +34448,16 @@ Clic droit sur un terme pour cr\xE9er une r\xE8gle.`,
       wholeWordOnly: this.settings.wholeWordOnly
     });
     if (occurrences.length === 0) {
-      new import_obsidian10.Notice("Aucune occurrence trouv\xE9e pour les r\xE8gles actives.");
+      new import_obsidian11.Notice("Aucune occurrence trouv\xE9e pour les r\xE8gles actives.");
       return;
     }
-    new OccurrencesModal(this.app, this, file, content, occurrences, rules).open();
+    const countByRule = /* @__PURE__ */ new Map();
+    for (const occ of occurrences) {
+      const id = occ.mappingId ?? "";
+      countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+    }
+    const ruleResults = rules.filter((r) => countByRule.has(r.id)).map((r) => ({ rule: r, matchCount: countByRule.get(r.id) }));
+    new MappingScanReviewModal(this.app, this, file, content, ruleResults).open();
   }
   // Appelé par OccurrencesModal après application — met à jour les statuts des règles.
   async updateMappingStatuses(filePath, rules, occurrences, decisions) {
