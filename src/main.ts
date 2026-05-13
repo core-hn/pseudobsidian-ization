@@ -194,9 +194,7 @@ export default class PseudObsPlugin extends Plugin {
     );
   }
 
-  onunload(): void {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_PSEUDOBS);
-  }
+  onunload(): void {}
 
   private async activateView(): Promise<void> {
     const { workspace } = this.app;
@@ -205,7 +203,7 @@ export default class PseudObsPlugin extends Plugin {
       leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
       await leaf.setViewState({ type: VIEW_TYPE_PSEUDOBS, active: true });
     }
-    workspace.revealLeaf(leaf);
+    void workspace.revealLeaf(leaf);
   }
 
   // --- Coulmont ---

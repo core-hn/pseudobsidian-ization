@@ -1,7 +1,6 @@
 import { App, FileSystemAdapter, Notice } from 'obsidian';
 import * as path from 'path';
 import * as os from 'os';
-import * as fs from 'fs';
 import type { EntityCategory, Occurrence } from '../types';
 
 // Modèle multilingue BERT-NER pré-converti en ONNX via Xenova.
@@ -59,9 +58,9 @@ export class OnnxNerScanner {
     if (_loading) {
       // Attendre la fin du chargement en cours
       await new Promise<void>((resolve, reject) => {
-        const timer = setInterval(() => {
-          if (_pipeline) { clearInterval(timer); resolve(); }
-          if (_loadError) { clearInterval(timer); reject(new Error(_loadError)); }
+        const timer = window.setInterval(() => {
+          if (_pipeline) { window.clearInterval(timer); resolve(); }
+          if (_loadError) { window.clearInterval(timer); reject(new Error(_loadError)); }
         }, 300);
       });
       return;
@@ -72,15 +71,19 @@ export class OnnxNerScanner {
 
     try {
       // Import dynamique pour éviter de charger transformers au démarrage du plugin
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const t: any = await import('@xenova/transformers');
-      const { env, pipeline } = t as { env: typeof import('@xenova/transformers')['env']; pipeline: typeof import('@xenova/transformers')['pipeline'] };
+      type TransformersModule = {
+        env: typeof import('@xenova/transformers')['env'];
+        pipeline: typeof import('@xenova/transformers')['pipeline'];
+        executionProviders: string[];
+      };
+      const t = await import('@xenova/transformers') as unknown as TransformersModule;
+      const { env, pipeline } = t;
 
       // En Electron, process.release.name === 'node' ajoute 'cpu' en tête des providers.
       // Le provider CPU nécessite des binaires natifs non disponibles — on le retire.
       if (Array.isArray(t.executionProviders)) {
-        const cpuIdx = (t.executionProviders as string[]).indexOf('cpu');
-        if (cpuIdx !== -1) (t.executionProviders as string[]).splice(cpuIdx, 1);
+        const cpuIdx = t.executionProviders.indexOf('cpu');
+        if (cpuIdx !== -1) t.executionProviders.splice(cpuIdx, 1);
       }
 
       // Avec platform:browser, RUNNING_LOCALLY=false → env.cacheDir=null.

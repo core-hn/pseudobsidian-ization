@@ -74,10 +74,10 @@ var init_OnboardingModal = __esm({
       }
       onOpen() {
         this.modalEl.addClass("pseudobs-onboarding");
-        setTimeout(() => this.render(), 0);
+        window.setTimeout(() => this.render(), 0);
       }
       scheduleRender() {
-        setTimeout(() => this.render(), 0);
+        window.setTimeout(() => this.render(), 0);
       }
       render() {
         const { contentEl } = this;
@@ -151,15 +151,17 @@ var init_OnboardingModal = __esm({
         });
         if (this.nerBackend === "transformers-js")
           selectTfjs.addClass("pseudobs-onboarding-select-btn-active");
-        selectTfjs.addEventListener("click", async () => {
-          this.nerBackend = "transformers-js";
-          await this.saveNerSettings();
-          if (!this.checkWasmFiles()) {
-            const ok = await this.downloadWasmFiles(wasmStatus, selectTfjs);
-            if (!ok)
-              return;
-          }
-          this.scheduleRender();
+        selectTfjs.addEventListener("click", () => {
+          void (async () => {
+            this.nerBackend = "transformers-js";
+            await this.saveNerSettings();
+            if (!this.checkWasmFiles()) {
+              const ok = await this.downloadWasmFiles(wasmStatus, selectTfjs);
+              if (!ok)
+                return;
+            }
+            this.scheduleRender();
+          })();
         });
         const noneRow = el.createDiv("pseudobs-onboarding-none-row");
         const noneBtn = noneRow.createEl("button", {
@@ -168,10 +170,12 @@ var init_OnboardingModal = __esm({
         });
         if (this.nerBackend === "none")
           noneBtn.addClass("pseudobs-onboarding-none-btn-active");
-        noneBtn.addEventListener("click", async () => {
-          this.nerBackend = "none";
-          await this.saveNerSettings();
-          this.scheduleRender();
+        noneBtn.addEventListener("click", () => {
+          void (async () => {
+            this.nerBackend = "none";
+            await this.saveNerSettings();
+            this.scheduleRender();
+          })();
         });
       }
       // ---- Utilitaires WASM -----------------------------------------
@@ -207,7 +211,7 @@ var init_OnboardingModal = __esm({
           try {
             const response = await (0, import_obsidian.requestUrl)({ url: `${WASM_CDN_BASE}/${f}`, method: "GET" });
             fs.writeFileSync(path.join(dir, f), Buffer.from(response.arrayBuffer));
-          } catch (e) {
+          } catch {
             statusEl.setText(`\xC9chec pour ${f} \u2014 v\xE9rifiez votre connexion`);
             statusEl.classList.add("pseudobs-onboarding-test-err");
             btn.removeAttribute("disabled");
@@ -241,12 +245,12 @@ var init_OnboardingModal = __esm({
         });
         const importStatus = importRow.createSpan({ cls: "pseudobs-onboarding-test-status" });
         importBtn.addEventListener("click", () => {
-          const input = document.createElement("input");
+          const input = activeDocument.createElement("input");
           input.type = "file";
           input.accept = ".json";
           input.multiple = true;
           input.classList.add("pseudobs-hidden-input");
-          document.body.appendChild(input);
+          activeDocument.body.appendChild(input);
           input.addEventListener("change", () => void this.processDictFiles(input, importStatus));
           input.click();
         });
@@ -314,9 +318,11 @@ var init_OnboardingModal = __esm({
           li.createSpan({ text: f.name });
           const removeBtn = li.createEl("button", { text: "\u2715", cls: "pseudobs-onboarding-dict-remove" });
           removeBtn.title = "Retirer ce dictionnaire du vault";
-          removeBtn.addEventListener("click", async () => {
-            await this.app.vault.delete(f);
-            this.scheduleRender();
+          removeBtn.addEventListener("click", () => {
+            void (async () => {
+              await this.app.fileManager.trashFile(f);
+              this.scheduleRender();
+            })();
           });
         }
       }
@@ -372,10 +378,12 @@ var init_OnboardingModal = __esm({
             this.scheduleRender();
           });
         } else if (this.currentStep === "summary") {
-          rightBtns.createEl("button", { text: "Commencer \xE0 travailler", cls: "pseudobs-onboarding-next-btn mod-cta" }).addEventListener("click", async () => {
-            this.plugin.settings.onboardingCompleted = true;
-            await this.plugin.saveSettings();
-            this.close();
+          rightBtns.createEl("button", { text: "Commencer \xE0 travailler", cls: "pseudobs-onboarding-next-btn mod-cta" }).addEventListener("click", () => {
+            void (async () => {
+              this.plugin.settings.onboardingCompleted = true;
+              await this.plugin.saveSettings();
+              this.close();
+            })();
           });
         } else {
           rightBtns.createEl("button", { text: "Passer cette \xE9tape", cls: "pseudobs-onboarding-skip-btn" }).addEventListener("click", () => {
@@ -32599,8 +32607,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
   async onFileChange() {
     if (this._renderingTab)
       return;
-    const activeLeaf = this.app.workspace.activeLeaf;
-    if (activeLeaf && activeLeaf.view === this)
+    if (this.app.workspace.getActiveViewOfType(import_obsidian7.ItemView) === this)
       return;
     const f = this.app.workspace.getActiveFile();
     if (f && f !== this.lastFile) {
@@ -32661,38 +32668,40 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
         cls: "pseudobs-view-hint"
       });
     }
-    scanBtn.addEventListener("click", async () => {
-      scanBtn.setAttr("disabled", "true");
-      scanBtn.setText("Scan en cours\u2026");
-      try {
-        const content = await this.app.vault.read(file);
-        const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
-        resultsEl.empty();
-        if (rules.length === 0) {
-          resultsEl.createEl("p", {
-            text: 'Aucune r\xE8gle active pour ce fichier. Cr\xE9ez des r\xE8gles via le menu contextuel ou la commande "cr\xE9er une r\xE8gle".',
-            cls: "pseudobs-view-hint"
-          });
-        } else {
-          const occs = scanOccurrences(content, file.path, rules, {
-            caseSensitive: this.plugin.settings.caseSensitive,
-            wholeWordOnly: this.plugin.settings.wholeWordOnly
-          });
-          this.occFile = file;
-          this.occContent = content;
-          this.occurrences = occs;
-          this.occRules = rules;
-          this.occDecisions = /* @__PURE__ */ new Map();
-          this.occCardRefs = /* @__PURE__ */ new Map();
-          for (const occ of occs)
-            this.occDecisions.set(occ.id, "validated");
-          this.occScanned = true;
-          this.renderOccurrenceCards(resultsEl);
+    scanBtn.addEventListener("click", () => {
+      void (async () => {
+        scanBtn.setAttr("disabled", "true");
+        scanBtn.setText("Scan en cours\u2026");
+        try {
+          const content = await this.app.vault.read(file);
+          const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
+          resultsEl.empty();
+          if (rules.length === 0) {
+            resultsEl.createEl("p", {
+              text: 'Aucune r\xE8gle active pour ce fichier. Cr\xE9ez des r\xE8gles via le menu contextuel ou la commande "cr\xE9er une r\xE8gle".',
+              cls: "pseudobs-view-hint"
+            });
+          } else {
+            const occs = scanOccurrences(content, file.path, rules, {
+              caseSensitive: this.plugin.settings.caseSensitive,
+              wholeWordOnly: this.plugin.settings.wholeWordOnly
+            });
+            this.occFile = file;
+            this.occContent = content;
+            this.occurrences = occs;
+            this.occRules = rules;
+            this.occDecisions = /* @__PURE__ */ new Map();
+            this.occCardRefs = /* @__PURE__ */ new Map();
+            for (const occ of occs)
+              this.occDecisions.set(occ.id, "validated");
+            this.occScanned = true;
+            this.renderOccurrenceCards(resultsEl);
+          }
+        } finally {
+          scanBtn.removeAttribute("disabled");
+          scanBtn.setText("Scanner le fichier");
         }
-      } finally {
-        scanBtn.removeAttribute("disabled");
-        scanBtn.setText("Scanner le fichier");
-      }
+      })();
     });
   }
   renderOccurrenceCards(el) {
@@ -32941,9 +32950,9 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     slider.addEventListener("input", () => {
       scoreDisplay.setText(parseFloat(slider.value).toFixed(2));
     });
-    slider.addEventListener("change", async () => {
+    slider.addEventListener("change", () => {
       this.plugin.settings.nerMinScore = parseFloat(slider.value);
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     });
     const fwSection = el.createDiv("pseudobs-ner-section");
     fwSection.createEl("strong", { text: "Mots fonctionnels exclus" });
@@ -32960,27 +32969,31 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       text: "Enregistrer",
       cls: "pseudobs-view-action-btn"
     });
-    saveBtn.addEventListener("click", async () => {
-      const words = textarea.value.split("\n").map((w) => w.trim()).filter((w) => w.length > 0);
-      this.plugin.settings.nerFunctionWords = words;
-      await this.plugin.saveSettings();
-      saveBtn.addClass("pseudobs-btn-saved");
-      saveBtn.setText("Enregistr\xE9");
-      setTimeout(() => {
-        saveBtn.removeClass("pseudobs-btn-saved");
-        saveBtn.setText("Enregistrer");
-      }, 2e3);
+    saveBtn.addEventListener("click", () => {
+      void (async () => {
+        const words = textarea.value.split("\n").map((w) => w.trim()).filter((w) => w.length > 0);
+        this.plugin.settings.nerFunctionWords = words;
+        await this.plugin.saveSettings();
+        saveBtn.addClass("pseudobs-btn-saved");
+        saveBtn.setText("Enregistr\xE9");
+        window.setTimeout(() => {
+          saveBtn.removeClass("pseudobs-btn-saved");
+          saveBtn.setText("Enregistrer");
+        }, 2e3);
+      })();
     });
     const resetBtn = fwSection.createEl("button", {
       text: "R\xE9initialiser par d\xE9faut",
       cls: "pseudobs-view-action-btn"
     });
     resetBtn.addClass("pseudobs-ner-reset-btn");
-    resetBtn.addEventListener("click", async () => {
-      const { DEFAULT_SETTINGS: DEFAULT_SETTINGS2 } = await Promise.resolve().then(() => (init_settings(), settings_exports));
-      this.plugin.settings.nerFunctionWords = [...DEFAULT_SETTINGS2.nerFunctionWords];
-      await this.plugin.saveSettings();
-      textarea.value = this.plugin.settings.nerFunctionWords.join("\n");
+    resetBtn.addEventListener("click", () => {
+      void (async () => {
+        const { DEFAULT_SETTINGS: DEFAULT_SETTINGS2 } = await Promise.resolve().then(() => (init_settings(), settings_exports));
+        this.plugin.settings.nerFunctionWords = [...DEFAULT_SETTINGS2.nerFunctionWords];
+        await this.plugin.saveSettings();
+        textarea.value = this.plugin.settings.nerFunctionWords.join("\n");
+      })();
     });
   }
   onClose() {
@@ -33030,13 +33043,13 @@ var OnnxNerScanner = class {
       throw new Error(_loadError);
     if (_loading) {
       await new Promise((resolve, reject) => {
-        const timer = setInterval(() => {
+        const timer = window.setInterval(() => {
           if (_pipeline) {
-            clearInterval(timer);
+            window.clearInterval(timer);
             resolve();
           }
           if (_loadError) {
-            clearInterval(timer);
+            window.clearInterval(timer);
             reject(new Error(_loadError));
           }
         }, 300);
@@ -33528,7 +33541,6 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
     );
   }
   onunload() {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_PSEUDOBS);
   }
   async activateView() {
     const { workspace } = this.app;
@@ -33537,7 +33549,7 @@ var PseudObsPlugin = class extends import_obsidian10.Plugin {
       leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
       await leaf.setViewState({ type: VIEW_TYPE_PSEUDOBS, active: true });
     }
-    workspace.revealLeaf(leaf);
+    void workspace.revealLeaf(leaf);
   }
   // --- Coulmont ---
   // Interroge l'outil de Baptiste Coulmont pour suggérer un prénom équivalent.

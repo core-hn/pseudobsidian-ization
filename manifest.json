@@ -2,7 +2,7 @@
   "id": "pseudonymizer-tool",
   "name": "Pseudonymizer Tool",
   "version": "0.0.6",
-  "minAppVersion": "1.6.6",
+  "minAppVersion": "1.7.2",
   "description": "Pseudonymize and correct interactional transcripts (Jefferson, ICOR, SRT, CHAT/CHA). Designed for qualitative researchers in linguistics and conversation analysis.",
   "author": "Axelle Abbadie",
   "authorUrl": "https://cv.hal.science/axelle-abbadie/",

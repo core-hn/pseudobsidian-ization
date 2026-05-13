@@ -85,7 +85,7 @@ export class ScopeResolver {
     for (const child of folder.children) {
       if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
       try {
-        const data: MappingFile = JSON.parse(await this.vault.read(child));
+        const data = JSON.parse(await this.vault.read(child)) as MappingFile;
         const store = MappingStore.fromJSON(data);
         const applicable = store.getAll().filter((r) => {
           if (r.scope.type === 'vault') return true;
@@ -110,7 +110,7 @@ export class ScopeResolver {
     const file = this.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) return [];
     try {
-      const data: MappingFile = JSON.parse(await this.vault.read(file));
+      const data = JSON.parse(await this.vault.read(file)) as MappingFile;
       const store = MappingStore.fromJSON(data);
       return store.getAll().filter((r) => r.status === 'validated');
     } catch {

@@ -6,7 +6,6 @@ import { resolveSpans, applySpans } from '../pseudonymizer/SpanProtector';
 import type { ReplacementSpan } from '../types';
 import { EditRuleModal } from './EditRuleModal';
 import { RuleModal } from './RuleModal';
-import type { RuleLocation } from '../mappings/ScopeResolver';
 
 export const VIEW_TYPE_PSEUDOBS = 'pseudonymization-view';
 
@@ -134,8 +133,7 @@ export class PseudonymizationView extends ItemView {
     // Le panneau lui-même peut devenir la feuille active sans changement de fichier
     // → éviter une boucle render ↔ active-leaf-change
     if (this._renderingTab) return;
-    const activeLeaf = this.app.workspace.activeLeaf;
-    if (activeLeaf && (activeLeaf as { view?: unknown }).view === this) return;
+    if (this.app.workspace.getActiveViewOfType(ItemView) === this) return;
 
     const f = this.app.workspace.getActiveFile();
     if (f && f !== this.lastFile) {
@@ -207,7 +205,7 @@ export class PseudonymizationView extends ItemView {
       });
     }
 
-    scanBtn.addEventListener('click', async () => {
+    scanBtn.addEventListener('click', () => { void (async () => {
       scanBtn.setAttr('disabled', 'true');
       scanBtn.setText('Scan en cours…');
       try {
@@ -242,7 +240,7 @@ export class PseudonymizationView extends ItemView {
         scanBtn.removeAttribute('disabled');
         scanBtn.setText('Scanner le fichier');
       }
-    });
+    })(); });
   }
 
   private renderOccurrenceCards(el: HTMLElement): void {
@@ -534,9 +532,9 @@ export class PseudonymizationView extends ItemView {
     slider.addEventListener('input', () => {
       scoreDisplay.setText(parseFloat(slider.value).toFixed(2));
     });
-    slider.addEventListener('change', async () => {
+    slider.addEventListener('change', () => {
       this.plugin.settings.nerMinScore = parseFloat(slider.value);
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     });
 
     // --- Mots fonctionnels ---
@@ -557,7 +555,7 @@ export class PseudonymizationView extends ItemView {
       text: 'Enregistrer',
       cls: 'pseudobs-view-action-btn',
     });
-    saveBtn.addEventListener('click', async () => {
+    saveBtn.addEventListener('click', () => { void (async () => {
       const words = textarea.value
         .split('\n')
         .map((w) => w.trim())
@@ -566,20 +564,20 @@ export class PseudonymizationView extends ItemView {
       await this.plugin.saveSettings();
       saveBtn.addClass('pseudobs-btn-saved');
       saveBtn.setText('Enregistré');
-      setTimeout(() => { saveBtn.removeClass('pseudobs-btn-saved'); saveBtn.setText('Enregistrer'); }, 2000);
-    });
+      window.setTimeout(() => { saveBtn.removeClass('pseudobs-btn-saved'); saveBtn.setText('Enregistrer'); }, 2000);
+    })(); });
 
     const resetBtn = fwSection.createEl('button', {
       text: 'Réinitialiser par défaut',
       cls: 'pseudobs-view-action-btn',
     });
     resetBtn.addClass('pseudobs-ner-reset-btn');
-    resetBtn.addEventListener('click', async () => {
+    resetBtn.addEventListener('click', () => { void (async () => {
       const { DEFAULT_SETTINGS } = await import('../settings');
       this.plugin.settings.nerFunctionWords = [...DEFAULT_SETTINGS.nerFunctionWords];
       await this.plugin.saveSettings();
       textarea.value = this.plugin.settings.nerFunctionWords.join('\n');
-    });
+    })(); });
   }
 
   onClose(): Promise<void> {

@@ -1,4 +1,4 @@
-import { App, FileSystemAdapter, Modal, Notice, Setting, TFile, requestUrl } from 'obsidian';
+import { App, FileSystemAdapter, Modal, Notice, TFile, requestUrl } from 'obsidian';
 import * as fs from 'fs';
 import * as path from 'path';
 import type PseudObsPlugin from '../main';
@@ -46,12 +46,12 @@ export class OnboardingModal extends Modal {
   onOpen(): void {
     this.modalEl.addClass('pseudobs-onboarding');
     // Différer le premier render pour sortir du cycle d'ouverture du modal
-    setTimeout(() => this.render(), 0);
+    window.setTimeout(() => this.render(), 0);
   }
 
   private scheduleRender(): void {
     // Différer le re-render pour éviter de modifier le DOM pendant un cycle de mesure Obsidian
-    setTimeout(() => this.render(), 0);
+    window.setTimeout(() => this.render(), 0);
   }
 
   private render(): void {
@@ -137,7 +137,7 @@ export class OnboardingModal extends Modal {
     });
     if (this.nerBackend === 'transformers-js') selectTfjs.addClass('pseudobs-onboarding-select-btn-active');
 
-    selectTfjs.addEventListener('click', async () => {
+    selectTfjs.addEventListener('click', () => { void (async () => {
       this.nerBackend = 'transformers-js';
       await this.saveNerSettings();
 
@@ -147,7 +147,7 @@ export class OnboardingModal extends Modal {
       }
 
       this.scheduleRender();
-    });
+    })(); });
 
     // --- Désactiver ---
     const noneRow = el.createDiv('pseudobs-onboarding-none-row');
@@ -156,11 +156,11 @@ export class OnboardingModal extends Modal {
       cls: 'pseudobs-onboarding-none-btn',
     });
     if (this.nerBackend === 'none') noneBtn.addClass('pseudobs-onboarding-none-btn-active');
-    noneBtn.addEventListener('click', async () => {
+    noneBtn.addEventListener('click', () => { void (async () => {
       this.nerBackend = 'none';
       await this.saveNerSettings();
       this.scheduleRender();
-    });
+    })(); });
   }
 
   // ---- Utilitaires WASM -----------------------------------------
@@ -203,7 +203,7 @@ export class OnboardingModal extends Modal {
       try {
         const response = await requestUrl({ url: `${WASM_CDN_BASE}/${f}`, method: 'GET' });
         fs.writeFileSync(path.join(dir, f), Buffer.from(response.arrayBuffer));
-      } catch (e) {
+      } catch {
         statusEl.setText(`Échec pour ${f} — vérifiez votre connexion`);
         statusEl.classList.add('pseudobs-onboarding-test-err');
         btn.removeAttribute('disabled');
@@ -244,12 +244,12 @@ export class OnboardingModal extends Modal {
     const importStatus = importRow.createSpan({ cls: 'pseudobs-onboarding-test-status' });
 
     importBtn.addEventListener('click', () => {
-      const input = document.createElement('input');
+      const input = activeDocument.createElement('input');
       input.type = 'file';
       input.accept = '.json';
       input.multiple = true;
       input.classList.add('pseudobs-hidden-input');
-      document.body.appendChild(input);
+      activeDocument.body.appendChild(input);
       input.addEventListener('change', () => void this.processDictFiles(input, importStatus));
       input.click();
     });
@@ -284,7 +284,7 @@ export class OnboardingModal extends Modal {
         ok++;
       } catch {
         err++;
-        new Notice(`Erreur lors de l\'import de ${f.name} — vérifiez le format .dict.json`);
+        new Notice(`Erreur lors de l'import de ${f.name} — vérifiez le format .dict.json`);
       }
     }
 
@@ -329,10 +329,10 @@ export class OnboardingModal extends Modal {
       li.createSpan({ text: f.name });
       const removeBtn = li.createEl('button', { text: '✕', cls: 'pseudobs-onboarding-dict-remove' });
       removeBtn.title = 'Retirer ce dictionnaire du vault';
-      removeBtn.addEventListener('click', async () => {
-        await this.app.vault.delete(f);
+      removeBtn.addEventListener('click', () => { void (async () => {
+        await this.app.fileManager.trashFile(f);
         this.scheduleRender();
-      });
+      })(); });
     }
   }
 
@@ -409,11 +409,11 @@ export class OnboardingModal extends Modal {
 
     } else if (this.currentStep === 'summary') {
       rightBtns.createEl('button', { text: 'Commencer à travailler', cls: 'pseudobs-onboarding-next-btn mod-cta' })
-        .addEventListener('click', async () => {
+        .addEventListener('click', () => { void (async () => {
           this.plugin.settings.onboardingCompleted = true;
           await this.plugin.saveSettings();
           this.close();
-        });
+        })(); });
 
     } else {
       // Étapes intermédiaires : Passer + Suivant
