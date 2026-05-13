@@ -166,7 +166,7 @@ src/
 
 ---
 
-## Statut — v0.1.0
+## Statut — v0.1.x
 
 | Phase | Statut | Description |
 |---|---|---|
