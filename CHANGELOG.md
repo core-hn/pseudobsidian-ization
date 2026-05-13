@@ -1,8 +1,8 @@
 # Changelog
 
-## [dev] v0.1.3 — 14 mai 2026
+## [prod] v0.1.3 — 14 mai 2026
 
-**Branche :** `main` | **Tag :** à venir
+**Branche :** `main` | **Tag :** `0.1.3`
 
 ### Nouvelles fonctionnalités
 - **Système de dictionnaires structurés** — format `DictionaryFile` v1.1 : champs `roles` (détection / remplacement / classes), `configSchema` (variables configurables avec valeurs possibles), `config` (valeurs actives), `author`, `doi`
