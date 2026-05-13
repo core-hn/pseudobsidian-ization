@@ -774,12 +774,11 @@
 
 /* ---- Modale de révision du scan dictionnaire (cards) ---- */
 
-.pseudobs-dict-review-modal {
+.pseudobs-modal-review-outer {
   width: min(620px, 92vw);
 }
-.pseudobs-dict-review-modal .modal-content { width: 100%; }
+.pseudobs-dict-review-modal { width: 100%; }
 .pseudobs-dict-review-modal h2 { margin-top: 0; font-size: 1.15em; }
-.modal:has(.pseudobs-dict-review-modal){ width: fit-content; }
 
 .pseudobs-dict-review-scroll {
   max-height: min(520px, 60vh);

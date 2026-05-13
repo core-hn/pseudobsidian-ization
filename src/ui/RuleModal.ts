@@ -223,7 +223,7 @@ export class RuleModal extends Modal {
       if (dict) {
         const incrementScope = dict.config?.incrementScope ?? 'file';
         const existingReplacements = await this.collectExistingReplacements(activeFile, incrementScope);
-        this.replacement = this.plugin.dictionaryLoader!.nextReplacement(
+        this.replacement = this.plugin.dictionaryLoader.nextReplacement(
           dict, this.dictEntryClass, existingReplacements
         );
       }
@@ -302,7 +302,7 @@ export class RuleModal extends Modal {
       if (!(f instanceof TFile)) continue;
       try {
         const data = JSON.parse(await this.app.vault.read(f)) as MappingFile;
-        for (const rule of data.mappings as MappingRule[]) {
+        for (const rule of data.mappings) {
           if (rule.sourceDictionary === this.dictId && rule.replacement) {
             replacements.push(rule.replacement);
           }

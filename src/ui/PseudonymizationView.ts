@@ -1,7 +1,6 @@
 import { ItemView, Notice, Setting, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
-import type { MappingRule } from '../types';
 import { scanOccurrences } from '../scanner/OccurrenceScanner';
 import { EditRuleModal } from './EditRuleModal';
 import { RuleModal } from './RuleModal';

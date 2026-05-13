@@ -349,7 +349,7 @@ export class DictionaryLoader {
             text: phrase,
             contextBefore: text.slice(Math.max(0, start - ctxLen), start),
             contextAfter:  text.slice(end, Math.min(text.length, end + ctxLen)),
-            category: (hit.dict.type ?? 'place') as EntityCategory,
+            category: hit.dict.type ?? 'place',
             status: 'needs_review',
           });
 

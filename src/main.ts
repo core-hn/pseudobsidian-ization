@@ -5,7 +5,6 @@ import { RuleModal } from './ui/RuleModal';
 import { QuickPseudonymizeModal } from './ui/QuickPseudonymizeModal';
 import { createPseudonymHighlighter, highlightDataChanged, type HighlightData } from './ui/PseudonymHighlighter';
 import { EditRuleModal } from './ui/EditRuleModal';
-import { OccurrencesModal } from './ui/OccurrencesModal';
 import { PseudonymizationView, VIEW_TYPE_PSEUDOBS } from './ui/PseudonymizationView';
 import { OnboardingModal } from './ui/OnboardingModal';
 import { OnnxNerScanner } from './scanner/OnnxNerScanner';

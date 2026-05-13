@@ -49,6 +49,7 @@ export class DictScanReviewModal extends Modal {
   }
 
   onOpen(): void {
+    this.modalEl.addClass('pseudobs-modal-review-outer');
     const { contentEl } = this;
     contentEl.addClass('pseudobs-dict-review-modal');
 
@@ -141,7 +142,7 @@ export class DictScanReviewModal extends Modal {
     footer.createEl('button', { text: 'Annuler' })
       .addEventListener('click', () => this.close());
 
-    this.applyBtn = footer.createEl('button', { cls: 'mod-cta' }) as HTMLButtonElement;
+    this.applyBtn = footer.createEl('button', { cls: 'mod-cta' });
     this.applyBtn.addEventListener('click', () => void this.apply());
 
     this.recomputeIndices();

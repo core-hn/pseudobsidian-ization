@@ -32555,6 +32555,7 @@ var MappingScanReviewModal = class extends import_obsidian6.Modal {
     this.checked = ruleResults.map(() => true);
   }
   onOpen() {
+    this.modalEl.addClass("pseudobs-modal-review-outer");
     const { contentEl } = this;
     contentEl.addClass("pseudobs-dict-review-modal");
     contentEl.createEl("h2", { text: "R\xE9vision du scan \u2014 mappings" });
@@ -33528,6 +33529,7 @@ var DictScanReviewModal = class extends import_obsidian9.Modal {
     this.indexSpans = results.map(() => null);
   }
   onOpen() {
+    this.modalEl.addClass("pseudobs-modal-review-outer");
     const { contentEl } = this;
     contentEl.addClass("pseudobs-dict-review-modal");
     contentEl.createEl("h2", { text: "R\xE9vision du scan \u2014 dictionnaires" });
