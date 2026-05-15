@@ -1,6 +1,4 @@
-import { App, FileSystemAdapter, Modal, Notice, TFile, requestUrl, setIcon } from 'obsidian';
-import * as fs from 'fs';
-import * as path from 'path';
+import { App, Modal, Notice, TFile, requestUrl, setIcon } from 'obsidian';
 import type PseudObsPlugin from '../main';
 import type { NerBackend } from '../settings';
 import type { DictionaryFile, DictionaryManifest, DictionaryManifestEntry } from '../types';
@@ -189,10 +187,12 @@ export class OnboardingModal extends Modal {
     const wasmRow = cardTfjs.createDiv('pseudobs-onboarding-url-row');
     const wasmStatus = wasmRow.createSpan({ cls: 'pseudobs-onboarding-test-status' });
 
-    if (this.checkWasmFiles()) {
-      wasmStatus.setText(t('onboarding.ner.wasmReady'));
-      wasmStatus.classList.add('pseudobs-onboarding-test-ok');
-    }
+    void this.checkWasmFiles().then((present) => {
+      if (present) {
+        wasmStatus.setText(t('onboarding.ner.wasmReady'));
+        wasmStatus.classList.add('pseudobs-onboarding-test-ok');
+      }
+    });
 
     const selectTfjs = cardTfjs.createEl('button', {
       text: this.nerBackend === 'transformers-js' ? t('onboarding.ner.selectedBtn') : t('onboarding.ner.installBtn'),
@@ -203,7 +203,7 @@ export class OnboardingModal extends Modal {
     selectTfjs.addEventListener('click', () => { void (async () => {
       this.nerBackend = 'transformers-js';
       await this.saveNerSettings();
-      if (!this.checkWasmFiles()) {
+      if (!await this.checkWasmFiles()) {
         const ok = await this.downloadWasmFiles(wasmStatus, selectTfjs);
         if (!ok) return;
       }
@@ -225,53 +225,43 @@ export class OnboardingModal extends Modal {
 
   // ---- Utilitaires WASM -----------------------------------------
 
-  private getPluginDir(): string | null {
-    const { adapter } = this.app.vault;
-    if (!(adapter instanceof FileSystemAdapter)) return null;
-    return path.join(
-      adapter.getBasePath(),
-      this.app.vault.configDir,
-      'plugins',
-      'pseudonymizer-tool'
-    );
+  // Chemin vault-relatif du dossier plugin — évite toute dépendance à fs/path
+  private getPluginRelDir(): string {
+    return `${this.app.vault.configDir}/plugins/pseudonymizer-tool`;
   }
 
-  private checkWasmFiles(): boolean {
-    const dir = this.getPluginDir();
-    if (!dir) return false;
-    return WASM_FILES.every((f) => fs.existsSync(path.join(dir, f)));
+  private async checkWasmFiles(): Promise<boolean> {
+    const dir = this.getPluginRelDir();
+    for (const f of WASM_FILES) {
+      if (!await this.app.vault.adapter.exists(`${dir}/${f}`)) return false;
+    }
+    return true;
   }
 
   private async downloadWasmFiles(
     statusEl: HTMLElement,
     btn: HTMLElement
   ): Promise<boolean> {
-    const dir = this.getPluginDir();
-    if (!dir) {
-      statusEl.setText('Impossible de localiser le dossier du plugin');
-      statusEl.className = 'pseudobs-onboarding-test-status pseudobs-onboarding-test-err';
-      return false;
-    }
-
+    const dir = this.getPluginRelDir();
     btn.setAttr('disabled', 'true');
 
     for (let i = 0; i < WASM_FILES.length; i++) {
       const f = WASM_FILES[i];
       statusEl.className = 'pseudobs-onboarding-test-status';
-      statusEl.setText(`Téléchargement ${i + 1}/${WASM_FILES.length} : ${f}…`);
+      statusEl.setText(`${i + 1}/${WASM_FILES.length} : ${f}…`);
 
       try {
         const response = await requestUrl({ url: `${WASM_CDN_BASE}/${f}`, method: 'GET' });
-        fs.writeFileSync(path.join(dir, f), Buffer.from(response.arrayBuffer));
+        await this.app.vault.adapter.writeBinary(`${dir}/${f}`, response.arrayBuffer);
       } catch {
-        statusEl.setText(`Échec pour ${f} — vérifiez votre connexion`);
+        statusEl.setText(`${f} — check your connection`);
         statusEl.classList.add('pseudobs-onboarding-test-err');
         btn.removeAttribute('disabled');
         return false;
       }
     }
 
-    statusEl.setText('Fichiers .wasm installés');
+    statusEl.setText(t('onboarding.ner.wasmReady'));
     statusEl.classList.add('pseudobs-onboarding-test-ok');
     btn.removeAttribute('disabled');
     return true;

@@ -674,13 +674,11 @@ function stepLabels() {
     summary: t("onboarding.step.summary")
   };
 }
-var import_obsidian, fs, path, TRANSFORMERS_VERSION, WASM_CDN_BASE, DICT_MANIFEST_URL, WASM_FILES, STEPS, OnboardingModal;
+var import_obsidian, TRANSFORMERS_VERSION, WASM_CDN_BASE, DICT_MANIFEST_URL, WASM_FILES, STEPS, OnboardingModal;
 var init_OnboardingModal = __esm({
   "src/ui/OnboardingModal.ts"() {
     "use strict";
     import_obsidian = require("obsidian");
-    fs = __toESM(require("fs"));
-    path = __toESM(require("path"));
     init_i18n();
     TRANSFORMERS_VERSION = "2.17.2";
     WASM_CDN_BASE = `https://cdn.jsdelivr.net/npm/@xenova/transformers@${TRANSFORMERS_VERSION}/dist`;
@@ -822,10 +820,12 @@ var init_OnboardingModal = __esm({
         cardTfjs.createEl("p", { text: t("onboarding.ner.tfjsDesc") });
         const wasmRow = cardTfjs.createDiv("pseudobs-onboarding-url-row");
         const wasmStatus = wasmRow.createSpan({ cls: "pseudobs-onboarding-test-status" });
-        if (this.checkWasmFiles()) {
-          wasmStatus.setText(t("onboarding.ner.wasmReady"));
-          wasmStatus.classList.add("pseudobs-onboarding-test-ok");
-        }
+        void this.checkWasmFiles().then((present) => {
+          if (present) {
+            wasmStatus.setText(t("onboarding.ner.wasmReady"));
+            wasmStatus.classList.add("pseudobs-onboarding-test-ok");
+          }
+        });
         const selectTfjs = cardTfjs.createEl("button", {
           text: this.nerBackend === "transformers-js" ? t("onboarding.ner.selectedBtn") : t("onboarding.ner.installBtn"),
           cls: "pseudobs-onboarding-select-btn"
@@ -836,7 +836,7 @@ var init_OnboardingModal = __esm({
           void (async () => {
             this.nerBackend = "transformers-js";
             await this.saveNerSettings();
-            if (!this.checkWasmFiles()) {
+            if (!await this.checkWasmFiles()) {
               const ok = await this.downloadWasmFiles(wasmStatus, selectTfjs);
               if (!ok)
                 return;
@@ -860,46 +860,36 @@ var init_OnboardingModal = __esm({
         });
       }
       // ---- Utilitaires WASM -----------------------------------------
-      getPluginDir() {
-        const { adapter } = this.app.vault;
-        if (!(adapter instanceof import_obsidian.FileSystemAdapter))
-          return null;
-        return path.join(
-          adapter.getBasePath(),
-          this.app.vault.configDir,
-          "plugins",
-          "pseudonymizer-tool"
-        );
+      // Chemin vault-relatif du dossier plugin — évite toute dépendance à fs/path
+      getPluginRelDir() {
+        return `${this.app.vault.configDir}/plugins/pseudonymizer-tool`;
       }
-      checkWasmFiles() {
-        const dir = this.getPluginDir();
-        if (!dir)
-          return false;
-        return WASM_FILES.every((f) => fs.existsSync(path.join(dir, f)));
+      async checkWasmFiles() {
+        const dir = this.getPluginRelDir();
+        for (const f of WASM_FILES) {
+          if (!await this.app.vault.adapter.exists(`${dir}/${f}`))
+            return false;
+        }
+        return true;
       }
       async downloadWasmFiles(statusEl, btn) {
-        const dir = this.getPluginDir();
-        if (!dir) {
-          statusEl.setText("Impossible de localiser le dossier du plugin");
-          statusEl.className = "pseudobs-onboarding-test-status pseudobs-onboarding-test-err";
-          return false;
-        }
+        const dir = this.getPluginRelDir();
         btn.setAttr("disabled", "true");
         for (let i2 = 0; i2 < WASM_FILES.length; i2++) {
           const f = WASM_FILES[i2];
           statusEl.className = "pseudobs-onboarding-test-status";
-          statusEl.setText(`T\xE9l\xE9chargement ${i2 + 1}/${WASM_FILES.length} : ${f}\u2026`);
+          statusEl.setText(`${i2 + 1}/${WASM_FILES.length} : ${f}\u2026`);
           try {
             const response = await (0, import_obsidian.requestUrl)({ url: `${WASM_CDN_BASE}/${f}`, method: "GET" });
-            fs.writeFileSync(path.join(dir, f), Buffer.from(response.arrayBuffer));
+            await this.app.vault.adapter.writeBinary(`${dir}/${f}`, response.arrayBuffer);
           } catch {
-            statusEl.setText(`\xC9chec pour ${f} \u2014 v\xE9rifiez votre connexion`);
+            statusEl.setText(`${f} \u2014 check your connection`);
             statusEl.classList.add("pseudobs-onboarding-test-err");
             btn.removeAttribute("disabled");
             return false;
           }
         }
-        statusEl.setText("Fichiers .wasm install\xE9s");
+        statusEl.setText(t("onboarding.ner.wasmReady"));
         statusEl.classList.add("pseudobs-onboarding-test-ok");
         btn.removeAttribute("disabled");
         return true;
@@ -1007,8 +997,8 @@ var init_OnboardingModal = __esm({
       }
       isDictInstalled(id) {
         const folder = this.plugin.settings.dictionariesFolder;
-        const path5 = `${folder}/${id}.dict.json`;
-        return this.app.vault.getAbstractFileByPath(path5) instanceof import_obsidian.TFile;
+        const path4 = `${folder}/${id}.dict.json`;
+        return this.app.vault.getAbstractFileByPath(path4) instanceof import_obsidian.TFile;
       }
       async downloadDict(entry) {
         try {
@@ -16638,8 +16628,8 @@ var init_hub = __esm({
        * Instantiate a `FileCache` object.
        * @param {string} path 
        */
-      constructor(path5) {
-        this.path = path5;
+      constructor(path4) {
+        this.path = path4;
       }
       /**
        * Checks whether the given request is in the cache.
@@ -28282,25 +28272,25 @@ var init_image = __esm({
        * Save the image to the given path.
        * @param {string} path The path to save the image to.
        */
-      async save(path5) {
+      async save(path4) {
         if (BROWSER_ENV) {
           if (WEBWORKER_ENV) {
             throw new Error("Unable to save an image from a Web Worker.");
           }
-          const extension = path5.split(".").pop().toLowerCase();
+          const extension = path4.split(".").pop().toLowerCase();
           const mime = CONTENT_TYPE_MAP.get(extension) ?? "image/png";
           const blob = await this.toBlob(mime);
           const dataURL = URL.createObjectURL(blob);
           const downloadLink = document.createElement("a");
           downloadLink.href = dataURL;
-          downloadLink.download = path5;
+          downloadLink.download = path4;
           downloadLink.click();
           downloadLink.remove();
         } else if (!env.useFS) {
           throw new Error("Unable to save the image because filesystem is disabled in this environment.");
         } else {
           const img = this.toSharp();
-          return await img.toFile(path5);
+          return await img.toFile(path4);
         }
       }
       toSharp() {
@@ -33787,7 +33777,7 @@ init_OnboardingModal();
 
 // src/scanner/OnnxNerScanner.ts
 var import_obsidian8 = require("obsidian");
-var path4 = __toESM(require("path"));
+var path3 = __toESM(require("path"));
 var os = __toESM(require("os"));
 var MODEL_ID = "Xenova/bert-base-multilingual-cased-ner-hrl";
 var TAG_TO_CATEGORY = {
@@ -33809,7 +33799,7 @@ var OnnxNerScanner = class {
     const { adapter } = this.app.vault;
     if (!(adapter instanceof import_obsidian8.FileSystemAdapter))
       return null;
-    return path4.join(
+    return path3.join(
       adapter.getBasePath(),
       this.app.vault.configDir,
       "plugins",
@@ -33843,9 +33833,9 @@ var OnnxNerScanner = class {
           t2.executionProviders.splice(cpuIdx, 1);
       }
       const pluginDir = this.getPluginDir();
-      env3.cacheDir = pluginDir ? path4.join(pluginDir, ".ner-cache") : path4.join(os.homedir(), ".cache", "huggingface", "hub");
+      env3.cacheDir = pluginDir ? path3.join(pluginDir, ".ner-cache") : path3.join(os.homedir(), ".cache", "huggingface", "hub");
       if (pluginDir) {
-        env3.backends.onnx.wasm.wasmPaths = pluginDir + path4.sep;
+        env3.backends.onnx.wasm.wasmPaths = pluginDir + path3.sep;
         env3.backends.onnx.wasm.numThreads = 1;
       }
       env3.allowRemoteModels = true;
@@ -34843,8 +34833,8 @@ var ScopeResolver = class {
   // Charge les règles validées d'un fichier de mapping spécifique, sans filtre de scope.
   // Utilisé pour les fichiers exportés (*.pseudonymized.*) dont le scope path ne correspond pas.
   async getRulesFromMappingFile(mappingFilename) {
-    const path5 = `${this.mappingFolder}/${mappingFilename}`;
-    const file = this.vault.getAbstractFileByPath(path5);
+    const path4 = `${this.mappingFolder}/${mappingFilename}`;
+    const file = this.vault.getAbstractFileByPath(path4);
     if (!(file instanceof import_obsidian11.TFile))
       return [];
     try {
