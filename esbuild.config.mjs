@@ -55,7 +55,9 @@ const context = await esbuild.context({
   logLevel: "info",
   sourcemap: prod ? false : "inline",
   treeShaking: true,
-  outfile: "main.js",
+  outfile: prod
+    ? "main.js"
+    : "test_vault/.obsidian/plugins/pseudonymizer-tool/main.js",
 });
 
 if (prod) {

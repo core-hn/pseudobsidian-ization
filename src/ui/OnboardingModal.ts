@@ -4,6 +4,7 @@ import * as path from 'path';
 import type PseudObsPlugin from '../main';
 import type { NerBackend } from '../settings';
 import type { DictionaryFile, DictionaryManifest, DictionaryManifestEntry } from '../types';
+import { t, setLocale, AVAILABLE_LANGUAGES } from '../i18n';
 
 // Version du package @xenova/transformers embarqué — doit rester synchronisée avec package.json
 const TRANSFORMERS_VERSION = '2.17.2';
@@ -16,16 +17,20 @@ const WASM_FILES = [
   'ort-wasm.wasm',
 ] as const;
 
-type Step = 'welcome' | 'ner' | 'dictionaries' | 'summary';
+type Step = 'welcome' | 'language' | 'storage' | 'ner' | 'dictionaries' | 'summary';
 
-const STEPS: Step[] = ['welcome', 'ner', 'dictionaries', 'summary'];
+const STEPS: Step[] = ['welcome', 'language', 'storage', 'ner', 'dictionaries', 'summary'];
 
-const STEP_LABELS: Record<Step, string> = {
-  welcome:      'Bienvenue',
-  ner:          'Détection NER',
-  dictionaries: 'Dictionnaires',
-  summary:      'Résumé',
-};
+function stepLabels(): Record<Step, string> {
+  return {
+    welcome:      t('onboarding.step.welcome'),
+    language:     t('onboarding.step.language'),
+    storage:      t('onboarding.step.storage'),
+    ner:          t('onboarding.step.ner'),
+    dictionaries: t('onboarding.step.dictionaries'),
+    summary:      t('onboarding.step.summary'),
+  };
+}
 
 export class OnboardingModal extends Modal {
   private plugin: PseudObsPlugin;
@@ -63,10 +68,12 @@ export class OnboardingModal extends Modal {
 
     const body = contentEl.createDiv('pseudobs-onboarding-body');
 
-    if (this.currentStep === 'welcome')      this.renderWelcome(body);
-    else if (this.currentStep === 'ner')     this.renderNer(body);
+    if (this.currentStep === 'welcome')           this.renderWelcome(body);
+    else if (this.currentStep === 'language')     this.renderLanguage(body);
+    else if (this.currentStep === 'storage')      this.renderStorage(body);
+    else if (this.currentStep === 'ner')          this.renderNer(body);
     else if (this.currentStep === 'dictionaries') this.renderDictionaries(body);
-    else                                     this.renderSummary(body);
+    else                                          this.renderSummary(body);
 
     this.renderNav(contentEl);
   }
@@ -80,60 +87,115 @@ export class OnboardingModal extends Modal {
       if (step === this.currentStep) dot.addClass('pseudobs-onboarding-step-current');
       else if (STEPS.indexOf(step) < STEPS.indexOf(this.currentStep))
         dot.addClass('pseudobs-onboarding-step-done');
-      dot.createSpan({ text: STEP_LABELS[step] });
+      dot.createSpan({ text: stepLabels()[step] });
     }
   }
 
   // ---- Étape 1 : Bienvenue ----------------------------------------
 
   private renderWelcome(el: HTMLElement): void {
-    el.createEl('h2', { text: 'Pseudonymizer tool' });
-    el.createEl('p', {
-      text: 'Ce plugin vous aide à corriger et pseudonymiser des transcriptions d\'entretiens et de corpus interactionnels (formats Jefferson, ICOR, .srt, .cha).',
-    });
-    el.createEl('p', {
-      text: 'L\'assistant va vous guider en deux étapes rapides :',
-    });
+    el.createEl('h2', { text: t('onboarding.welcome.title') });
+    el.createEl('p', { text: t('onboarding.welcome.desc') });
+    el.createEl('p', { text: t('onboarding.welcome.steps') });
     const list = el.createEl('ul');
-    list.createEl('li', { text: 'Choisir un moteur de détection automatique des entités nommées (optionnel).' });
-    list.createEl('li', { text: 'Importer des dictionnaires de candidats de remplacement (.dict.json) si vous en avez.' });
-    el.createEl('p', {
-      text: 'Vous pourrez reconfigurer ces options à tout moment via les paramètres du plugin.',
-      cls: 'pseudobs-onboarding-hint',
-    });
+    list.createEl('li', { text: t('onboarding.welcome.step1') });
+    list.createEl('li', { text: t('onboarding.welcome.step2') });
+    list.createEl('li', { text: t('onboarding.welcome.step3') });
+    el.createEl('p', { text: t('onboarding.welcome.hint'), cls: 'pseudobs-onboarding-hint' });
   }
 
-  // ---- Étape 2 : NER ----------------------------------------------
+  // ---- Étape 2 : Langue -------------------------------------------
 
-  private renderNer(el: HTMLElement): void {
-    el.createEl('h2', { text: 'Détection automatique des entités' });
+  private renderLanguage(el: HTMLElement): void {
+    // Titre toujours bilingue — l'utilisateur n'a pas encore choisi de langue
+    el.createEl('h2', { text: 'Interface language / Langue de l\'interface' });
     el.createEl('p', {
-      text: 'Un modèle NER (reconnaissance d\'entités nommées) peut détecter automatiquement les prénoms, noms, lieux et institutions dans vos transcriptions — sans liste exhaustive, directement dans Obsidian.',
+      text: 'The interface language does not affect transcript analysis. / La langue de l\'interface n\'affecte pas l\'analyse des transcriptions.',
+      cls: 'pseudobs-onboarding-hint',
     });
 
-    // --- Carte transformers.js ---
+    const currentLang = this.plugin.settings.language;
+
+    for (const [code, name] of Object.entries(AVAILABLE_LANGUAGES)) {
+      const card = el.createDiv('pseudobs-onboarding-ner-card');
+      if (currentLang === code) card.addClass('pseudobs-onboarding-ner-card-selected');
+
+      card.createEl('strong', { text: name });
+
+      const btn = card.createEl('button', {
+        text: currentLang === code ? 'Selected' : 'Select',
+        cls: 'pseudobs-onboarding-select-btn',
+      });
+      if (currentLang === code) btn.addClass('pseudobs-onboarding-select-btn-active');
+
+      btn.addEventListener('click', () => { void (async () => {
+        this.plugin.settings.language = code;
+        await this.plugin.saveSettings();
+        setLocale(code);
+        this.scheduleRender();
+      })(); });
+    }
+  }
+
+  // ---- Étape 3 : Stockage -----------------------------------------
+
+  private renderStorage(el: HTMLElement): void {
+    el.createEl('h2', { text: t('onboarding.storage.title') });
+
+    // Recommandation 1 vault / corpus
+    const rec = el.createDiv('pseudobs-onboarding-ner-card pseudobs-onboarding-ner-card-selected');
+    const recHeader = rec.createDiv('pseudobs-onboarding-ner-card-header');
+    recHeader.createEl('strong', { text: t('onboarding.storage.vaultPerCorpus') });
+    rec.createEl('p', { text: t('onboarding.storage.vaultPerCorpusDesc') });
+
+    el.createEl('hr');
+    el.createEl('p', { text: t('onboarding.storage.hint'), cls: 'pseudobs-onboarding-hint' });
+
+    const fields: [string, keyof typeof this.plugin.settings][] = [
+      [t('onboarding.storage.transcriptionsFolder'), 'transcriptionsFolder'],
+      [t('onboarding.storage.mappingFolder'),        'mappingFolder'],
+      [t('onboarding.storage.dictionariesFolder'),   'dictionariesFolder'],
+      [t('onboarding.storage.exportsFolder'),        'exportsFolder'],
+    ];
+
+    for (const [label, key] of fields) {
+      const row = el.createDiv('pseudobs-onboarding-url-row');
+      row.createEl('small', { text: label });
+      const input = row.createEl('input');
+      input.type = 'text';
+      input.value = String(this.plugin.settings[key]);
+      input.addEventListener('change', () => { void (async () => {
+        (this.plugin.settings as unknown as Record<string, unknown>)[key] = input.value.trim() || String(this.plugin.settings[key]);
+        await this.plugin.saveSettings();
+      })(); });
+    }
+  }
+
+  // ---- Étape 4 : NER ----------------------------------------------
+
+  private renderNer(el: HTMLElement): void {
+    el.createEl('h2', { text: t('onboarding.step.ner') });
+    el.createEl('p', { text: t('onboarding.ner.desc') });
+
     const cardTfjs = el.createDiv('pseudobs-onboarding-ner-card');
     if (this.nerBackend === 'transformers-js') cardTfjs.addClass('pseudobs-onboarding-ner-card-selected');
 
     const tfjsHeader = cardTfjs.createDiv('pseudobs-onboarding-ner-card-header');
-    tfjsHeader.createEl('strong', { text: 'transformers.js — modèle ONNX embarqué' });
-    tfjsHeader.createEl('span', { text: 'Python n\'est pas requis', cls: 'pseudobs-onboarding-badge' });
+    tfjsHeader.createEl('strong', { text: t('onboarding.ner.tfjsTitle') });
+    tfjsHeader.createEl('span', { text: t('onboarding.ner.tfjsBadge'), cls: 'pseudobs-onboarding-badge' });
 
-    cardTfjs.createEl('p', {
-      text: 'Modèle NER multilingue exécuté localement dans le vault. Les fichiers .wasm (~19 Mo) sont téléchargés une seule fois ici. Le modèle (~66 Mo) est téléchargé au premier scan.',
-    });
+    cardTfjs.createEl('p', { text: t('onboarding.ner.tfjsDesc') });
 
     const wasmRow = cardTfjs.createDiv('pseudobs-onboarding-url-row');
     const wasmStatus = wasmRow.createSpan({ cls: 'pseudobs-onboarding-test-status' });
 
-    const wasmAlreadyPresent = this.checkWasmFiles();
-    if (wasmAlreadyPresent) {
-      wasmStatus.setText('Fichiers .wasm déjà installés');
+    if (this.checkWasmFiles()) {
+      wasmStatus.setText(t('onboarding.ner.wasmReady'));
       wasmStatus.classList.add('pseudobs-onboarding-test-ok');
     }
 
     const selectTfjs = cardTfjs.createEl('button', {
-      text: this.nerBackend === 'transformers-js' ? 'Sélectionné' : 'Installer et utiliser transformers.js',
+      text: this.nerBackend === 'transformers-js' ? t('onboarding.ner.selectedBtn') : t('onboarding.ner.installBtn'),
       cls: 'pseudobs-onboarding-select-btn',
     });
     if (this.nerBackend === 'transformers-js') selectTfjs.addClass('pseudobs-onboarding-select-btn-active');
@@ -141,19 +203,16 @@ export class OnboardingModal extends Modal {
     selectTfjs.addEventListener('click', () => { void (async () => {
       this.nerBackend = 'transformers-js';
       await this.saveNerSettings();
-
       if (!this.checkWasmFiles()) {
         const ok = await this.downloadWasmFiles(wasmStatus, selectTfjs);
         if (!ok) return;
       }
-
       this.scheduleRender();
     })(); });
 
-    // --- Désactiver ---
     const noneRow = el.createDiv('pseudobs-onboarding-none-row');
     const noneBtn = noneRow.createEl('button', {
-      text: this.nerBackend === 'none' ? 'Désactivé (règles manuelles uniquement)' : 'Passer — je travaillerai manuellement',
+      text: this.nerBackend === 'none' ? t('onboarding.ner.noneActive') : t('onboarding.ner.noneSkip'),
       cls: 'pseudobs-onboarding-none-btn',
     });
     if (this.nerBackend === 'none') noneBtn.addClass('pseudobs-onboarding-none-btn-active');
@@ -227,27 +286,19 @@ export class OnboardingModal extends Modal {
   // ---- Étape 3 : Dictionnaires ------------------------------------
 
   private renderDictionaries(el: HTMLElement): void {
-    el.createEl('h2', { text: 'Dictionnaires de candidats' });
-    el.createEl('p', {
-      text: 'Les dictionnaires proposent des candidats de remplacement (villes, prénoms…) et alimentent la détection. Ils sont hébergés dans un dépôt dédié et téléchargés dans votre vault — aucune donnée ne quitte Obsidian.',
-    });
+    el.createEl('h2', { text: t('onboarding.dict.title') });
+    el.createEl('p', { text: t('onboarding.dict.desc') });
 
-    // Zone catalogue (remplie de façon asynchrone)
     const catalogueEl = el.createDiv('pseudobs-onboarding-catalogue');
-    catalogueEl.createEl('p', { text: 'Chargement du catalogue…', cls: 'pseudobs-onboarding-hint' });
+    catalogueEl.createEl('p', { text: t('onboarding.dict.catalogueLoading'), cls: 'pseudobs-onboarding-hint' });
     void this.renderCatalogue(catalogueEl);
 
-    // Séparateur
     el.createEl('hr');
 
-    // Import manuel (fallback offline)
     const manualRow = el.createDiv('pseudobs-onboarding-import-row');
-    manualRow.createEl('small', {
-      text: 'Vous avez déjà un fichier .dict.json ? Importez-le manuellement :',
-      cls: 'pseudobs-onboarding-hint',
-    });
+    manualRow.createEl('small', { text: t('onboarding.dict.manualHint'), cls: 'pseudobs-onboarding-hint' });
     const importBtn = manualRow.createEl('button', {
-      text: 'Importer un fichier local (.dict.json)',
+      text: t('onboarding.dict.importBtn'),
       cls: 'pseudobs-onboarding-import-btn',
     });
     const importStatus = manualRow.createSpan({ cls: 'pseudobs-onboarding-test-status' });
@@ -273,10 +324,7 @@ export class OnboardingModal extends Modal {
       manifest = res.json as DictionaryManifest;
     } catch {
       container.empty();
-      container.createEl('p', {
-        text: 'Impossible de contacter le catalogue en ligne. Vérifiez votre connexion ou importez un fichier local ci-dessous.',
-        cls: 'pseudobs-onboarding-hint',
-      });
+      container.createEl('p', { text: t('onboarding.dict.catalogueError'), cls: 'pseudobs-onboarding-hint' });
       return;
     }
 
@@ -287,7 +335,7 @@ export class OnboardingModal extends Modal {
 
     const thead = table.createEl('thead');
     const headerRow = thead.createEl('tr');
-    ['Dictionnaire', 'Langue', 'Rôles', 'Taille', ''].forEach((h) =>
+    [t('onboarding.dict.col.dict'), t('onboarding.dict.col.lang'), t('onboarding.dict.col.roles'), t('onboarding.dict.col.size'), ''].forEach((h) =>
       headerRow.createEl('th', { text: h })
     );
 
@@ -306,26 +354,22 @@ export class OnboardingModal extends Modal {
     const nameCell = tr.createEl('td', { cls: 'pseudobs-onboarding-dict-name-cell' });
     nameCell.createEl('span', { text: entry.label });
     if (entry.recommended) {
-      nameCell.createEl('span', { text: 'Recommandé', cls: 'pseudobs-onboarding-badge' });
+      nameCell.createEl('span', { text: t('onboarding.dict.recommended'), cls: 'pseudobs-onboarding-badge' });
     }
 
-    // Langue
     tr.createEl('td', { text: entry.language.toUpperCase() });
 
-    // Rôles
     const roles: string[] = [];
-    if (entry.roles.detection)   roles.push('détection');
-    if (entry.roles.replacement) roles.push('remplacement');
-    if (entry.roles.classes)     roles.push('classes');
+    if (entry.roles.detection)   roles.push(t('onboarding.dict.role.detection'));
+    if (entry.roles.replacement) roles.push(t('onboarding.dict.role.replacement'));
+    if (entry.roles.classes)     roles.push(t('onboarding.dict.role.classes'));
     tr.createEl('td', { text: roles.join(' · '), cls: 'pseudobs-onboarding-dict-roles' });
 
-    // Taille
     tr.createEl('td', { text: this.formatSize(entry.size), cls: 'pseudobs-onboarding-dict-size' });
 
-    // Bouton icône uniquement
     const actionCell = tr.createEl('td', { cls: 'pseudobs-onboarding-dict-action' });
     const btn = actionCell.createEl('button', { cls: 'pseudobs-onboarding-icon-btn' });
-    btn.setAttribute('aria-label', alreadyInstalled ? 'Réinstaller' : 'Installer');
+    btn.setAttribute('aria-label', alreadyInstalled ? t('onboarding.dict.reinstall') : t('onboarding.dict.install'));
     setIcon(btn, alreadyInstalled ? 'cloud-check' : 'cloud-download');
     if (alreadyInstalled) btn.addClass('pseudobs-onboarding-icon-btn-done');
 
@@ -411,17 +455,17 @@ export class OnboardingModal extends Modal {
         ok++;
       } catch {
         err++;
-        new Notice(`Erreur lors de l'import de ${f.name} — vérifiez le format .dict.json`);
+        new Notice(t('onboarding.dict.importError', f.name));
       }
     }
 
     if (ok > 0) {
-      statusEl.setText(`${ok} dictionnaire${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`);
+      statusEl.setText(ok > 1 ? t('onboarding.dict.importOkMany', String(ok)) : t('onboarding.dict.importOk', String(ok)));
       statusEl.addClass('pseudobs-onboarding-test-ok');
       void this.plugin.dictionaryLoader.load();
     }
     if (err > 0) {
-      statusEl.setText(`${err} fichier${err > 1 ? 's' : ''} rejeté${err > 1 ? 's' : ''}`);
+      statusEl.setText(err > 1 ? t('onboarding.dict.importErrMany', String(err)) : t('onboarding.dict.importErr', String(err)));
       statusEl.addClass('pseudobs-onboarding-test-err');
     }
 
@@ -443,7 +487,7 @@ export class OnboardingModal extends Modal {
     if (files.length === 0) return;
 
     el.createEl('p', {
-      text: `Dictionnaires installés dans ce vault (${files.length}) :`,
+      text: t('onboarding.dict.listTitle', String(files.length)),
       cls: 'pseudobs-onboarding-dict-count',
     });
 
@@ -452,7 +496,7 @@ export class OnboardingModal extends Modal {
       const li = list.createEl('li');
       li.createSpan({ text: f.name });
       const removeBtn = li.createEl('button', { text: '✕', cls: 'pseudobs-onboarding-dict-remove' });
-      removeBtn.title = 'Retirer ce dictionnaire du vault';
+      removeBtn.title = t('onboarding.dict.remove');
       removeBtn.addEventListener('click', () => { void (async () => {
         await this.app.fileManager.trashFile(f);
         void this.plugin.dictionaryLoader.load();
@@ -464,20 +508,20 @@ export class OnboardingModal extends Modal {
   // ---- Étape 4 : Résumé ------------------------------------------
 
   private renderSummary(el: HTMLElement): void {
-    el.createEl('h2', { text: 'Configuration terminée' });
+    el.createEl('h2', { text: t('onboarding.summary.title') });
 
     const NER_LABELS: Record<NerBackend, string> = {
-      none:               'Désactivé — règles manuelles uniquement',
-      spacy:              `spaCy local (${this.plugin.settings.spacyServerUrl})`,
-      'transformers-js':  'transformers.js — modèle ONNX (téléchargement au premier scan)',
+      none:              t('onboarding.summary.ner.none'),
+      spacy:             `spaCy local (${this.plugin.settings.spacyServerUrl})`,
+      'transformers-js': t('onboarding.summary.ner.tfjs'),
     };
 
-    el.createEl('p', { text: 'Voici ce qui a été configuré :' });
+    el.createEl('p', { text: t('onboarding.summary.intro') });
 
     const table = el.createEl('table', { cls: 'pseudobs-onboarding-summary-table' });
 
     const rows: [string, string][] = [
-      ['Détection NER', NER_LABELS[this.plugin.settings.nerBackend]],
+      [t('onboarding.summary.ner'), NER_LABELS[this.plugin.settings.nerBackend]],
     ];
 
     const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.dictionariesFolder);
@@ -487,7 +531,7 @@ export class OnboardingModal extends Modal {
         if (child instanceof TFile && child.name.endsWith('.json')) dictCount++;
       }
     }
-    rows.push(['Dictionnaires', `${dictCount} fichier${dictCount > 1 ? 's' : ''} dans le vault`]);
+    rows.push([t('onboarding.summary.dicts'), t('onboarding.summary.dicts.count', String(dictCount))]);
 
     for (const [label, value] of rows) {
       const tr = table.createEl('tr');
@@ -495,10 +539,7 @@ export class OnboardingModal extends Modal {
       tr.createEl('td', { text: value });
     }
 
-    el.createEl('p', {
-      text: 'Ces paramètres sont modifiables à tout moment via les paramètres du plugin : Reconfigurer.',
-      cls: 'pseudobs-onboarding-hint',
-    });
+    el.createEl('p', { text: t('onboarding.summary.hint'), cls: 'pseudobs-onboarding-hint' });
   }
 
   // ---- Navigation ------------------------------------------------
@@ -509,31 +550,29 @@ export class OnboardingModal extends Modal {
 
     // Bouton Annuler — toujours présent sauf à l'étape Résumé
     if (this.currentStep !== 'summary') {
-      nav.createEl('button', { text: 'Annuler', cls: 'pseudobs-onboarding-cancel-btn' })
+      nav.createEl('button', { text: t('onboarding.nav.cancel'), cls: 'pseudobs-onboarding-cancel-btn' })
         .addEventListener('click', () => this.close());
     }
 
     const rightBtns = nav.createDiv('pseudobs-onboarding-nav-right');
 
-    // Bouton Retour
     if (idx > 0) {
-      rightBtns.createEl('button', { text: 'Retour', cls: 'pseudobs-onboarding-back-btn' })
+      rightBtns.createEl('button', { text: t('onboarding.nav.back'), cls: 'pseudobs-onboarding-back-btn' })
         .addEventListener('click', () => {
           this.currentStep = STEPS[idx - 1];
           this.scheduleRender();
         });
     }
 
-    // Bouton principal
     if (this.currentStep === 'welcome') {
-      rightBtns.createEl('button', { text: 'Commencer', cls: 'pseudobs-onboarding-next-btn mod-cta' })
+      rightBtns.createEl('button', { text: t('onboarding.nav.start'), cls: 'pseudobs-onboarding-next-btn mod-cta' })
         .addEventListener('click', () => {
           this.currentStep = STEPS[idx + 1];
           this.scheduleRender();
         });
 
     } else if (this.currentStep === 'summary') {
-      rightBtns.createEl('button', { text: 'Commencer à travailler', cls: 'pseudobs-onboarding-next-btn mod-cta' })
+      rightBtns.createEl('button', { text: t('onboarding.nav.finish'), cls: 'pseudobs-onboarding-next-btn mod-cta' })
         .addEventListener('click', () => { void (async () => {
           this.plugin.settings.onboardingCompleted = true;
           await this.plugin.saveSettings();
@@ -541,13 +580,12 @@ export class OnboardingModal extends Modal {
         })(); });
 
     } else {
-      // Étapes intermédiaires : Passer + Suivant
-      rightBtns.createEl('button', { text: 'Passer cette étape', cls: 'pseudobs-onboarding-skip-btn' })
+      rightBtns.createEl('button', { text: t('onboarding.nav.skip'), cls: 'pseudobs-onboarding-skip-btn' })
         .addEventListener('click', () => {
           this.currentStep = STEPS[idx + 1];
           this.scheduleRender();
         });
-      rightBtns.createEl('button', { text: 'Suivant', cls: 'pseudobs-onboarding-next-btn mod-cta' })
+      rightBtns.createEl('button', { text: t('onboarding.nav.next'), cls: 'pseudobs-onboarding-next-btn mod-cta' })
         .addEventListener('click', () => {
           this.currentStep = STEPS[idx + 1];
           this.scheduleRender();

@@ -1,26 +1,5 @@
 # Changelog
 
-> Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
-
-## [dev] v0.1.4 — 16 May 2026
-
-**Branch:** `main` | **Tag:** upcoming
-
-### New features
-- **Internationalization (i18n)** — all UI strings externalized into `src/i18n/locales/en.json` and `fr.json`; language switchable from wizard and settings without restart
-- **Language step in wizard** — first step after welcome; bilingual display before a language is chosen
-- **Storage step in wizard** — folder configuration + "one vault per corpus" recommendation
-- **Settings reorganization** — 6 sections in order of usage frequency: General · Text detection · Pseudonymization · NER · Storage · Security; language dropdown at the top
-- **Corpus organization** (`Organize corpus` command) — named classes (sub-folders) mirrored across transcriptions/, mappings/ and exports/; class selection on import
-- **Broad-scope warning for name rules** — dynamic callout in `RuleModal` and `EditRuleModal` when a first name/surname rule is set to folder or vault scope; green success callout for file scope
-- **Mappings tab — grouped by scope** — three sections (File / Folder / Vault) with "Active file only" checkbox (checked by default)
-
-### Changes
-- README, CHANGELOG, ROADMAP now in English; French versions archived as `*.fr.md`
-- `EditRuleModal`, `QuickPseudonymizeModal` fully migrated to `t()`
-
----
-
 ## [prod] v0.1.3 — 14 mai 2026
 
 **Branche :** `main` | **Tag :** `0.1.3`

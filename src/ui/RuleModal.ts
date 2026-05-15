@@ -1,7 +1,8 @@
 import { App, Modal, Setting, TFile, Notice } from 'obsidian';
+import { t } from '../i18n';
 import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
-import type { EntityCategory, MappingFile, MappingRule, ScopeType } from '../types';
+import type { EntityCategory, MappingFile, ScopeType } from '../types';
 
 export class RuleModal extends Modal {
   private plugin: PseudObsPlugin;
@@ -70,15 +71,13 @@ export class RuleModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl('h2', { text: 'Créer une règle de remplacement' });
+    contentEl.createEl('h2', { text: t('ruleModal.title') });
 
     new Setting(contentEl)
-      .setName('Source')
-      .setDesc('Terme original à remplacer')
-      .addText((t) =>
-        t.setValue(this.source).onChange((v) => {
-          this.source = v;
-        })
+      .setName(t('ruleModal.source'))
+      .setDesc(t('ruleModal.sourceDesc'))
+      .addText((tx) =>
+        tx.setValue(this.source).onChange((v) => { this.source = v; })
       );
 
     // --- Suggestions Coulmont ---
@@ -86,7 +85,7 @@ export class RuleModal extends Modal {
     if (this.coulomontSuggestions.length > 0) {
       const box = contentEl.createDiv();
       box.addClass('pseudobs-suggestions-box');
-      box.createEl('small', { text: 'Suggestions de prénoms équivalents — choisissez :' })
+      box.createEl('small', { text: t('ruleModal.coulomontLabel') })
         .addClass('pseudobs-suggestions-label');
       const tags = box.createDiv();
       tags.addClass('pseudobs-suggestions-tags');
@@ -116,12 +115,12 @@ export class RuleModal extends Modal {
       box.addClass('pseudobs-suggestions-box');
       const label = box.createEl('small');
       label.addClass('pseudobs-suggestions-label');
-      label.setText(`Dictionnaire : "${this.source}" → classe ${this.dictEntryClass}`);
+      label.setText(t('ruleModal.dictLabel', this.source, this.dictEntryClass));
 
       const row = box.createDiv();
       row.addClass('pseudobs-suggestions-tags');
 
-      const classBtn = row.createEl('button', { text: `Utiliser "${preview}" (portée : ${scope})` });
+      const classBtn = row.createEl('button', { text: t('ruleModal.dictUseClass', preview, scope) });
       classBtn.addClass('pseudobs-suggestion-btn');
       classBtn.addEventListener('click', () => {
         this.useClass = true;
@@ -129,7 +128,6 @@ export class RuleModal extends Modal {
         classBtn.addClass('pseudobs-suggestion-btn-selected');
       });
 
-      // Pré-sélectionner automatiquement si aucune suggestion Coulmont
       if (this.coulomontSuggestions.length === 0) {
         this.useClass = true;
         if (replacementInput) replacementInput.value = preview;
@@ -138,45 +136,33 @@ export class RuleModal extends Modal {
     }
 
     new Setting(contentEl)
-      .setName('Remplacement')
-      .setDesc(
-        this.dictEntryClass
-          ? 'L\'index exact sera calculé à la création selon les règles existantes dans la portée.'
-          : 'Pseudonyme ou catégorie analytique'
-      )
-      .addText((t) => {
+      .setName(t('ruleModal.replacement'))
+      .setDesc(this.dictEntryClass ? t('ruleModal.replacementDescClass') : t('ruleModal.replacementDesc'))
+      .addText((tx) => {
         const preview = this.dictEntryClass
           ? (this.plugin.dictionaryLoader?.getById(this.dictId ?? '')?.config?.replacementPattern ?? '{class}_{index}')
               .replace('{class}', this.dictEntryClass)
               .replace('{index}', 'N')
           : this.replacement;
-        t.setValue(preview).onChange((v) => {
+        tx.setValue(preview).onChange((v) => {
           this.replacement = v;
-          this.useClass = false; // saisie manuelle désactive le mode classe
+          this.useClass = false;
         });
-        replacementInput = t.inputEl;
+        replacementInput = tx.inputEl;
       });
 
-    // Catégorie — masquée si Coulmont impose 'first_name'
     new Setting(contentEl)
-      .setName('Catégorie')
+      .setName(t('ruleModal.category'))
       .addDropdown((d) => {
-        const options: Record<EntityCategory, string> = {
-          first_name: 'Prénom',
-          last_name: 'Nom de famille',
-          full_name: 'Nom complet',
-          place: 'Lieu',
-          institution: 'Institution',
-          date: 'Date',
-          age: 'Âge',
-          profession: 'Profession',
-          custom: 'Autre',
-        };
-        for (const [value, label] of Object.entries(options)) {
-          d.addOption(value, label);
+        const cats: EntityCategory[] = ['first_name','last_name','full_name','place','institution','date','age','profession','custom'];
+        for (const cat of cats) {
+          d.addOption(cat, t(`category.${cat}`));
         }
         d.setValue(this.category);
-        d.onChange((v) => { this.category = v as EntityCategory; });
+        d.onChange((v) => {
+          this.category = v as EntityCategory;
+          updateBroadScopeWarning();
+        });
         if (this.coulomontSuggestions.length > 0) {
           const settingItem = d.selectEl.closest('.setting-item');
           if (settingItem instanceof HTMLElement) settingItem.hide();
@@ -184,36 +170,61 @@ export class RuleModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName('Portée')
+      .setName(t('ruleModal.scope'))
       .addDropdown((d) => {
-        d.addOption('file', 'Ce fichier uniquement');
-        d.addOption('folder', 'Ce dossier');
-        d.addOption('vault', 'Tout le vault');
+        d.addOption('file',   t('ruleModal.scopeFile'));
+        d.addOption('folder', t('ruleModal.scopeFolder'));
+        d.addOption('vault',  t('ruleModal.scopeVault'));
         d.setValue('file');
-        d.onChange((v) => { this.scopeType = v as ScopeType; });
+        d.onChange((v) => {
+          this.scopeType = v as ScopeType;
+          updateBroadScopeWarning();
+        });
       });
 
+    // Callout dynamique — visible uniquement pour les catégories noms/prénoms
+    const calloutEl = contentEl.createDiv();
+    calloutEl.hide();
+    const isNameCategory = () => ['first_name', 'last_name', 'full_name'].includes(this.category);
+    const isBroadScope   = () => this.scopeType !== 'file';
+    const updateBroadScopeWarning = () => {
+      if (!isNameCategory()) { calloutEl.hide(); return; }
+      calloutEl.empty();
+      calloutEl.show();
+      if (isBroadScope()) {
+        calloutEl.setAttribute('data-callout', 'warning');
+        calloutEl.className = 'callout pseudobs-rule-callout';
+        calloutEl.createDiv('callout-title').createSpan({ text: t('ruleModal.scopeWarnTitle') });
+        calloutEl.createDiv('callout-content').createEl('p', { text: t('panel.mappings.warnBroadName') });
+      } else {
+        calloutEl.setAttribute('data-callout', 'success');
+        calloutEl.className = 'callout pseudobs-rule-callout';
+        calloutEl.createDiv('callout-title').createSpan({ text: t('ruleModal.scopeOkTitle') });
+        calloutEl.createDiv('callout-content').createEl('p', { text: t('ruleModal.scopeOk') });
+      }
+    };
+
     new Setting(contentEl)
-      .setName('Priorité')
-      .setDesc('Entier libre, comme un z-index CSS — défaut 0, plus grand = appliqué en premier')
-      .addText((t) =>
-        t.setValue('0').onChange((v) => { this.priority = parseInt(v, 10) || 0; })
+      .setName(t('ruleModal.priority'))
+      .setDesc(t('ruleModal.priorityDesc'))
+      .addText((tx) =>
+        tx.setValue('0').onChange((v) => { this.priority = parseInt(v, 10) || 0; })
       );
 
     new Setting(contentEl).addButton((btn) =>
-      btn.setButtonText('Créer la règle').setCta().onClick(() => void this.createRule())
+      btn.setButtonText(t('ruleModal.submit')).setCta().onClick(() => void this.createRule())
     );
   }
 
   private async createRule(): Promise<void> {
     if (!this.source.trim()) {
-      new Notice('La source est obligatoire.');
+      new Notice(t('ruleModal.errorMissing'));
       return;
     }
 
     const activeFile = this.app.workspace.getActiveFile();
     if (!activeFile) {
-      new Notice('Aucun fichier actif.');
+      new Notice(t('ruleModal.errorNoFile'));
       return;
     }
 
@@ -230,7 +241,7 @@ export class RuleModal extends Modal {
     }
 
     if (!this.replacement.trim()) {
-      new Notice('Le remplacement est obligatoire.');
+      new Notice(t('ruleModal.errorMissing'));
       return;
     }
 
@@ -271,7 +282,7 @@ export class RuleModal extends Modal {
       await this.app.vault.create(mappingPath, json);
     }
 
-    new Notice(`✓ Règle créée : "${this.source.trim()}" → "${this.replacement.trim()}"`);
+    new Notice(t('notice.ruleCreated', this.source.trim(), this.replacement.trim()));
     void this.plugin.refreshHighlightData();
     this.close();
   }

@@ -2,6 +2,7 @@ import { App, Editor, EditorPosition, Modal, Notice, Setting, TFile } from 'obsi
 import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
 import type { EntityCategory, MappingFile } from '../types';
+import { t } from '../i18n';
 
 type ApplyScope = 'occurrence' | 'file';
 
@@ -30,7 +31,6 @@ export class QuickPseudonymizeModal extends Modal {
     this.source = editor.getSelection();
     this.replacement = prefillReplacement;
     this.suggestions = suggestions;
-    // Coulmont ne traite que des prénoms
     if (suggestions.length > 0) this.category = 'first_name';
     this.from = editor.getCursor('from');
     this.to = editor.getCursor('to');
@@ -38,30 +38,26 @@ export class QuickPseudonymizeModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl('h2', { text: 'Pseudonymiser' });
+    contentEl.createEl('h2', { text: t('quickModal.title') });
 
-    // Source en lecture seule
     new Setting(contentEl)
-      .setName('Expression sélectionnée')
-      .setDesc('Terme à remplacer — non modifiable')
-      .addText((t) => {
-        t.setValue(this.source).setDisabled(true);
-        t.inputEl.addClass('pseudobs-disabled-input');
+      .setName(t('quickModal.source'))
+      .setDesc(t('quickModal.sourceDesc'))
+      .addText((tx) => {
+        tx.setValue(this.source).setDisabled(true);
+        tx.inputEl.addClass('pseudobs-disabled-input');
       });
 
-    // Suggestions Coulmont : boutons cliquables qui remplissent le champ
     let replacementInput: HTMLInputElement;
+
     if (this.suggestions.length > 0) {
-      const suggBox = contentEl.createDiv();
-      suggBox.addClass('pseudobs-suggestions-box');
-      suggBox.createEl('small', { text: 'Suggestions de prénoms équivalents (m/f non différenciés) :' })
+      const suggBox = contentEl.createDiv('pseudobs-suggestions-box');
+      suggBox.createEl('small', { text: t('ruleModal.coulomontLabel') })
         .addClass('pseudobs-suggestions-label');
-      const tags = suggBox.createDiv();
-      tags.addClass('pseudobs-suggestions-tags');
+      const tags = suggBox.createDiv('pseudobs-suggestions-tags');
       const btnEls: HTMLElement[] = [];
       for (const name of this.suggestions) {
-        const btn = tags.createEl('button', { text: name });
-        btn.addClass('pseudobs-suggestion-btn');
+        const btn = tags.createEl('button', { text: name, cls: 'pseudobs-suggestion-btn' });
         btn.addEventListener('click', () => {
           this.replacement = name;
           if (replacementInput) {
@@ -75,74 +71,55 @@ export class QuickPseudonymizeModal extends Modal {
       }
     }
 
-    // Champ de remplacement — pré-rempli si un prénom a déjà été sélectionné
     new Setting(contentEl)
-      .setName('Remplacer par')
-      .addText((t) => {
-        t.setPlaceholder('Pseudonyme ou catégorie analytique');
-        t.setValue(this.replacement);
-        t.onChange((v) => (this.replacement = v));
-        replacementInput = t.inputEl;
+      .setName(t('quickModal.replaceBy'))
+      .addText((tx) => {
+        tx.setPlaceholder(t('quickModal.replacementPlaceholder'));
+        tx.setValue(this.replacement);
+        tx.onChange((v) => (this.replacement = v));
+        replacementInput = tx.inputEl;
       });
 
     new Setting(contentEl)
-      .setName('Catégorie')
+      .setName(t('ruleModal.category'))
       .addDropdown((d) => {
-        const options: Record<EntityCategory, string> = {
-          first_name: 'Prénom',
-          last_name: 'Nom de famille',
-          full_name: 'Nom complet',
-          place: 'Lieu',
-          institution: 'Institution',
-          date: 'Date',
-          age: 'Âge',
-          profession: 'Profession',
-          custom: 'Autre',
-        };
-        for (const [value, label] of Object.entries(options)) {
-          d.addOption(value, label);
-        }
+        const cats: EntityCategory[] = ['first_name','last_name','full_name','place','institution','date','age','profession','custom'];
+        for (const cat of cats) d.addOption(cat, t(`category.${cat}`));
         d.setValue('custom');
         d.onChange((v) => (this.category = v as EntityCategory));
       });
 
     new Setting(contentEl)
-      .setName('Portée du remplacement')
+      .setName(t('quickModal.scope'))
       .addDropdown((d) => {
-        d.addOption('file', 'Toutes les occurrences dans ce fichier');
-        d.addOption('occurrence', 'Cette occurrence uniquement');
+        d.addOption('file',       t('quickModal.scopeFile'));
+        d.addOption('occurrence', t('quickModal.scopeOccurrence'));
         d.setValue('file');
         d.onChange((v) => (this.applyScope = v as ApplyScope));
       });
 
     new Setting(contentEl).addButton((btn) =>
-      btn
-        .setButtonText('Pseudonymiser')
-        .setCta()
-        .onClick(() => this.apply())
+      btn.setButtonText(t('quickModal.submit')).setCta().onClick(() => void this.apply())
     );
 
-    // Focus sur le champ de remplacement à l'ouverture
     window.setTimeout(() => replacementInput?.focus(), 50);
   }
 
   private async apply(): Promise<void> {
     const replacement = this.replacement.trim();
     if (!replacement) {
-      new Notice('Le remplacement est obligatoire.');
+      new Notice(t('ruleModal.errorMissing'));
       return;
     }
 
     const activeFile = this.app.workspace.getActiveFile();
     if (!activeFile) {
-      new Notice('Aucun fichier actif.');
+      new Notice(t('notice.noActiveFile'));
       return;
     }
 
-    // 1. Sauvegarder la règle dans le mapping JSON (valeur brute, sans marqueurs)
     await this.saveRule(activeFile, replacement);
 
-    // 2. Appliquer dans le fichier — avec marqueurs si activés
     const s = this.plugin.settings;
     const marked = s.useMarkerInExport
       ? `${s.markerOpen}${replacement}${s.markerClose}`
@@ -150,13 +127,12 @@ export class QuickPseudonymizeModal extends Modal {
 
     if (this.applyScope === 'occurrence') {
       this.editor.replaceRange(marked, this.from, this.to);
-      new Notice(`✓ "${this.source}" → "${marked}" (cette occurrence)`);
+      new Notice(t('notice.appliedOccurrence', this.source, marked));
     } else {
       const count = await this.plugin.applyRuleToFile(activeFile, this.source, marked);
-      new Notice(`✓ "${this.source}" → "${marked}" (${count} occurrence${count > 1 ? 's' : ''})`);
+      new Notice(t('notice.appliedFile', this.source, marked, String(count), count > 1 ? 's' : ''));
     }
 
-    // Rafraîchir le surlignage immédiatement
     void this.plugin.refreshHighlightData();
     this.close();
   }

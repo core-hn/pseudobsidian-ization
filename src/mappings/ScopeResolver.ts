@@ -103,6 +103,30 @@ export class ScopeResolver {
     return result;
   }
 
+  // Retourne TOUTES les règles de TOUS les fichiers de mapping, sans filtre de scope.
+  // Utilisé par l'onglet Mappings en mode "toutes les règles".
+  async getAllRulesWithLocation(): Promise<RuleLocation[]> {
+    const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
+    if (!(folder instanceof TFolder)) return [];
+
+    const result: RuleLocation[] = [];
+
+    for (const child of folder.children) {
+      if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
+      try {
+        const data = JSON.parse(await this.vault.read(child)) as MappingFile;
+        const store = MappingStore.fromJSON(data);
+        for (const rule of store.getAll()) {
+          result.push({ rule, store, filePath: child.path });
+        }
+      } catch {
+        // ignorer les fichiers malformés
+      }
+    }
+
+    return result;
+  }
+
   // Charge les règles validées d'un fichier de mapping spécifique, sans filtre de scope.
   // Utilisé pour les fichiers exportés (*.pseudonymized.*) dont le scope path ne correspond pas.
   async getRulesFromMappingFile(mappingFilename: string): Promise<MappingRule[]> {

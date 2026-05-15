@@ -1,25 +1,23 @@
 # ROADMAP — PseudObsidian-ization
 
-An Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson / ICOR / SRT / CHAT conventions).
+Plugin Obsidian de pseudonymisation et correction de transcriptions (conventions Jefferson / ICOR / SRT / CHAT).
 
-> French version: [ROADMAP.fr.md](ROADMAP.fr.md)
+Chaque phase produit quelque chose de testable. Les critères d'acceptation renvoient aux sections de SPECS.md.
 
-Each phase produces something testable. Acceptance criteria reference SPECS.md sections.
+## État actuel (mai 2026) — v0.1.0
 
-## Current status (May 2026) — v0.1.x
+**Phases 0 à 8 terminées.** La Phase 9 (dictionnaires de remplacement pour lieux/institutions) est la prochaine cible.
 
-**Phases 0–9 complete.** Phase 10 (refinement & EMCA specialization) is the current target.
-
-Architectural decision (May 2026): **identifying entity detection** is handled by **NER** (`transformers.js` + `bert-base-multilingual-cased-ner-hrl`) rather than exhaustive lexical dictionaries. Dictionaries serve as **replacement** resources (substitution candidates), not detection.
+Décision architecturale adoptée en mai 2026 : la **détection des entités identifiantes** repose sur du **NER** (`transformers.js` + `bert-base-multilingual-cased-ner-hrl`) plutôt que sur des dictionnaires lexicaux exhaustifs. Les dictionnaires restent des ressources de **remplacement** (candidats de substitution), pas de détection.
 
 ```
-✅ Phases 0–8   Parsers · Engine · UI · Scopes · Highlighting · Validation · Coulmont · Panel · NER · Wizard
-✅ Phase 9      Structured dictionaries · DictionaryLoader · Review modals · French communes
-🔄 Phase 10     Refinement & EMCA specialization (v0.1.x → v0.2.0)
-⏳ Phase 11     Interactional analysis functions (v1.0.0)
+✅ Phases 0–8   Parsers · Moteur · UI · Portées · Surlignage · Validation · Coulmont · Panneau · NER · Wizard
+🔄 Phase 9      Dictionnaires de remplacement (lieux/institutions) (v0.1.0)
+⏳ Phase 10     Affinage et stabilisation (v0.2.0)
+⏳ Phase 11     Fonctions d'analyse interactionnelle et conversationnelle (v1.0.0)
 ```
 
-Community portal publication is ongoing with each version (PR #12766 under review).
+La publication sur le répertoire communautaire Obsidian se fait **au fil des versions** (PR #12766 en cours de validation).
 
 ---
 
@@ -210,61 +208,60 @@ Objectif : permettre la détection et le remplacement automatiques des entités 
 
 ---
 
-## 🔄 Phase 10 — Refinement & EMCA specialization (v0.1.x → v0.2.0)
+## ⏳ Phase 10 — Affinage et stabilisation (v0.1.x)
 
-Goal: consolidate all existing features and add the EMCA-specific functions that make the plugin genuinely useful for interactional research.
+Objectif : consolider l'ensemble des features en place avant d'aborder les fonctions avancées.
 
-- [x] **i18n** — all UI strings externalized in `locales/en.json` and `fr.json`; language selectable in wizard and settings
-- [x] **Corpus organization** — named classes with mirrored folder structure; class selection on import
-- [x] **Settings redesign** — 6 sections ordered by frequency of use
-- [x] **Broad-scope warning** — callout in RuleModal / EditRuleModal for name rules with folder/vault scope
-- [x] **Mappings tab grouped by scope** — File / Folder / Vault sections with active-file filter
-- [ ] Unit test coverage ≥ 80% for parsers, engine, NER scanner, DictionaryLoader
-- [ ] Jefferson / ICOR convention checker: hover suggestions, editor highlighting
-- [ ] Exports in original format for corpus re-opening
-- [ ] EMCA publication exports (PNG)
-- [ ] NER performance: measure and optimize on a 500-turn file
-- [ ] [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) integration in Exports tab for encrypting correspondence tables and pseudonymized exports
-- [ ] Resolve remaining open questions (SPECS §20)
+- [ ] Couverture de tests unitaires ≥ 80 % sur parsers, moteur, NER scanner
+- [ ] Tests de non-régression Phase 4 (§18.2) maintenus verts avec les règles NER actives
+- [ ] Correction des conventions Jefferson / ICOR : suggestions au survol, highlighting éditeur
+- [ ] Exports dans le format d'origine pour l'ouverture de corpus
+- [ ] Exports pour publication en EMCA (PNG)
+- [ ] Performance : mesurer et optimiser le temps de scan NER sur un fichier de 500 tours
+- [ ] **Internationalisation (i18n)** : externaliser toutes les chaînes UI dans un fichier de traduction (`locales/fr.json`, `locales/en.json`) — architecture à définir (standard Obsidian ou `i18next`)
+- [ ] Intégration [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) dans l'onglet Exports pour le chiffrement des tables de correspondance et des exports pseudonymisés
+- [ ] Trancher les questions ouvertes persistantes (SPECS §20)
+- [ ] Comportement UI (view) conditionnel au dossier du fichier actif (rel aux dossiers d'export et de mapping)
 
-**Testable (v0.2.0):** stable end-to-end workflow on a real corpus of 10 interviews.
+**Testable (v0.2.0) :** workflow de bout en bout stable sur un corpus synthétique de 10 entretiens.
 
 ---
 
-## ⏳ Phase 11 — Interactional analysis functions (v1.0.0)
+## ⏳ Phase 11 — Fonctions d'analyse interactionnelle et conversationnelle (v0.2.0)
 
-Goal: go beyond pseudonymization to offer functions tailored to EMCA and conversation analysis research.
+Objectif : aller au-delà de la pseudonymisation pour offrir des fonctions adaptées aux besoins spécifiques de l'EMCA et de l'analyse conversationnelle.
 
-Scope to be defined during Phase 10 — planned directions:
+Périmètre à définir lors de la Phase 10 — pistes envisagées :
 
-- Assisted verification and correction of Jefferson / ICOR conventions (overlaps `[`, latching `=`, pauses `(0.5)`, lengthening `:`, prosody `.` `,` `?`)
-- Structured navigation by turn / sequence (panoptic view inspired by Sonal)
-- Thematic annotation of turns (free codes, file/folder/vault scope)
-- ELAN (`.eaf`) or Praat (`.TextGrid`) export from annotated files
-- Optional audio coupling via local file (Obsidian API `app.vault`) — turn ↔ audio segment synchronization
-- Compatibility with Whispurge / Sonal pi exchange JSON (SPECS §20.6)
+- Vérification et correction assistée des conventions Jefferson / ICOR (chevauchements `[`, enchaînements `=`, pauses `(0.5)`, allongements `:`, prosodie `.` `,` `?`)
+- Navigation structurée par tour de parole / séquence (vue panoptique inspirée de Sonal)
+- Annotation thématique des tours (codes libres, portée fichier/dossier/vault)
+- Export ELAN (`.eaf`) ou Praat (`.TextGrid`) depuis les fichiers annotés
+- Couplage audio optionnel via fichier local (Obsidian API `app.vault`) — synchronisation tour ↔ segment audio
+- Compatibilité avec le JSON d'échange Whispurge / Sonal pi (SPECS §20.6)
 
-**Testable (v1.0.0):** a researcher can open a CHAT transcript, navigate turn by turn, correct conventions, pseudonymize, annotate thematically, and export to ELAN — without leaving Obsidian.
-
----
-
-## Phase 12 — Data quality refinement
-
-- [ ] `mappings/ConflictDetector.ts`: overlap detection between NER spans and manual rules (§8.5)
-- [ ] `ambiguous.json`: historically ambiguous first name / place tokens (Florence, Nancy, Lorraine…) — ⚠ badge in the review modal
-- [ ] Configurable minimum population threshold for detection (exclude communes < N inhabitants)
-- [ ] Model evaluation: CamemBERT-NER (`Jean-Baptiste/camembert-ner`)
+**Testable (v1.0.0) :** un chercheur peut ouvrir une transcription CHAT, la naviguer tour par tour, corriger les conventions, pseudonymiser, annoter thématiquement, et exporter vers ELAN — sans quitter Obsidian.
 
 ---
 
-## Planned features (outside current phases)
+## Pahse 12 – Processus d'affinage de nettoyage des données
+- [ ] `mappings/ConflictDetector.ts` : détection des chevauchements entre spans NER et règles manuelles (§8.5)
+- [ ] `ambiguous.json` : tokens historiquement ambigus prénom/lieu (Florence, Nancy, Lorraine…) — badge ⚠ dans la modale de révision
+- [ ] Seuil de population minimum configurable pour la détection (exclure les communes < N hab)
+- [ ] Amélioration modèle : évaluer CamemBERT-NER (`Jean-Baptiste/camembert-ner`)
 
-| Feature | Description | Prerequisite |
+---
+
+## Features envisagées (hors phases planifiées)
+
+Ces fonctionnalités sont identifiées comme utiles mais non planifiées dans les phases actuelles.
+
+| Feature | Description | Prérequis |
 |---|---|---|
-| **spaCy backend** | Python sidecar server (`fr_core_news_sm`) called via HTTP — better precision on French, no model download, faster response. Requires Python ≥ 3.9. | Phase 9 stable |
-| **CamemBERT-NER** | Replace the multilingual BERT model with `Jean-Baptiste/camembert-ner` or `cmarkea/distilcamembert-base-ner` — specifically trained on French. Requires ONNX conversion and HuggingFace hosting. | Phase 9 stable |
-| **spaCy confidence scores** | Expose spaCy entity scores for filtering, as with transformers.js. | spaCy backend |
-| **Interactive disambiguation** | Contextual modal for ambiguous city/first-name tokens (Nancy, Florence…): context display + Person / Place / Ignore buttons. | Phase 9 |
+| **Backend spaCy** | Serveur Python sidecar (`fr_core_news_sm`) appelé via HTTP — meilleure précision sur le français, pas de téléchargement de modèle, temps de réponse plus rapide. Requiert Python ≥ 3.9 côté utilisateur. | Phase 9 stable |
+| **Modèle CamemBERT-NER** | Remplacer le modèle multilingue BERT par `Jean-Baptiste/camembert-ner` ou `cmarkea/distilcamembert-base-ner` — spécifiquement entraîné sur le français. Nécessite une conversion ONNX et un hébergement HuggingFace. | Phase 9 stable |
+| **Score de confiance spaCy** | Exposer les scores d'entités de spaCy (via `displacy` ou scorer) pour filtrer comme avec transformers.js. | Backend spaCy |
+| **Désambiguïsation interactive** | Modale contextuelle pour les tokens ambigus ville/prénom (Nancy, Florence…) : affichage du contexte + boutons Personne / Lieu / Ignorer. | Phase 9 |
 
 ---
 

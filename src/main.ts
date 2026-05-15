@@ -1,4 +1,5 @@
 import { Plugin, Notice, TFile, TAbstractFile, Editor, Menu, MarkdownView, requestUrl, WorkspaceLeaf } from 'obsidian';
+import { t, setLocale } from './i18n';
 import { EditorView } from '@codemirror/view';
 import { PseudObsSettings, DEFAULT_SETTINGS, PseudObsSettingTab } from './settings';
 import { RuleModal } from './ui/RuleModal';
@@ -10,6 +11,7 @@ import { OnboardingModal } from './ui/OnboardingModal';
 import { OnnxNerScanner } from './scanner/OnnxNerScanner';
 import { DictionaryLoader } from './dictionaries/DictionaryLoader';
 import { DictScanReviewModal } from './ui/DictScanReviewModal';
+import { CorpusModal, ClassSelectModal, getCorpusClasses } from './ui/CorpusModal';
 import type { DictScanResultItem } from './ui/DictScanReviewModal';
 import { MappingScanReviewModal } from './ui/MappingScanReviewModal';
 import type { MappingRuleResult } from './ui/MappingScanReviewModal';
@@ -39,6 +41,7 @@ export default class PseudObsPlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    setLocale(this.settings.language);
     this.scopeResolver = new ScopeResolver(this.app.vault, this.settings.mappingFolder);
     this.nerScanner = new OnnxNerScanner(this.app);
     this.dictionaryLoader = new DictionaryLoader(this.app, this);
@@ -80,20 +83,26 @@ export default class PseudObsPlugin extends Plugin {
     );
 
     this.addCommand({
+      id: 'organize-corpus',
+      name: t('command.organizeCorpus'),
+      callback: () => new CorpusModal(this.app, this).open(),
+    });
+
+    this.addCommand({
       id: 'add-transcription',
-      name: 'Ajouter une transcription',
+      name: t('command.addTranscription'),
       callback: () => this.openFilePicker(),
     });
 
     this.addCommand({
       id: 'pseudonymize-current-file',
-      name: 'Pseudonymiser le fichier courant',
+      name: t('command.pseudonymizeFile'),
       callback: () => this.pseudonymizeActiveFile(),
     });
 
     this.addCommand({
       id: 'create-rule',
-      name: 'Créer une règle de remplacement',
+      name: t('command.createRule'),
       editorCallback: (editor) => {
         new RuleModal(this.app, this, editor.getSelection()).open();
       },
@@ -101,25 +110,25 @@ export default class PseudObsPlugin extends Plugin {
 
     this.addCommand({
       id: 'scan-current-file',
-      name: 'Scanner le fichier courant',
+      name: t('command.scanFile'),
       callback: () => this.scanCurrentFile(),
     });
 
     this.addCommand({
       id: 'scan-ner',
-      name: 'Scanner le fichier avec détection NER',
+      name: t('command.scanNer'),
       callback: () => void this.scanCurrentFileNer(),
     });
 
     this.addCommand({
       id: 'scan-dictionaries',
-      name: 'Scanner le fichier avec les dictionnaires',
+      name: t('command.scanDictionaries'),
       callback: () => void this.scanCurrentFileWithDictionaries(),
     });
 
     this.addCommand({
       id: 'pseudonymize-selection',
-      name: 'Pseudonymiser la sélection',
+      name: t('command.pseudonymizeSelection'),
       editorCheckCallback: (checking, editor) => {
         if (!editor.getSelection()) return false;
         if (!checking) new QuickPseudonymizeModal(this.app, this, editor).open();
@@ -144,16 +153,16 @@ export default class PseudObsPlugin extends Plugin {
         const isReplacement = this.highlightData.replacements.some((r) => r.toLowerCase() === bareLower);
         const isKnown       = isSource || isReplacement;
 
+        const truncate = (s: string) => s.slice(0, 25) + (s.length > 25 ? '…' : '');
+
         if (isReplacement) {
-          // Terme déjà pseudonymisé : proposer l'annulation en premier
           menu.addItem((item) =>
             item
-              .setTitle(`Annuler la pseudonymisation de "${bare.slice(0, 25)}${bare.length > 25 ? '…' : ''}"`)
+              .setTitle(t('contextMenu.cancelPseudonymization', truncate(bare)))
               .setIcon('undo')
               .onClick(async () => {
                 const location = await this.scopeResolver.findRuleByTerm(bare);
-                if (!location) { new Notice('Règle introuvable dans les mappings.'); return; }
-                // Remplacer la sélection (avec ou sans marqueurs) par la source originale
+                if (!location) { new Notice(t('notice.ruleNotFound')); return; }
                 editor.replaceSelection(location.rule.source);
                 void this.refreshHighlightData();
               })
@@ -163,14 +172,14 @@ export default class PseudObsPlugin extends Plugin {
         if (isKnown) {
           menu.addItem((item) =>
             item
-              .setTitle(`Modifier la règle pour "${bare.slice(0, 25)}${bare.length > 25 ? '…' : ''}"`)
+              .setTitle(t('contextMenu.editRule', truncate(bare)))
               .setIcon('settings')
               .onClick(async () => {
                 const location = await this.scopeResolver.findRuleByTerm(bare);
                 if (location) {
                   new EditRuleModal(this.app, this, location).open();
                 } else {
-                  new Notice('Règle introuvable dans les mappings.');
+                  new Notice(t('notice.ruleNotFound'));
                 }
               })
           );
@@ -178,14 +187,14 @@ export default class PseudObsPlugin extends Plugin {
 
         menu.addItem((item) =>
           item
-            .setTitle(`Pseudonymiser "${selection.slice(0, 25)}${selection.length > 25 ? '…' : ''}"`)
+            .setTitle(t('contextMenu.pseudonymize', truncate(selection)))
             .setIcon('eye-off')
             .onClick(() => new QuickPseudonymizeModal(this.app, this, editor).open())
         );
 
         menu.addItem((item) =>
           item
-            .setTitle(`Pseudonymiser avec Pr Baptiste Coulmont`)
+            .setTitle(t('contextMenu.coulmont'))
             .setIcon('book-user')
             .onClick(async () => {
               const notice = new Notice('Recherche sur coulmont.com…', 0);
@@ -200,7 +209,7 @@ export default class PseudObsPlugin extends Plugin {
         );
         menu.addItem((item) =>
           item
-            .setTitle('Créer une règle de remplacement…')
+            .setTitle(t('contextMenu.createRule'))
             .setIcon('pencil')
             .onClick(() => new RuleModal(this.app, this, selection).open())
         );
@@ -315,13 +324,12 @@ export default class PseudObsPlugin extends Plugin {
 
       // Si un .md du même nom existe déjà, ne pas écraser
       if (this.app.vault.getAbstractFileByPath(mdPath) instanceof TFile) {
-        new Notice(`⚠ ${basename}.md existe déjà — conversion ignorée pour ${file.name}`);
+        new Notice(t('notice.conversionSkipped', basename, file.name));
         return;
       }
 
       await this.app.vault.create(mdPath, mdContent);
 
-      // Mapping JSON vide
       const mappingPath = `${this.settings.mappingFolder}/${basename}.mapping.json`;
       if (!this.app.vault.getAbstractFileByPath(mappingPath)) {
         await this.ensureFolder(this.settings.mappingFolder);
@@ -329,18 +337,16 @@ export default class PseudObsPlugin extends Plugin {
         await this.app.vault.create(mappingPath, JSON.stringify(store.toJSON(), null, 2));
       }
 
-      // Supprimer le fichier source non-Markdown maintenant remplacé par le .md
       await this.app.fileManager.trashFile(file);
 
-      // Ouvrir le .md
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
       if (mdFile instanceof TFile) {
         await this.app.workspace.getLeaf().openFile(mdFile);
       }
 
-      new Notice(`✓ ${file.name} → ${basename}.md`);
+      new Notice(t('notice.converted', file.name, `${basename}.md`));
     } catch (e) {
-      new Notice(`Erreur de conversion de ${file.name} : ${(e as Error).message}`);
+      new Notice(t('notice.conversionError', file.name, (e as Error).message));
     }
   }
 
@@ -370,17 +376,26 @@ export default class PseudObsPlugin extends Plugin {
 
   private async copyToVault(browserFile: File): Promise<void> {
     const raw = await browserFile.text();
-    const destFolder = this.settings.transcriptionsFolder;
-    await this.ensureFolder(destFolder);
-    const destPath = `${destFolder}/${browserFile.name}`;
+
+    // Sélection de classe si le corpus est organisé en sous-dossiers
+    const classes = getCorpusClasses(this.app, this.settings.transcriptionsFolder);
+    let targetFolder = this.settings.transcriptionsFolder;
+
+    if (classes.length > 0) {
+      const modal = new ClassSelectModal(this.app, this, classes);
+      const chosen = await modal.prompt();
+      if (chosen === undefined) return; // annulé
+      if (chosen !== null) targetFolder = `${this.settings.transcriptionsFolder}/${chosen}`;
+    }
+
+    await this.ensureFolder(targetFolder);
+    const destPath = `${targetFolder}/${browserFile.name}`;
 
     if (this.app.vault.getAbstractFileByPath(destPath) instanceof TFile) {
-      new Notice(`Le fichier existe déjà dans le vault : ${browserFile.name}`);
+      new Notice(t('notice.fileExists', browserFile.name));
       return;
     }
 
-    // Créer le fichier brut dans le vault — le watcher vault.on('create') prendra le relai
-    // pour les formats convertibles (.srt, .cha, .chat)
     await this.app.vault.create(destPath, raw);
   }
 
@@ -388,21 +403,18 @@ export default class PseudObsPlugin extends Plugin {
 
   async pseudonymizeActiveFile(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
-    if (!file) { new Notice('Aucun fichier actif.'); return; }
+    if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const ext = file.extension.toLowerCase();
     if (!['srt', 'cha', 'chat', 'md', 'txt'].includes(ext)) {
-      new Notice(`Format non pris en charge : .${ext}`);
+      new Notice(t('notice.formatUnsupported', ext));
       return;
     }
 
     const content = await this.app.vault.read(file);
-    // Charger les règles depuis les trois niveaux (fichier + dossier + vault)
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new Notice(
-        `Aucune règle validée.\nCréez des règles via Ctrl+P → "Créer une règle".\nMapping attendu : ${this.settings.mappingFolder}/${file.basename}.mapping.json`
-      );
+      new Notice(t('notice.noRules'));
       return;
     }
 
@@ -445,7 +457,7 @@ export default class PseudObsPlugin extends Plugin {
       await this.app.vault.create(outputPath, pseudonymized);
     }
 
-    new Notice(`✓ ${rules.length} règle(s) appliquée(s)\n→ ${outputPath}`);
+    new Notice(t('notice.exportDone', String(rules.length), outputPath));
   }
 
   async scanCurrentFileNer(): Promise<void> {
@@ -455,11 +467,11 @@ export default class PseudObsPlugin extends Plugin {
     }
 
     const file = this.app.workspace.getActiveFile();
-    if (!file) { new Notice('Aucun fichier actif.'); return; }
+    if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const ext = file.extension.toLowerCase();
     if (!['srt', 'cha', 'chat', 'md', 'txt'].includes(ext)) {
-      new Notice(`Format non pris en charge : .${ext}`);
+      new Notice(t('notice.formatUnsupported', ext));
       return;
     }
 
@@ -471,39 +483,33 @@ export default class PseudObsPlugin extends Plugin {
       });
 
       if (occurrences.length === 0) {
-        new Notice('Aucune entité détectée par le NER.');
+        new Notice(t('notice.noNerEntities'));
         return;
       }
 
-      // Dédoublonner — un terme peut apparaître plusieurs fois dans le texte
       const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
-
       this.nerCandidateFile = file;
       this.nerCandidates = unique;
-
       void this.refreshHighlightData();
 
-      new Notice(
-        `✓ ${unique.length} entité${unique.length > 1 ? 's' : ''} détectée${unique.length > 1 ? 's' : ''} — surlignée${unique.length > 1 ? 's' : ''} en bleu.\nClic droit sur un terme pour créer une règle.`,
-        6000
-      );
+      new Notice(t('notice.nerEntitiesFound', String(unique.length), unique.length > 1 ? t('notice.nerEntitiesFound.entities') : t('notice.nerEntitiesFound.entity')), 6000);
     } catch (e) {
-      new Notice(`Erreur NER : ${(e as Error).message}`);
+      new Notice(`NER error: ${(e as Error).message}`);
     }
   }
 
   async scanCurrentFileWithDictionaries(dictIds?: string[]): Promise<void> {
     if (!this.dictionaryLoader.hasDetection()) {
-      new Notice('Aucun dictionnaire de détection chargé.\nInstallez un dictionnaire depuis le panneau Dictionnaires.');
+      new Notice(t('notice.noDictDetection'));
       return;
     }
 
     const file = this.app.workspace.getActiveFile();
-    if (!file) { new Notice('Aucun fichier actif.'); return; }
+    if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const ext = file.extension.toLowerCase();
     if (!['srt', 'cha', 'chat', 'md', 'txt'].includes(ext)) {
-      new Notice(`Format non pris en charge : .${ext}`);
+      new Notice(t('notice.formatUnsupported', ext));
       return;
     }
 
@@ -514,7 +520,7 @@ export default class PseudObsPlugin extends Plugin {
     const occurrences = this.dictionaryLoader.scanText(content, file.path, existingSources, dictIds);
 
     if (occurrences.length === 0) {
-      new Notice('Aucune entité trouvée dans les dictionnaires de détection.');
+      new Notice(t('notice.noDictEntities'));
       return;
     }
 
@@ -587,7 +593,7 @@ export default class PseudObsPlugin extends Plugin {
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
 
     if (!(mappingFile instanceof TFile)) {
-      new Notice(`Aucun mapping trouvé pour ${file.name}`);
+      new Notice(t('notice.noMapping', file.name));
       return;
     }
 
@@ -602,16 +608,16 @@ export default class PseudObsPlugin extends Plugin {
       await this.app.vault.create(destPath, content);
     }
 
-    new Notice(`✓ Mapping exporté → ${destPath}`);
+    new Notice(t('notice.mappingExported', destPath));
   }
 
   private async scanCurrentFile(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
-    if (!file) { new Notice('Aucun fichier actif.'); return; }
+    if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new Notice('Aucune règle pour ce fichier.\nCréez des règles via Ctrl+P → "Créer une règle".');
+      new Notice(t('notice.noRules'));
       return;
     }
 
@@ -622,7 +628,7 @@ export default class PseudObsPlugin extends Plugin {
     });
 
     if (occurrences.length === 0) {
-      new Notice('Aucune occurrence trouvée pour les règles actives.');
+      new Notice(t('notice.noOccurrences'));
       return;
     }
 

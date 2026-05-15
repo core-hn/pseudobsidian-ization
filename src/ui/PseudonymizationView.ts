@@ -1,4 +1,5 @@
 import { ItemView, Notice, Setting, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
+import { t } from '../i18n';
 import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
 import { scanOccurrences } from '../scanner/OccurrenceScanner';
@@ -11,20 +12,9 @@ export const VIEW_TYPE_PSEUDOBS = 'pseudonymization-view';
 
 type Tab = 'mappings' | 'dictionaries' | 'exports' | 'ner';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  first_name: 'Prénom', last_name: 'Nom', full_name: 'Nom complet',
-  place: 'Lieu', institution: 'Institution', date: 'Date',
-  age: 'Âge', profession: 'Profession', custom: 'Autre',
-};
-
-const SCOPE_LABELS: Record<string, string> = {
-  file: 'Fichier', folder: 'Dossier', vault: 'Vault',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  validated: '✓', ignored: '✗', partial: '◑',
-  suggested: '?', conflict: '⚠', disabled: '–', needs_review: '👁',
-};
+function categoryLabel(cat: string): string { return t(`category.${cat}`) || cat; }
+function scopeLabel(s: string): string { return t(`scope.${s}`) || s; }
+function statusLabel(s: string): string { return t(`status.${s}`) || s; }
 
 export class PseudonymizationView extends ItemView {
   private plugin: PseudObsPlugin;
@@ -36,6 +26,8 @@ export class PseudonymizationView extends ItemView {
   private lastFile: TFile | null = null;
   // IDs des dictionnaires cochés pour le scan groupé (tous cochés par défaut)
   private checkedDicts = new Set<string>();
+  // Onglet Mappings : filtrer sur le fichier actif (coché par défaut)
+  private mappingsFilterActive = true;
   // Garde contre la réentrance de onFileChange (le panneau lui-même peut devenir feuille active)
   private _renderingTab = false;
 
@@ -57,12 +49,12 @@ export class PseudonymizationView extends ItemView {
     const content = root.createDiv('pseudobs-view-content');
 
     const tabs: [Tab, string][] = [
-      ['mappings', 'Mappings'],
-      ['dictionaries', 'Dictionnaires'],
-      ['exports', 'Exports'],
+      ['mappings',      t('panel.tab.mappings')],
+      ['dictionaries',  t('panel.tab.dictionaries')],
+      ['exports',       t('panel.tab.exports')],
     ];
     if (this.plugin.settings.nerBackend !== 'none') {
-      tabs.push(['ner', 'NER']);
+      tabs.push(['ner', t('panel.tab.ner')]);
     }
 
     this.panes = {} as Record<Tab, HTMLElement>;
@@ -137,34 +129,30 @@ export class PseudonymizationView extends ItemView {
   private async renderMappingsTab(el: HTMLElement): Promise<void> {
     const file = this.getFile();
 
+    // ---- Toolbar ----
     const toolbar = el.createDiv('pseudobs-view-toolbar');
-    // Bouton ajouter règle
+
     const addRuleBtn = toolbar.createEl('button', { cls: 'pseudobs-view-action-btn' });
     setIcon(addRuleBtn, 'list-plus');
-    addRuleBtn.createSpan({ text: 'Ajouter une règle' });
+    addRuleBtn.createSpan({ text: t('panel.mappings.addRule') });
     addRuleBtn.addEventListener('click', () => new RuleModal(this.app, this.plugin).open());
-    
-    // Bouton scan — ouvre MappingScanReviewModal
+
     const scanBtn = toolbar.createEl('button', { cls: 'pseudobs-view-action-btn' });
     setIcon(scanBtn, 'scan-search');
-    scanBtn.createSpan({ text: 'Scanner le fichier' });
+    scanBtn.createSpan({ text: t('panel.mappings.scanFile') });
     if (!file) scanBtn.setAttr('disabled', 'true');
     scanBtn.addEventListener('click', () => { void (async () => {
       if (!file) return;
       scanBtn.setAttr('disabled', 'true');
-      scanBtn.setText('Scan en cours…');
+      scanBtn.querySelector('span')?.setText(t('panel.mappings.scanning'));
       try {
         const content = await this.app.vault.read(file);
         const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
-        if (rules.length === 0) {
-          new Notice('Aucune règle active pour ce fichier. Créez des règles via le menu contextuel.');
-          return;
-        }
+        if (rules.length === 0) { new Notice(t('panel.mappings.noRulesHint')); return; }
         const occs = scanOccurrences(content, file.path, rules, {
           caseSensitive: this.plugin.settings.caseSensitive,
           wholeWordOnly: this.plugin.settings.wholeWordOnly,
         });
-        // Grouper par règle
         const countByRule = new Map<string, number>();
         for (const occ of occs) {
           const id = occ.mappingId ?? '';
@@ -173,50 +161,84 @@ export class PseudonymizationView extends ItemView {
         const ruleResults: MappingRuleResult[] = rules
           .filter((r) => countByRule.has(r.id))
           .map((r) => ({ rule: r, matchCount: countByRule.get(r.id)! }));
-        if (ruleResults.length === 0) {
-          new Notice('Aucune occurrence trouvée pour les règles actives.');
-          return;
-        }
+        if (ruleResults.length === 0) { new Notice(t('notice.noOccurrences')); return; }
         new MappingScanReviewModal(this.app, this.plugin, file, content, ruleResults).open();
       } finally {
         scanBtn.removeAttribute('disabled');
-        scanBtn.setText('Scanner le fichier');
+        scanBtn.querySelector('span')?.setText(t('panel.mappings.scanFile'));
       }
     })(); });
 
-    if (!file) {
-      el.createEl('p', { text: 'Aucun fichier actif.', cls: 'pseudobs-view-hint' });
+    // ---- Checkbox filtre fichier actif ----
+    const filterRow = el.createDiv('pseudobs-mappings-filter-row');
+    const cb = filterRow.createEl('input');
+    cb.type = 'checkbox';
+    cb.checked = this.mappingsFilterActive;
+    cb.addClass('pseudobs-dict-review-cb');
+    filterRow.createEl('label', { text: t('panel.mappings.filterActive') });
+    cb.addEventListener('change', () => {
+      this.mappingsFilterActive = cb.checked;
+      void this.renderTab('mappings');
+    });
+
+    if (!file && this.mappingsFilterActive) {
+      el.createEl('p', { text: t('panel.mappings.noFile'), cls: 'pseudobs-view-hint' });
       return;
     }
 
-    const locations = await this.plugin.scopeResolver.getRulesWithLocation(file.path);
+    // ---- Chargement des règles ----
+    const locations = this.mappingsFilterActive && file
+      ? await this.plugin.scopeResolver.getRulesWithLocation(file.path)
+      : await this.plugin.scopeResolver.getAllRulesWithLocation();
 
     if (locations.length === 0) {
-      el.createEl('p', { text: `Aucune règle pour ${file.name}.`, cls: 'pseudobs-view-hint' });
+      el.createEl('p', {
+        text: this.mappingsFilterActive && file
+          ? t('panel.mappings.noRules', file.name)
+          : t('panel.mappings.noRules', '—'),
+        cls: 'pseudobs-view-hint',
+      });
       return;
     }
 
-    const table = el.createEl('table', { cls: 'pseudobs-mappings-table' });
-    const headerRow = table.createEl('thead').createEl('tr');
-    for (const col of ['Source', 'Remplacement', 'Catégorie', 'Portée', 'P.', 'Statut', '']) {
-      headerRow.createEl('th', { text: col });
+    // ---- Grouper par portée ----
+    const byScope: Record<string, typeof locations> = { file: [], folder: [], vault: [] };
+    for (const loc of locations) {
+      const s = loc.rule.scope.type;
+      (byScope[s] ??= []).push(loc);
     }
 
-    const tbody = table.createEl('tbody');
-    for (const loc of locations) {
-      const { rule } = loc;
-      const row = tbody.createEl('tr');
-      row.createEl('td', { text: rule.source,      cls: 'pseudobs-mappings-source' });
-      row.createEl('td', { text: rule.replacement, cls: 'pseudobs-mappings-replacement' });
-      row.createEl('td', { text: CATEGORY_LABELS[rule.category] ?? rule.category });
-      row.createEl('td', { text: SCOPE_LABELS[rule.scope.type]  ?? rule.scope.type });
-      row.createEl('td', { text: String(rule.priority) });
-      row.createEl('td', { text: STATUS_LABELS[rule.status]     ?? rule.status });
+    const scopeOrder: Array<'file' | 'folder' | 'vault'> = ['file', 'folder', 'vault'];
+    const cols = [
+      t('panel.mappings.col.source'), t('panel.mappings.col.replacement'),
+      t('panel.mappings.col.category'), t('panel.mappings.col.priority'),
+      t('panel.mappings.col.status'), '',
+    ];
 
-      const editBtn = row.createEl('td').createEl('button', { cls: 'pseudobs-mappings-edit-btn' });
-      setIcon(editBtn, "pencil");
-      editBtn.title = 'Modifier';
-      editBtn.addEventListener('click', () => new EditRuleModal(this.app, this.plugin, loc).open());
+    for (const scopeType of scopeOrder) {
+      const locs = byScope[scopeType];
+      if (!locs || locs.length === 0) continue;
+
+      el.createEl('h3', { text: scopeLabel(scopeType), cls: 'pseudobs-mappings-scope-heading' });
+
+      const table = el.createEl('table', { cls: 'pseudobs-mappings-table' });
+      const headerRow = table.createEl('thead').createEl('tr');
+      for (const col of cols) headerRow.createEl('th', { text: col });
+
+      const tbody = table.createEl('tbody');
+      for (const loc of locs) {
+        const { rule } = loc;
+        const row = tbody.createEl('tr');
+        row.createEl('td', { text: rule.source,      cls: 'pseudobs-mappings-source' });
+        row.createEl('td', { text: rule.replacement, cls: 'pseudobs-mappings-replacement' });
+        row.createEl('td', { text: categoryLabel(rule.category) });
+        row.createEl('td', { text: String(rule.priority) });
+        row.createEl('td', { text: statusLabel(rule.status) });
+
+        const editBtn = row.createEl('td').createEl('button', { cls: 'pseudobs-mappings-edit-btn' });
+        setIcon(editBtn, 'pencil');
+        editBtn.addEventListener('click', () => new EditRuleModal(this.app, this.plugin, loc).open());
+      }
     }
   }
 
@@ -231,47 +253,39 @@ export class PseudonymizationView extends ItemView {
     }
 
     if (dicts.length === 0) {
-      el.createEl('p', {
-        text: 'Aucun dictionnaire installé. Installez-en un depuis le wizard (Paramètres → Reconfigurer) ou importez un fichier local.',
-        cls: 'pseudobs-view-hint',
-      });
+      el.createEl('p', { text: t('panel.dict.noneInstalled'), cls: 'pseudobs-view-hint' });
     } else {
-      // Mini cards
       for (const dict of dicts) {
         const card = el.createDiv('pseudobs-dict-card');
 
-        // Checkbox scan groupé
         const checkbox = card.createEl('input');
         checkbox.type = 'checkbox';
         checkbox.checked = this.checkedDicts.has(dict.dictionaryId);
         checkbox.addClass('pseudobs-dict-card-checkbox');
-        checkbox.title = 'Inclure dans le scan groupé';
+        checkbox.title = t('panel.dict.checkbox');
         checkbox.addEventListener('change', () => {
           if (checkbox.checked) this.checkedDicts.add(dict.dictionaryId);
           else this.checkedDicts.delete(dict.dictionaryId);
         });
 
-        // Infos
         const info = card.createDiv('pseudobs-dict-card-info');
         info.createEl('strong', { text: dict.label, cls: 'pseudobs-dict-card-title' });
         info.createEl('small', { text: `${dict.dictionaryId}.dict.json`, cls: 'pseudobs-dict-card-filename' });
 
-        // Bouton scan individuel
         if (dict.roles?.detection) {
           const scanBtn = card.createEl('button', { cls: 'pseudobs-dict-card-scan mod-cta' });
           setIcon(scanBtn, 'scan-search');
-          scanBtn.setAttribute('aria-label', `Scanner avec ${dict.label}`);
-          scanBtn.title = `Scanner le fichier actif avec "${dict.label}"`;
+          scanBtn.setAttribute('aria-label', t('panel.dict.scanWith', dict.label));
+          scanBtn.title = t('panel.dict.scanWith', dict.label);
           scanBtn.addEventListener('click', () => {
             void this.plugin.scanCurrentFileWithDictionaries([dict.dictionaryId]);
           });
         }
 
-        // Bouton suppression
         const removeBtn = card.createEl('button', { cls: 'pseudobs-dict-card-remove' });
         setIcon(removeBtn, 'trash-2');
-        removeBtn.setAttribute('aria-label', 'Supprimer ce dictionnaire');
-        removeBtn.title = 'Supprimer ce dictionnaire du vault';
+        removeBtn.setAttribute('aria-label', t('panel.dict.remove'));
+        removeBtn.title = t('panel.dict.remove');
         removeBtn.addEventListener('click', () => { void (async () => {
           const f = this.app.vault.getAbstractFileByPath(
             `${this.plugin.settings.dictionariesFolder}/${dict.dictionaryId}.dict.json`
@@ -283,22 +297,20 @@ export class PseudonymizationView extends ItemView {
         })(); });
       }
 
-      // Bouton scan groupé
       el.createEl('hr');
       const groupScanBtn = el.createEl('button', { cls: 'pseudobs-dict-group-scan mod-cta' });
       setIcon(groupScanBtn, 'scan-search');
-      groupScanBtn.createSpan({ text: 'Scanner les dictionnaires cochés' });
+      groupScanBtn.createSpan({ text: t('panel.dict.scanAll') });
       groupScanBtn.addEventListener('click', () => {
         const ids = [...this.checkedDicts];
-        if (ids.length === 0) { new Notice('Aucun dictionnaire coché.'); return; }
+        if (ids.length === 0) { new Notice(t('notice.noCheckedDicts')); return; }
         void this.plugin.scanCurrentFileWithDictionaries(ids);
       });
     }
 
-    // Import manuel
     el.createEl('hr');
     const importBtn = el.createEl('button', {
-      text: 'Importer un fichier local (.dict.json)',
+      text: t('panel.dict.importLocal'),
       cls: 'pseudobs-view-add-btn',
     });
     importBtn.addEventListener('click', () => {
@@ -327,10 +339,10 @@ export class PseudonymizationView extends ItemView {
               await this.app.vault.create(dest, text);
             }
             ok++;
-          } catch { new Notice(`Format invalide : ${f.name}`); }
+          } catch { new Notice(t('notice.invalidFormat', f.name)); }
         }
         if (ok > 0) {
-          new Notice(`✓ ${ok} dictionnaire${ok > 1 ? 's' : ''} importé${ok > 1 ? 's' : ''}`);
+          new Notice(t('notice.dictImported', String(ok), ok > 1 ? t('notice.dictImported.many') : t('notice.dictImported.one')));
           await this.plugin.dictionaryLoader.load();
         }
         await this.renderTab('dictionaries');
@@ -345,26 +357,24 @@ export class PseudonymizationView extends ItemView {
     const file = this.getFile();
 
     if (!file) {
-      el.createEl('p', { text: 'Aucun fichier actif.', cls: 'pseudobs-view-hint' });
+      el.createEl('p', { text: t('panel.mappings.noFile'), cls: 'pseudobs-view-hint' });
       return;
     }
 
-    el.createEl('p', { text: `Fichier actif : ${file.name}`, cls: 'pseudobs-view-filename' });
+    el.createEl('p', { text: `${file.name}`, cls: 'pseudobs-view-filename' });
 
     new Setting(el)
-      .setName('Pseudonymiser et exporter')
-      .setDesc('Génère un fichier .pseudonymized.[ext] dans le dossier d\'exports configuré')
+      .setName(t('panel.exports.pseudonymize'))
       .addButton((btn) =>
-        btn.setButtonText('Exporter').setCta().onClick(() => {
+        btn.setButtonText(t('panel.exports.pseudonymize')).setCta().onClick(() => {
           void this.plugin.pseudonymizeActiveFile();
         })
       );
 
     new Setting(el)
-      .setName('Exporter la table de correspondance')
-      .setDesc('Copie le mapping JSON dans le dossier d\'exports')
+      .setName(t('panel.exports.exportMapping'))
       .addButton((btn) =>
-        btn.setButtonText('Exporter le mapping').onClick(() => {
+        btn.setButtonText(t('panel.exports.exportMapping')).onClick(() => {
           void this.plugin.exportMappingForFile(file);
         })
       );
@@ -375,27 +385,19 @@ export class PseudonymizationView extends ItemView {
   private async renderNerTab(el: HTMLElement): Promise<void> {
     const s = this.plugin.settings;
 
-    // Bouton scan NER
     const nerScanBtn = el.createEl('button', { cls: 'pseudobs-view-action-btn mod-cta' });
     setIcon(nerScanBtn, 'scan-search');
-    nerScanBtn.createSpan({ text: 'Identifier des candidats' });
-    nerScanBtn.title = 'Détecter les entités nommées dans le fichier actif et les surligner en bleu';
+    nerScanBtn.createSpan({ text: t('panel.ner.scanBtn') });
+    nerScanBtn.title = t('panel.ner.scanBtn');
     nerScanBtn.addEventListener('click', () => void this.plugin.scanCurrentFileNer());
 
     el.createEl('hr');
 
-    el.createEl('p', {
-      text: 'Paramètres du scanner de détection automatique des entités nommées.',
-      cls: 'pseudobs-view-hint',
-    });
+    el.createEl('p', { text: t('panel.ner.hint'), cls: 'pseudobs-view-hint' });
 
-    // --- Seuil de confiance ---
     const scoreSection = el.createDiv('pseudobs-ner-section');
-    scoreSection.createEl('strong', { text: 'Seuil de confiance' });
-    scoreSection.createEl('p', {
-      text: 'Les entités dont le score est inférieur à cette valeur sont ignorées. Plus la valeur est haute, moins de faux positifs mais aussi moins de détections.',
-      cls: 'pseudobs-view-hint',
-    });
+    scoreSection.createEl('strong', { text: t('panel.ner.threshold') });
+    scoreSection.createEl('p', { text: t('panel.ner.thresholdDesc'), cls: 'pseudobs-view-hint' });
 
     const scoreRow = scoreSection.createDiv('pseudobs-ner-score-row');
     const scoreDisplay = scoreRow.createEl('span', {
@@ -417,13 +419,9 @@ export class PseudonymizationView extends ItemView {
       void this.plugin.saveSettings();
     });
 
-    // --- Mots fonctionnels ---
     const fwSection = el.createDiv('pseudobs-ner-section');
-    fwSection.createEl('strong', { text: 'Mots fonctionnels exclus' });
-    fwSection.createEl('p', {
-      text: 'Un mot par ligne. Ces termes ne seront jamais retenus comme entités nommées, même si le modèle les détecte (artefacts de tokenisation).',
-      cls: 'pseudobs-view-hint',
-    });
+    fwSection.createEl('strong', { text: t('panel.ner.functionWords') });
+    fwSection.createEl('p', { text: t('panel.ner.functionWordsDesc'), cls: 'pseudobs-view-hint' });
 
     const textarea = fwSection.createEl('textarea');
     textarea.addClass('pseudobs-ner-fw-textarea');
@@ -432,7 +430,7 @@ export class PseudonymizationView extends ItemView {
     textarea.spellcheck = false;
 
     const saveBtn = fwSection.createEl('button', {
-      text: 'Enregistrer',
+      text: t('panel.ner.save'),
       cls: 'pseudobs-view-action-btn',
     });
     saveBtn.addEventListener('click', () => { void (async () => {
@@ -443,13 +441,13 @@ export class PseudonymizationView extends ItemView {
       this.plugin.settings.nerFunctionWords = words;
       await this.plugin.saveSettings();
       saveBtn.addClass('pseudobs-btn-saved');
-      saveBtn.setText('Enregistré');
-      window.setTimeout(() => { saveBtn.removeClass('pseudobs-btn-saved'); saveBtn.setText('Enregistrer'); }, 2000);
+      saveBtn.setText(t('panel.ner.saved'));
+      window.setTimeout(() => { saveBtn.removeClass('pseudobs-btn-saved'); saveBtn.setText(t('panel.ner.save')); }, 2000);
     })(); });
 
     const resetBtn = fwSection.createEl('button', { cls: 'pseudobs-view-action-btn' });
     setIcon(resetBtn, 'rotate-ccw');
-    resetBtn.createSpan({ text: 'Réinitialiser par défaut' });
+    resetBtn.createSpan({ text: t('panel.ner.reset') });
     resetBtn.addClass('pseudobs-ner-reset-btn');
     resetBtn.addEventListener('click', () => { void (async () => {
       const { DEFAULT_SETTINGS } = await import('../settings');

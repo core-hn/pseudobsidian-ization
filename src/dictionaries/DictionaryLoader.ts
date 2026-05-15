@@ -7,7 +7,6 @@ import type {
   DictionaryCondition,
   DictionaryPattern,
   Occurrence,
-  EntityCategory,
 } from '../types';
 
 // Séquence de tokens avec positions dans la ligne d'origine

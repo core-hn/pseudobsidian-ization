@@ -1,216 +1,224 @@
 # Pseudonymizer Tool
-alias `PseudObsidian-ization` pour les intimes.
 
-Plugin Obsidian de **pseudonymisation et de correction de transcriptions** pour chercheurs en sciences du langage. Il comble un manque : les outils existants (Sonal, Whispurge) ne s'intègrent pas dans un environnement de prise de notes et d'analyse, et peu de logiciels acceptent les conventions de transcription multimodales (Jefferson, ICOR).
+An Obsidian plugin for **pseudonymizing and correcting interactional transcripts** for researchers in linguistics and conversation analysis. It fills a gap: existing tools (Sonal, Whispurge) do not integrate into a note-taking and analysis environment, and few applications support multimodal transcription conventions (Jefferson, ICOR).
 
-> **English summary** — An Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson / ICOR conventions, .srt, .cha formats). Designed for qualitative researchers in linguistics and conversation analysis. See [SPECS.md](SPECS.md) for full technical specifications.
+> **Français** — [README.fr.md](README.fr.md)
 
 ---
 
 ## Workflow
 
 ```
-Transcription brute (.srt, .cha, .md, .txt)
-        ↓ import automatique
-Obsidian — édition native Markdown
-        ↓ pseudonymisation (manuelle ou NER)
-Fichier source annoté  +  table de correspondance (séparée)
+Raw transcript (.srt, .cha, .md, .txt)
+        ↓ automatic import
+Obsidian — native Markdown editing
+        ↓ pseudonymization (manual or NER)
+Annotated source file  +  correspondence table (separate)
         ↓ export
-Transcription pseudonymisée (.pseudonymized.*)
+Pseudonymized transcript (.pseudonymized.*)
 ```
 
-Deux approches, combinables librement :
+Two approaches, freely combined:
 
-- **Manuelle** — clic droit sur un terme → choisir un pseudonyme → le plugin remplace et enregistre la règle
-- **Automatique (NER)** — un modèle d'IA détecte les entités identifiantes et les surligne en bleu dans l'éditeur → le chercheur valide ou rejette chaque candidat par clic droit
+- **Manual** — right-click a term → choose a pseudonym → the plugin replaces it and saves the rule
+- **Automatic (NER)** — an AI model detects identifying entities and highlights them in blue in the editor → the researcher validates or rejects each candidate
 
-Les pseudonymes sont encadrés de marqueurs `{{...}}` dans le fichier source et l'export pour rester visuellement distincts des données brutes. Les tables de correspondance ne sont jamais incluses dans les exports.
+Pseudonyms are wrapped in `{{...}}` markers in the source file and export to remain visually distinct from raw data. Correspondence tables are never included in exports.
 
 ---
 
-## Prise en main
+## Getting started
 
-### Premier lancement
+### First launch
 
-Au premier chargement, un assistant de configuration s'ouvre automatiquement en trois étapes :
+A setup wizard opens automatically on first load:
 
-1. **Bienvenue** — présentation du plugin
-2. **Détection NER** — choisir d'activer le modèle IA local (téléchargement WASM ~19 Mo) ou de travailler uniquement avec des règles manuelles
-3. **Dictionnaires** — importer des fichiers `.dict.json` existants si vous avez déjà des listes de candidats de remplacement
+1. **Welcome** — plugin overview
+2. **Language** — choose the interface language
+3. **Storage** — configure vault folders (we recommend one vault per corpus)
+4. **NER detection** — enable the local AI model (WASM download ~19 MB) or work with manual rules only
+5. **Dictionaries** — install replacement candidate dictionaries from the online catalogue
 
-L'assistant est relançable à tout moment : Paramètres → Pseudonymizer tool → Reconfigurer.
+The wizard can be relaunched at any time: Settings → Pseudonymizer Tool → Setup wizard.
 
-### Formats pris en charge
+### Supported formats
 
 | Format | Extension | Notes |
 |---|---|---|
-| Sous-titres horodatés | `.srt` | Sortie Whisper / IA — horodatages et structure préservés |
-| CHAT / CLAN | `.cha`, `.chat` | Lignes `@`, `*`, `%` préservées |
-| Markdown annoté | `.md` | Conventions Jefferson ou ICOR |
-| Texte brut | `.txt` | Sans marqueurs de convention |
+| Timestamped subtitles | `.srt` | Whisper / AI output — timestamps and structure preserved |
+| CHAT / CLAN | `.cha`, `.chat` | `@`, `*`, `%` lines preserved |
+| Annotated Markdown | `.md` | Jefferson or ICOR conventions |
+| Plain text | `.txt` | No convention markers |
 
-Les fichiers `.srt` et `.cha` sont automatiquement convertis en Markdown à l'import. Un fichier de mapping JSON vide est créé en même temps.
+`.srt` and `.cha` files are automatically converted to Markdown on import. An empty mapping JSON file is created at the same time.
 
-> Installez le plugin [Data Files Editor](https://github.com/zuktol/obsidian-data-files-editor) pour visionner les fichiers de mapping JSON directement depuis votre vault.
+> Install the [Data Files Editor](https://github.com/zuktol/obsidian-data-files-editor) plugin to view mapping JSON files directly in your vault.
 
 ### Installation
 
-**Via le répertoire communautaire Obsidian** (validation en cours) :
-1. Obsidian → Paramètres → Extensions communautaires → Parcourir → "Pseudonymizer Tool"
+**Via the Obsidian community plugins directory** (under review):
+1. Obsidian → Settings → Community plugins → Browse → "Pseudonymizer Tool"
 
-**Installation manuelle** depuis la [dernière release GitHub](https://github.com/core-hn/pseudobsidian-ization/releases) :
-1. Télécharger `main.js`, `manifest.json`, `styles.css`
-2. Copier dans `.obsidian/plugins/pseudonymizer-tool/` de votre vault
-3. Activer dans Paramètres → Extensions communautaires
+**Manual installation** from the [latest GitHub release](https://github.com/core-hn/pseudobsidian-ization/releases):
+1. Download `main.js`, `manifest.json`, `styles.css`
+2. Copy into `.obsidian/plugins/pseudonymizer-tool/` in your vault
+3. Enable in Settings → Community plugins
 
-> Les fichiers WASM (NER) sont téléchargés automatiquement par l'assistant au premier lancement si vous activez la détection automatique. Vous pouvez aussi les télécharger manuellement depuis la release.
+> WASM files (NER) are downloaded automatically by the wizard on first launch if you enable automatic detection. They can also be downloaded manually from the release.
 
 ---
 
-## Fonctionnalités
+## Features
 
-### Pseudonymisation manuelle
+### Manual pseudonymization
 
-Toutes les actions sont disponibles via le **clic droit** sur une sélection dans l'éditeur :
+All actions are available via **right-click** on a selection in the editor:
 
 | Action | Description |
 |---|---|
-| **Pseudonymiser** | Remplace le terme (cette occurrence ou toutes) avec marqueurs `{{...}}` |
-| **Pseudonymiser avec Pr Baptiste Coulmont** | Interroge [coulmont.com](https://coulmont.com) — propose des prénoms sociologiquement équivalents (même milieu social, même décennie) |
-| **Créer une règle** | Enregistre la correspondance dans le mapping JSON sans modifier le texte |
-| **Modifier la règle** | Modifie une règle existante (disponible sur les termes en orange ou en vert) |
-| **Annuler la pseudonymisation** | Restaure le terme original pour cette occurrence (disponible sur les termes en vert) |
+| **Pseudonymize** | Replace the term (this occurrence or all) with `{{...}}` markers |
+| **Pseudonymize with Prof. Baptiste Coulmont** | Queries [coulmont.com](https://coulmont.com) — suggests sociologically equivalent first names (same social background, same decade) |
+| **Create a rule** | Saves the correspondence in the mapping JSON without modifying the text |
+| **Edit rule** | Modifies an existing rule (available on orange or green highlighted terms) |
+| **Cancel pseudonymization** | Restores the original term for this occurrence (available on green terms) |
 
-### Détection automatique par NER
+### Automatic NER detection
 
-Le moteur de **reconnaissance d'entités nommées** détecte prénoms, noms, lieux et institutions sans liste préexistante, en exploitant le contexte syntaxique. Contrairement à une approche par dictionnaire, il distingue "Florence" la personne de "Florence" la ville. Les sous-termes d'une entité composée connue sont filtrés automatiquement (si "Saint-Jean-de-Luz" est une règle, "Jean" et "Luz" ne remontent pas comme candidats NER).
+The **named entity recognition** engine detects first names, surnames, places and institutions without a pre-existing list, using syntactic context. Unlike a dictionary approach, it distinguishes "Florence" the person from "Florence" the city. Sub-terms of a known compound entity are automatically filtered (if "Saint-Jean-de-Luz" is a rule, "Jean" and "Luz" do not appear as NER candidates).
 
-> Pour comprendre ce que sont les modèles NER : [blog Vaniila](https://blog.vaniila.ai/NER/).
+**Usage:**
+1. Side panel → **NER** tab → **Identify candidates**
+2. Entities appear **highlighted in blue** in the editor
+3. Right-click a blue term → **Pseudonymize** or **Create a rule**
 
-**Utilisation :**
-1. Panneau latéral → onglet **Candidats** → **Identifier des candidats**
-2. Les entités apparaissent **surlignées en bleu** dans l'éditeur
-3. Clic droit sur un terme bleu → **Pseudonymiser** ou **Créer une règle**
+**Model:** `Xenova/bert-base-multilingual-cased-ner-hrl` via `transformers.js`. 100% local execution. One-time downloads on first use: WASM (~19 MB) + NER model (~66 MB). **Works offline after the first download.**
 
-**Modèle :** `Xenova/bert-base-multilingual-cased-ner-hrl` via `transformers.js`. Exécution 100 % locale. Téléchargements uniques au premier usage : WASM (~19 Mo) + modèle NER (~66 Mo). **Fonctionnement hors-ligne après le premier téléchargement.**
+**Settings (NER tab in the panel):**
+- **Confidence threshold** (0.50–1.00): increasing it reduces false positives
+- **Excluded function words**: editable list of tokens to always ignore ("de", "du", "la"…)
 
-**Paramètres (onglet NER du panneau)** :
-- **Seuil de confiance** (0,50–1,00) : augmenter réduit les faux positifs
-- **Mots fonctionnels exclus** : liste éditable des tokens à toujours ignorer ("de", "du", "la"…)
+### Side panel
 
-### Panneau latéral
+Accessible via the ribbon icon or `Ctrl+P → Pseudonymization: open panel`.
 
-Accessible via l'icône dans le ruban ou `Ctrl+P → Pseudonymisation : ouvrir le panneau`.
-
-| Onglet | Contenu |
+| Tab | Content |
 |---|---|
-| **Mappings** | Règles actives · Modifier · Supprimer · Ajouter · Scanner le fichier |
-| **Dictionnaires** | Mini cards · Scan par dictionnaire · Import local |
-| **Exports** | Pseudonymiser et exporter · Exporter la table de correspondance |
-| **NER** | Visible si NER activé · Identifier des candidats · Seuil de confiance · Mots fonctionnels |
+| **Mappings** | Active rules · Edit · Delete · Add · Scan file |
+| **Dictionaries** | Mini cards · Dictionary scan · Local import |
+| **Exports** | Pseudonymize and export · Export correspondence table |
+| **NER** | Visible if NER enabled · Identify candidates · Confidence threshold · Function words |
 
-### Surlignage et marqueurs
+### Highlighting and markers
 
-Le surlignage est actif dans tout fichier ouvert, y compris les fichiers export `.pseudonymized.*` qui héritent automatiquement des règles du fichier source.
+Highlighting is active in all open files, including `.pseudonymized.*` export files, which automatically inherit rules from the source file.
 
-| Couleur | Signification |
+| Colour | Meaning |
 |---|---|
-| 🟠 Orange + contour | Terme source encore présent — à pseudonymiser |
-| 🟢 Vert + souligné | Pseudonyme appliqué en direct dans le fichier |
-| 🔵 Bleu + contour | Candidat NER — pas encore de règle |
+| 🟠 Orange + outline | Source term still present — to be pseudonymized |
+| 🟢 Green + underline | Pseudonym applied directly in the file |
+| 🔵 Blue + outline | NER candidate — no rule yet |
 
-Dans les fichiers exportés, les pseudonymes sont encadrés de marqueurs `{{Pierre}}` pour les distinguer des données brutes (activé par défaut, configurable dans les paramètres).
+In exported files, pseudonyms are wrapped in `{{Pierre}}` markers to distinguish them from raw data (enabled by default, configurable in settings).
 
-### Tables de correspondance
+### Correspondence tables
 
-- Trois niveaux de portée : `fichier.mapping.json` · `dossier.mapping.json` · `vault.mapping.json`
-- Statuts par occurrence : `validated`, `ignored`, `partial`, `conflict`, `needs_review`
-- **Priorité z-index** : entier libre — les entités longues priment (`Saint-Jean-de-Luz` > `Jean`)
-- Format JSON documenté dans `SPECS.md §5`
+- Three scope levels: `file.mapping.json` · `folder.mapping.json` · `vault.mapping.json`
+- Per-occurrence statuses: `validated`, `ignored`, `partial`, `conflict`, `needs_review`
+- **Z-index priority**: free integer — longer entities take precedence (`Saint-Jean-de-Luz` > `Jean`)
+- JSON format documented in `SPECS.md §5`
 
-### Dictionnaires de pseudonymisation
+### Pseudonymization dictionaries
 
-Les dictionnaires fournissent des **candidats de remplacement** et alimentent la **détection automatique** de termes à pseudonymiser. Ils sont hébergés dans un dépôt dédié et téléchargés dans votre vault — aucun texte de transcription ne quitte Obsidian.
+Dictionaries provide **replacement candidates** and feed **automatic detection**. They are hosted in a dedicated repository and downloaded into your vault — no transcript text ever leaves Obsidian.
 
-**Installation depuis le catalogue :**
-1. Wizard → étape Dictionnaires → choisir dans le catalogue en ligne
-2. Ou : Paramètres → Reconfigurer → étape Dictionnaires
+**Installing from the catalogue:**
+1. Wizard → Dictionaries step → choose from the online catalogue
+2. Or: Settings → Setup wizard → Dictionaries step
 
-**Utilisation :**
-1. Panneau latéral → onglet **Dictionnaires**
-2. Cocher les dictionnaires à activer pour le scan
-3. Bouton **Scanner le fichier actif** (ou le bouton loupe sur chaque card pour un dictionnaire seul)
-4. Une modale de révision s'ouvre : chaque entité détectée est présentée avec son extrait de contexte, sa classe proposée et son remplacement calculé automatiquement (`Ville_1`, `Métropole_2`…)
-5. Décocher les faux positifs · modifier le préfixe si besoin · **Créer les règles**
+**Usage:**
+1. Side panel → **Dictionaries** tab
+2. Check the dictionaries to activate for the scan
+3. Click **Scan active file** (or the magnifier button on each card for a single dictionary)
+4. A review modal opens: each detected entity is shown with its context excerpt, proposed class and automatically computed replacement (`Ville_1`, `Métropole_2`…)
+5. Uncheck false positives · edit the prefix if needed · **Create rules**
 
-**Dictionnaire disponible — Communes françaises (GeoAPI INSEE) :**
-- 34 957 communes françaises, 5 classes : Village · Petite_Ville · Ville · Grande_Ville · Métropole
-- Rôles : détection + remplacement par classe avec index d'incrémentation
-- Portée recommandée : fichier (chaque fichier reçoit sa propre numérotation)
+**Available dictionary — French communes (GeoAPI INSEE):**
+- 34,957 French communes, 5 classes: Village · Petite_Ville · Ville · Grande_Ville · Métropole
+- Roles: detection + class-based replacement with incremental index
+- Recommended scope: file (each file gets its own numbering)
 
-> Dépôt dédié : [core-hn/pseudobsidian-dictionaries](https://github.com/core-hn/pseudobsidian-dictionaries) — contributions bienvenues.
+> Dedicated repository: [core-hn/pseudobsidian-dictionaries](https://github.com/core-hn/pseudobsidian-dictionaries) — contributions welcome.
 
-### Sécurité et confidentialité
+### Corpus organization
 
-- Tout traitement est **local** — aucun texte de transcription n'est envoyé à un serveur externe
-- Le modèle NER s'exécute dans Obsidian via WASM, sans appel réseau
-- **Exception documentée :** "Pseudonymiser avec Coulmont" propose des *prénoms de remplacement* à partir d'une requête du *prénom à pseudonymiser* (pas le contenu de la transcription) à l'outil `coulmont.com/bac`. Sur son site web, B. Coulmont précise que "recherches ne sont pas enregistrées".
-- Les tables de correspondance ne sont jamais incluses dans les exports pseudonymisés.
+The plugin helps you structure your corpus in folders before starting work. Use the command **Organize corpus** (Ctrl+P) to define classes (sub-folders). Each class automatically creates mirrored folders for transcriptions, mapping tables and exports. When adding a transcription, you are prompted to select a class.
+
+> We recommend **one Obsidian vault per corpus**. This keeps mapping files, dictionaries and exports together with their transcriptions, and makes archiving or sharing a corpus straightforward.
+
+### Privacy and security
+
+- All processing is **local** — no transcript text is sent to an external server
+- The NER model runs in Obsidian via WASM, without any network call
+- **Documented exception:** "Pseudonymize with Coulmont" sends the *source first name* (not transcript content) to `coulmont.com/bac` to suggest equivalent names. B. Coulmont states on his website that searches are not logged.
+- Correspondence tables are never included in pseudonymized exports.
 
 ---
 
-## Pour les développeurs
+## For developers
 
 ```bash
 git clone https://gitlab.huma-num.fr/aabbadie/pseudobsidian-ization.git
 cd pseudobsidian-ization
 npm install
-npm run dev      # build en mode watch
-npm test         # suite de tests Jest
-npm run build    # build de production
-npm run deploy   # build + copie dans test_vault/
+npm run dev           # watch build (esbuild)
+npm test              # Jest test suite
+npm run build         # production build
+npm run deploy        # build + copy to test_vault/
+npm run build:cities  # regenerate assets/cities.dict.json from GeoAPI INSEE
 ```
 
-Structure du dépôt :
+Repository structure:
 
 ```
 src/
-├── main.ts               # Point d'entrée Obsidian
-├── settings.ts           # Paramètres persistants
-├── types.ts              # Types partagés
+├── main.ts               # Obsidian entry point
+├── settings.ts           # Persistent settings
+├── types.ts              # Shared types
+├── i18n/                 # Internationalization (en, fr)
 ├── parsers/              # SrtParser, ChatParser, TranscriptConverter
 ├── mappings/             # MappingStore, ScopeResolver
-├── pseudonymizer/        # Moteur, ReplacementPlanner, SpanProtector
+├── pseudonymizer/        # Engine, ReplacementPlanner, SpanProtector
 ├── scanner/              # OccurrenceScanner, OnnxNerScanner
-└── ui/                   # PseudonymizationView, modales, surlignage CM6
+├── dictionaries/         # DictionaryLoader
+└── ui/                   # PseudonymizationView, modals, CM6 highlighting
 ```
 
 ---
 
-## Statut — v0.1.x
+## Status — v0.1.x
 
-| Phase | Statut | Description |
+| Phase | Status | Description |
 |---|---|---|
-| 0–6 | ✅ | Parsers · Moteur · Commandes · Portées · Surlignage · Validation |
-| 7 — Coulmont | ✅ | Suggestions de prénoms équivalents · Import JSON/CSV |
-| 8 — Panneau latéral | ✅ | 3 onglets · NER embarqué · Wizard · Annulation · Surlignage export |
-| 9 — Dictionnaires structurés | 🔄 | Format v1.1 · DictionaryLoader · Scan par dictionnaire · Modale de révision · Communes françaises |
-| 10 — Affinage | ⏳ | Stabilisation v0.2.0 |
-| 11 — Fonctions EMCA | ⏳ | Navigation tours · Correction Jefferson/ICOR · Export ELAN |
+| 0–6 | ✅ | Parsers · Engine · Commands · Scopes · Highlighting · Validation |
+| 7 — Coulmont | ✅ | Equivalent first name suggestions · JSON/CSV import |
+| 8 — Side panel | ✅ | 3 tabs · Embedded NER · Wizard · Cancellation · Export highlighting |
+| 9 — Structured dictionaries | ✅ | Format v1.1 · DictionaryLoader · Dictionary scan · Review modal · French communes |
+| 10 — Refinement | 🔄 | i18n · Corpus organization · Settings redesign · Phase in progress |
+| 11 — EMCA functions | ⏳ | Turn navigation · Jefferson/ICOR correction · ELAN export |
 
-Voir [ROADMAP.md](ROADMAP.md) pour le détail des phases et les features envisagées.
+See [ROADMAP.md](ROADMAP.md) for the full phase breakdown and planned features.
 
 ---
 
-## Contribuer
+## Contributing
 
-Les contributions sont les bienvenues, en particulier :
+Contributions are welcome, particularly:
 
-- **Dictionnaires** : listes de prénoms, toponymes, institutions pour des corpus spécifiques (langues régionales, terrains non francophones, périodes historiques)
-- **Conventions de transcription** : parsers pour d'autres systèmes (ELAN, Praat TextGrid, EXMARaLDA)
-- **Retours d'usage** : issues pour signaler des cas limites rencontrés sur de vrais corpus
+- **Dictionaries**: first name lists, place names, institutions for specific corpora (regional languages, non-French fields, historical periods) — see [core-hn/pseudobsidian-dictionaries](https://github.com/core-hn/pseudobsidian-dictionaries)
+- **Transcription conventions**: parsers for other systems (ELAN, Praat TextGrid, EXMARaLDA)
+- **Usage feedback**: issues to report edge cases encountered on real corpora
 
-Merci d'ouvrir une issue avant de proposer une pull request pour les fonctionnalités importantes.
+Please open an issue before submitting a pull request for significant features.
 
 ---
 
@@ -223,26 +231,25 @@ GPL 3.0
 *The Beerware License* (Revision 42)
 
 ```
-Axelle Abbadie a conçu ce code. Vous pouvez faire ce que vous voulez avec,
-tant que vous conservez cette notice. Si on se croise un jour et que vous
-pensez que ça valait le coup, vous pouvez m'offrir une bière.
+Axelle Abbadie wrote this code. You can do whatever you want with it
+as long as you keep this notice. If we meet someday, and you think
+it was worth it, you can buy me a beer.
 ```
 
-**Ce plugin est fait pour être modifié.** Si votre terrain implique des conventions de transcription particulières, un dialecte régional, des corpus multilingues ou des formats d'export spécifiques à votre institution, adaptez le code à vos besoins.
+**This plugin is made to be modified.** If your fieldwork involves particular transcription conventions, a regional dialect, multilingual corpora or institution-specific export formats, adapt the code to your needs.
 
 ---
 
-## Crédits
+## Credits
 
-<!-- Suggestions — à compléter par l'auteure : -->
-### Propriété intellectuelle
-- **Axelle Abbadie** — conception, spécifications, direction du développement, recherche UX. ([cvHAL](https://cv.hal.science/axelle-abbadie))
-- Vibe-coding avec **Claude Sonnet 4.6** (Anthropic)
+### Intellectual property
+- **Axelle Abbadie** — design, specifications, development direction, UX research. ([cvHAL](https://cv.hal.science/axelle-abbadie))
+- Vibe-coded with **Claude Sonnet 4.6** (Anthropic)
 
 ### Inspiration
-- **Sonal pi** — À la suite d'une rencontre avec [Maxime Beligné](https://umr5600.cnrs.fr/fr/lequipe/name/max-beligne/) au cours de [la journée "Pseudonymiser, Anonymiser ?" organisée par la MSH-Sud](https://www.mshsud.org/agenda/anonymiser-pseudonymiser/). Lien vers le logiciel : [Sonal-pi](https://www.sonal-info.com/), développé par depuis 2008 par Alex Alber.
+- **Sonal pi** — Following a meeting with [Maxime Beligné](https://umr5600.cnrs.fr/fr/lequipe/name/max-beligne/) at the ["Pseudonymiser, Anonymiser?" day organized by MSH-Sud](https://www.mshsud.org/agenda/anonymiser-pseudonymiser/). Software: [Sonal-pi](https://www.sonal-info.com/), developed since 2008 by Alex Alber.
 
-### Travaux valorisés
-- **Baptiste Coulmont** — outil de pseudonymisation ([coulmont.com/bac](https://coulmont.com/bac)) utilisé pour la suggestion de prénoms.
-- **Stefan Schweter** (Bayerische Staatsbibliothek) — modèle NER multilingue [`bert-base-multilingual-cased-ner-hrl`](https://huggingface.co/stefan-it/bert-base-multilingual-cased-ner-hrl), utilisé pour la détection automatique des entités nommées.
-- **Joshua Lochner / Xenova** — conversion ONNX du modèle et bibliothèque [`transformers.js`](https://github.com/xenova/transformers.js), qui permettent l'exécution locale dans Obsidian sans dépendance Python.
+### Acknowledged work
+- **Baptiste Coulmont** — pseudonymization tool ([coulmont.com/bac](https://coulmont.com/bac)) used for first name suggestions.
+- **Stefan Schweter** (Bayerische Staatsbibliothek) — multilingual NER model [`bert-base-multilingual-cased-ner-hrl`](https://huggingface.co/stefan-it/bert-base-multilingual-cased-ner-hrl), used for automatic entity detection.
+- **Joshua Lochner / Xenova** — ONNX model conversion and [`transformers.js`](https://github.com/xenova/transformers.js) library, enabling local execution in Obsidian without a Python dependency.

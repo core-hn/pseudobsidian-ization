@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '../i18n';
 import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
 import type { EntityCategory, MappingFile } from '../types';
@@ -53,11 +54,12 @@ export class DictScanReviewModal extends Modal {
     const { contentEl } = this;
     contentEl.addClass('pseudobs-dict-review-modal');
 
-    contentEl.createEl('h2', { text: 'Révision du scan — dictionnaires' });
+    contentEl.createEl('h2', { text: t('dictScanModal.title') });
 
     const dicts = [...new Set(this.results.map((r) => r.dictLabel))];
+    const n = this.results.length;
     contentEl.createEl('p', {
-      text: `${this.results.length} entité${this.results.length > 1 ? 's' : ''} détectée${this.results.length > 1 ? 's' : ''} · ${dicts.join(', ')}`,
+      text: t('dictScanModal.summary', String(n), n > 1 ? t('dictScanModal.summary.entities') : t('dictScanModal.summary.entity'), dicts.join(', ')),
       cls: 'pseudobs-scan-summary',
     });
 
@@ -72,7 +74,7 @@ export class DictScanReviewModal extends Modal {
       const termWrap = header.createDiv('pseudobs-dict-review-card-term-wrap');
       termWrap.createEl('span', { text: item.term, cls: 'pseudobs-dict-review-term' });
       termWrap.createEl('span', {
-        text: item.category.replace('_', ' '),
+        text: t(`category.${item.category}`),
         cls: 'pseudobs-dict-review-cat',
       });
 
@@ -139,7 +141,7 @@ export class DictScanReviewModal extends Modal {
 
     // Pied de page
     const footer = contentEl.createDiv('pseudobs-dict-review-footer');
-    footer.createEl('button', { text: 'Annuler' })
+    footer.createEl('button', { text: t('dictScanModal.cancel') })
       .addEventListener('click', () => this.close());
 
     this.applyBtn = footer.createEl('button', { cls: 'mod-cta' });
@@ -198,8 +200,8 @@ export class DictScanReviewModal extends Modal {
   private updateApplyLabel(): void {
     const n = this.checked.filter(Boolean).length;
     this.applyBtn.textContent = n === 0
-      ? 'Aucune règle à appliquer'
-      : `Créer ${n} règle${n > 1 ? 's' : ''}`;
+      ? t('dictScanModal.noRules')
+      : t('dictScanModal.apply', String(n), n > 1 ? t('dictScanModal.apply.rules') : t('dictScanModal.apply.rule'));
     this.applyBtn.toggleClass('pseudobs-dict-review-btn-empty', n === 0);
   }
 
@@ -245,7 +247,7 @@ export class DictScanReviewModal extends Modal {
     }
 
     const n = toCreate.length;
-    new Notice(`✓ ${n} règle${n > 1 ? 's' : ''} créée${n > 1 ? 's' : ''}`);
+    new Notice(t('notice.rulesCreated', String(n), n > 1 ? t('notice.rulesCreated.rules') : t('notice.rulesCreated.rule')));
     void this.plugin.refreshHighlightData();
     this.close();
   }

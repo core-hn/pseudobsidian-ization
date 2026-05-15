@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '../i18n';
 import type PseudObsPlugin from '../main';
 import type { MappingRule } from '../types';
 import { findSpansForRule } from '../pseudonymizer/ReplacementPlanner';
@@ -37,22 +38,20 @@ export class MappingScanReviewModal extends Modal {
     const { contentEl } = this;
     contentEl.addClass('pseudobs-dict-review-modal');
 
-    contentEl.createEl('h2', { text: 'Révision du scan — mappings' });
+    contentEl.createEl('h2', { text: t('mappingScanModal.title') });
+    const nr = this.ruleResults.length;
     contentEl.createEl('p', {
-      text: `${this.ruleResults.length} règle${this.ruleResults.length > 1 ? 's' : ''} active${this.ruleResults.length > 1 ? 's' : ''} avec des occurrences dans "${this.file.name}"`,
+      text: t('mappingScanModal.summary', String(nr), nr > 1 ? t('mappingScanModal.summary.rules') : t('mappingScanModal.summary.rule'), this.file.name),
       cls: 'pseudobs-scan-summary',
     });
-    contentEl.createEl('p', {
-      text: 'Décochez les règles à ne pas appliquer. Les remplacements seront écrits dans le fichier source.',
-      cls: 'pseudobs-view-hint',
-    });
+    contentEl.createEl('p', { text: t('mappingScanModal.hint'), cls: 'pseudobs-view-hint' });
 
     const scroll = contentEl.createDiv('pseudobs-dict-review-scroll');
     const table = scroll.createEl('table', { cls: 'pseudobs-dict-review-table' });
 
     const thead = table.createEl('thead');
     const hr = thead.createEl('tr');
-    ['', 'Source', '', 'Remplacement', 'Occ.'].forEach((h) =>
+    ['', 'Source', '', t('mappingScanModal.col.replacement'), t('mappingScanModal.col.occurrences')].forEach((h) =>
       hr.createEl('th', { text: h })
     );
 
@@ -90,7 +89,7 @@ export class MappingScanReviewModal extends Modal {
     });
 
     const footer = contentEl.createDiv('pseudobs-dict-review-footer');
-    footer.createEl('button', { text: 'Annuler' })
+    footer.createEl('button', { text: t('mappingScanModal.cancel') })
       .addEventListener('click', () => this.close());
 
     this.applyBtn = footer.createEl('button', { cls: 'mod-cta' });
@@ -104,8 +103,10 @@ export class MappingScanReviewModal extends Modal {
       .filter((_, i) => this.checked[i])
       .reduce((sum, r) => sum + r.matchCount, 0);
     this.applyBtn.textContent = n === 0
-      ? 'Aucune règle à appliquer'
-      : `Pseudonymiser (${n} règle${n > 1 ? 's' : ''}, ${total} occurrence${total > 1 ? 's' : ''})`;
+      ? t('mappingScanModal.noRules')
+      : t('mappingScanModal.apply',
+          String(n), n > 1 ? t('mappingScanModal.apply.rules') : t('mappingScanModal.apply.rule'),
+          String(total), total > 1 ? t('mappingScanModal.apply.occurrences') : t('mappingScanModal.apply.occurrence'));
     this.applyBtn.toggleClass('pseudobs-dict-review-btn-empty', n === 0);
   }
 
@@ -137,7 +138,7 @@ export class MappingScanReviewModal extends Modal {
 
     const resolved = resolveSpans(allSpans);
     if (resolved.length === 0) {
-      new Notice('Aucune occurrence à remplacer.');
+      new Notice(t('notice.noOccurrences'));
       this.close();
       return;
     }
@@ -147,7 +148,10 @@ export class MappingScanReviewModal extends Modal {
     void this.plugin.refreshHighlightData();
 
     const total = resolved.length;
-    new Notice(`✓ ${total} occurrence${total > 1 ? 's' : ''} pseudonymisée${total > 1 ? 's' : ''} dans "${this.file.name}"`);
+    new Notice(t('notice.occurrencesPseudonymized',
+      String(total),
+      total > 1 ? t('notice.occurrencesPseudonymized.occurrences') : t('notice.occurrencesPseudonymized.occurrence'),
+      this.file.name));
     this.close();
   }
 

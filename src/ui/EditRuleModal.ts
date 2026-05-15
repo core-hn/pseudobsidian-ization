@@ -2,12 +2,12 @@ import { App, Modal, Notice, Setting } from 'obsidian';
 import type PseudObsPlugin from '../main';
 import type { EntityCategory, ScopeType } from '../types';
 import type { RuleLocation } from '../mappings/ScopeResolver';
+import { t } from '../i18n';
 
 export class EditRuleModal extends Modal {
   private plugin: PseudObsPlugin;
   private location: RuleLocation;
 
-  // Valeurs éditables — initialisées depuis la règle existante
   private replacement: string;
   private category: EntityCategory;
   private scopeType: ScopeType;
@@ -27,67 +27,94 @@ export class EditRuleModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     const { rule } = this.location;
-    contentEl.createEl('h2', { text: 'Modifier la règle' });
+    contentEl.createEl('h2', { text: t('ruleModal.title') });
 
     new Setting(contentEl)
-      .setName('Source')
+      .setName(t('ruleModal.source'))
       .setDesc('Non modifiable — créez une nouvelle règle pour changer la source')
-      .addText((t) => {
-        t.setValue(rule.source).setDisabled(true);
-        t.inputEl.addClass('pseudobs-disabled-input');
+      .addText((tx) => {
+        tx.setValue(rule.source).setDisabled(true);
+        tx.inputEl.addClass('pseudobs-disabled-input');
       });
 
     new Setting(contentEl)
-      .setName('Remplacement')
-      .addText((t) =>
-        t.setValue(this.replacement).onChange((v) => (this.replacement = v))
+      .setName(t('ruleModal.replacement'))
+      .addText((tx) =>
+        tx.setValue(this.replacement).onChange((v) => (this.replacement = v))
       );
 
     new Setting(contentEl)
-      .setName('Catégorie')
+      .setName(t('ruleModal.category'))
       .addDropdown((d) => {
-        const options: Record<EntityCategory, string> = {
-          first_name: 'Prénom', last_name: 'Nom de famille', full_name: 'Nom complet',
-          place: 'Lieu', institution: 'Institution', date: 'Date',
-          age: 'Âge', profession: 'Profession', custom: 'Autre',
-        };
-        for (const [value, label] of Object.entries(options)) d.addOption(value, label);
+        const cats: EntityCategory[] = ['first_name','last_name','full_name','place','institution','date','age','profession','custom'];
+        for (const cat of cats) d.addOption(cat, t(`category.${cat}`));
         d.setValue(this.category);
-        d.onChange((v) => (this.category = v as EntityCategory));
+        d.onChange((v) => {
+          this.category = v as EntityCategory;
+          updateWarn();
+        });
       });
 
     new Setting(contentEl)
-      .setName('Portée')
+      .setName(t('ruleModal.scope'))
       .addDropdown((d) => {
-        d.addOption('file', 'Ce fichier uniquement');
-        d.addOption('folder', 'Ce dossier');
-        d.addOption('vault', 'Tout le vault');
+        d.addOption('file',   t('ruleModal.scopeFile'));
+        d.addOption('folder', t('ruleModal.scopeFolder'));
+        d.addOption('vault',  t('ruleModal.scopeVault'));
         d.setValue(this.scopeType);
-        d.onChange((v) => (this.scopeType = v as ScopeType));
+        d.onChange((v) => {
+          this.scopeType = v as ScopeType;
+          updateWarn();
+        });
       });
 
+    // Callout dynamique
+    const calloutEl = contentEl.createDiv();
+    const isNameCat = () => ['first_name', 'last_name', 'full_name'].includes(this.category);
+    const isBroad   = () => this.scopeType !== 'file';
+    const updateWarn = () => {
+      if (!isNameCat()) { calloutEl.hide(); return; }
+      calloutEl.empty();
+      calloutEl.show();
+      if (isBroad()) {
+        calloutEl.setAttribute('data-callout', 'warning');
+        calloutEl.className = 'callout pseudobs-rule-callout';
+        calloutEl.createDiv('callout-title').createSpan({ text: t('ruleModal.scopeWarnTitle') });
+        calloutEl.createDiv('callout-content').createEl('p', { text: t('panel.mappings.warnBroadName') });
+      } else {
+        calloutEl.setAttribute('data-callout', 'success');
+        calloutEl.className = 'callout pseudobs-rule-callout';
+        calloutEl.createDiv('callout-title').createSpan({ text: t('ruleModal.scopeOkTitle') });
+        calloutEl.createDiv('callout-content').createEl('p', { text: t('ruleModal.scopeOk') });
+      }
+    };
+    // État initial
+    if (isNameCat()) {
+      calloutEl.show();
+      updateWarn();
+    } else {
+      calloutEl.hide();
+    }
+
     new Setting(contentEl)
-      .setName('Priorité')
-      .setDesc('Entier libre, comme un z-index CSS — défaut 0')
-      .addText((t) =>
-        t.setValue(String(this.priority)).onChange((v) => (this.priority = parseInt(v, 10) || 0))
+      .setName(t('ruleModal.priority'))
+      .setDesc(t('ruleModal.priorityDesc'))
+      .addText((tx) =>
+        tx.setValue(String(this.priority)).onChange((v) => (this.priority = parseInt(v, 10) || 0))
       );
 
     new Setting(contentEl)
       .addButton((btn) =>
-        btn.setButtonText('Enregistrer').setCta().onClick(() => this.save())
+        btn.setButtonText(t('panel.ner.save')).setCta().onClick(() => void this.save())
       )
       .addButton((btn) =>
-        btn
-          .setButtonText('Supprimer la règle')
-          .setWarning()
-          .onClick(() => this.delete())
+        btn.setButtonText(t('ruleModal.delete')).setWarning().onClick(() => void this.delete())
       );
   }
 
   private async save(): Promise<void> {
     if (!this.replacement.trim()) {
-      new Notice('Le remplacement est obligatoire.');
+      new Notice(t('ruleModal.errorMissing'));
       return;
     }
 
@@ -100,7 +127,7 @@ export class EditRuleModal extends Modal {
     });
 
     await this.plugin.scopeResolver.saveStore(store, filePath);
-    new Notice(`✓ Règle mise à jour : "${rule.source}" → "${this.replacement.trim()}"`);
+    new Notice(t('notice.ruleCreated', rule.source, this.replacement.trim()));
     void this.plugin.refreshHighlightData();
     this.close();
   }
@@ -109,7 +136,7 @@ export class EditRuleModal extends Modal {
     const { store, filePath, rule } = this.location;
     store.remove(rule.id);
     await this.plugin.scopeResolver.saveStore(store, filePath);
-    new Notice(`✓ Règle supprimée : "${rule.source}"`);
+    new Notice(`✓ "${rule.source}"`);
     void this.plugin.refreshHighlightData();
     this.close();
   }
