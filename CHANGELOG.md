@@ -2,7 +2,7 @@
 
 > Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
 
-## [dev] v0.1.4 — 16 May 2026
+## [prod] v0.1.4 — 16 May 2026
 
 **Branch:** `main` | **Tag:** upcoming
 
