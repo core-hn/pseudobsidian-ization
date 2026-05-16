@@ -227,7 +227,16 @@ Goal: consolidate all existing features and add the EMCA-specific functions that
 - [ ] [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) integration in Exports tab for encrypting correspondence tables and pseudonymized exports
 - [ ] Resolve remaining open questions (SPECS §20)
 
-**Testable (v0.2.0):** stable end-to-end workflow on a real corpus of 10 interviews.
+### noScribe integration & audio pseudonymization
+
+[noScribe](https://github.com/kaixxx/noScribe) is a local transcription tool (Whisper + pyannote) widely used in qualitative research. It produces VTT files with **word-level timestamps** and **speaker diarization**.
+
+- [ ] **`VttParser.ts`** — import noScribe VTT: word-level timestamps, speaker labels, round-trip guarantee; auto-conversion to `.md` on import alongside `.mapping.json`
+- [ ] **Timestamp adjustment UI** — when a word timestamp from Whisper is imprecise, the researcher can fine-tune it: playback of ±1 s around the word (Web Audio API, no external dependency), editable start/end fields, saved back to the mapping metadata
+- [ ] **Audio bleep export** — once terms are pseudonymized and timestamps are validated, generate an audio export where each pseudonymized occurrence is replaced by a sine tone at the exact word position; export as WAV via Web Audio API
+- [ ] **Speaker-aware pseudonymization** — rules can be scoped to a specific speaker label (e.g. `SPEAKER_1`); when a name is pseudonymized in one turn, offer to apply the rule to all turns by the same speaker
+
+**Testable (v0.2.0):** stable end-to-end workflow on a real corpus of 10 interviews, including noScribe VTT import, audio bleep export, and timestamp adjustment.
 
 ---
 
