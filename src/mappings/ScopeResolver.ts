@@ -17,16 +17,26 @@ export class ScopeResolver {
     private mappingFolder: string
   ) {}
 
+  /** Collecte récursivement tous les fichiers .mapping.json dans un dossier. */
+  private collectMappingFiles(folder: TFolder): TFile[] {
+    const files: TFile[] = [];
+    for (const child of folder.children) {
+      if (child instanceof TFile && child.name.endsWith('.mapping.json')) {
+        files.push(child);
+      } else if (child instanceof TFolder) {
+        files.push(...this.collectMappingFiles(child));
+      }
+    }
+    return files;
+  }
+
   async getRulesFor(filePath: string): Promise<MappingRule[]> {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
     if (!(folder instanceof TFolder)) return [];
 
     const allRules: MappingRule[] = [];
 
-    for (const child of folder.children) {
-      if (!(child instanceof TFile)) continue;
-      if (!child.name.endsWith('.mapping.json')) continue;
-
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const raw = await this.vault.read(child);
         const data = JSON.parse(raw) as MappingFile;
@@ -56,8 +66,7 @@ export class ScopeResolver {
 
     const needle = term.toLowerCase();
 
-    for (const child of folder.children) {
-      if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const data = JSON.parse(await this.vault.read(child)) as MappingFile;
         const store = MappingStore.fromJSON(data);
@@ -82,8 +91,7 @@ export class ScopeResolver {
 
     const result: RuleLocation[] = [];
 
-    for (const child of folder.children) {
-      if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const data = JSON.parse(await this.vault.read(child)) as MappingFile;
         const store = MappingStore.fromJSON(data);
@@ -111,8 +119,7 @@ export class ScopeResolver {
 
     const result: RuleLocation[] = [];
 
-    for (const child of folder.children) {
-      if (!(child instanceof TFile) || !child.name.endsWith('.mapping.json')) continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const data = JSON.parse(await this.vault.read(child)) as MappingFile;
         const store = MappingStore.fromJSON(data);

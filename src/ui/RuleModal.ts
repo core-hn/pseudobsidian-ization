@@ -1,5 +1,6 @@
 import { App, Modal, Setting, TFile, Notice } from 'obsidian';
 import { t } from '../i18n';
+import { generateRedaction, REDACTION_CHAR } from '../pseudonymizer/Redaction';
 import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
 import type { EntityCategory, MappingFile, ScopeType } from '../types';
@@ -211,6 +212,23 @@ export class RuleModal extends Modal {
         tx.setValue('0').onChange((v) => { this.priority = parseInt(v, 10) || 0; })
       );
 
+    // Checkbox caviardage
+    const redactRow = contentEl.createDiv('pseudobs-redact-row');
+    const redactCb = redactRow.createEl('input');
+    redactCb.type = 'checkbox';
+    redactCb.addClass('pseudobs-dict-review-cb');
+    redactRow.createSpan({ text: ` ${t('redaction.checkbox')}` }).title = t('redaction.checkboxDesc');
+    redactCb.addEventListener('change', () => {
+      if (redactCb.checked) {
+        this.replacement = generateRedaction(this.source || REDACTION_CHAR);
+        this.useClass = false;
+        if (replacementInput) { replacementInput.value = this.replacement; replacementInput.setAttr('disabled', 'true'); }
+      } else {
+        this.replacement = '';
+        if (replacementInput) { replacementInput.value = ''; replacementInput.removeAttribute('disabled'); }
+      }
+    });
+
     new Setting(contentEl).addButton((btn) =>
       btn.setButtonText(t('ruleModal.submit')).setCta().onClick(() => void this.createRule())
     );
@@ -283,7 +301,7 @@ export class RuleModal extends Modal {
     }
 
     new Notice(t('notice.ruleCreated', this.source.trim(), this.replacement.trim()));
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
 

@@ -86,6 +86,7 @@ var init_en = __esm({
       "notice.noDictDetection": "No detection dictionary loaded.\nInstall a dictionary from the Dictionaries panel.",
       "notice.noDictEntities": "No entities found in the detection dictionaries.",
       "notice.noDictReplacements": "No replacements available for the found entities.",
+      "notice.ruleDeleted": '\u2713 Rule deleted \u2014 "{0}" restored in active file',
       "notice.ruleCreated": '\u2713 Rule created: "{0}" \u2192 "{1}"',
       "notice.rulesCreated": "\u2713 {0} {1} created",
       "notice.rulesCreated.rule": "rule",
@@ -127,6 +128,9 @@ var init_en = __esm({
       "ruleModal.scopeWarnTitle": "Longitudinal scope",
       "ruleModal.scopeOkTitle": "File scope",
       "ruleModal.scopeOk": "Good practice. This pseudonym will only apply to this transcription \u2014 each file remains independent.",
+      "contextMenu.redact": 'Redact "{0}"',
+      "redaction.checkbox": "Redact (\u{1F02B})",
+      "redaction.checkboxDesc": "Replace with \u{1F02B} symbols (one per syllable) \u2014 for non-essential identifying content",
       "contextMenu.coulmont": "Pseudonymize with Prof. Baptiste Coulmont",
       "contextMenu.createRule": "Create a replacement rule\u2026",
       "ruleModal.title": "Create a replacement rule",
@@ -384,6 +388,7 @@ var init_fr = __esm({
       "notice.noDictDetection": "Aucun dictionnaire de d\xE9tection charg\xE9.\nInstallez un dictionnaire depuis le panneau Dictionnaires.",
       "notice.noDictEntities": "Aucune entit\xE9 trouv\xE9e dans les dictionnaires de d\xE9tection.",
       "notice.noDictReplacements": "Aucun remplacement disponible pour les entit\xE9s trouv\xE9es.",
+      "notice.ruleDeleted": '\u2713 R\xE8gle supprim\xE9e \u2014 "{0}" r\xE9tabli dans le fichier actif',
       "notice.ruleCreated": '\u2713 R\xE8gle cr\xE9\xE9e : "{0}" \u2192 "{1}"',
       "notice.rulesCreated": "\u2713 {0} r\xE8gle{1} cr\xE9\xE9e{1}",
       "notice.rulesCreated.rule": "",
@@ -425,6 +430,9 @@ var init_fr = __esm({
       "ruleModal.scopeWarnTitle": "Port\xE9e longitudinale",
       "ruleModal.scopeOkTitle": "Port\xE9e fichier",
       "ruleModal.scopeOk": "Bonne pratique. Ce pseudonyme ne s'appliquera qu'\xE0 cette transcription \u2014 chaque fichier reste ind\xE9pendant.",
+      "contextMenu.redact": 'Caviarder "{0}"',
+      "redaction.checkbox": "Caviardage (\u{1F02B})",
+      "redaction.checkboxDesc": "Remplace par des \u{1F02B} (1 par syllabe) \u2014 pour les informations identifiantes non essentielles",
       "contextMenu.coulmont": "Pseudonymiser avec Pr Baptiste Coulmont",
       "contextMenu.createRule": "Cr\xE9er une r\xE8gle de remplacement\u2026",
       "ruleModal.title": "Cr\xE9er une r\xE8gle de remplacement",
@@ -32453,6 +32461,20 @@ init_settings();
 var import_obsidian3 = require("obsidian");
 init_i18n();
 
+// src/pseudonymizer/Redaction.ts
+var REDACTION_CHAR = "\u{1F02B}";
+function countSyllables(text) {
+  const groups = text.match(/[aeiouyàâäéèêëîïôùûüœæAEIOUYÀÂÄÉÈÊËÎÏÔÙÛÜŒÆ]+/g);
+  return Math.max(1, groups?.length ?? 1);
+}
+function generateRedaction(text) {
+  return text.split(/( +)/).map((part) => {
+    if (/^ +$/.test(part))
+      return part;
+    return REDACTION_CHAR.repeat(countSyllables(part));
+  }).join("");
+}
+
 // src/mappings/MappingStore.ts
 function generateId() {
   return `map_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -32707,6 +32729,27 @@ var RuleModal = class extends import_obsidian3.Modal {
         this.priority = parseInt(v, 10) || 0;
       })
     );
+    const redactRow = contentEl.createDiv("pseudobs-redact-row");
+    const redactCb = redactRow.createEl("input");
+    redactCb.type = "checkbox";
+    redactCb.addClass("pseudobs-dict-review-cb");
+    redactRow.createSpan({ text: ` ${t("redaction.checkbox")}` }).title = t("redaction.checkboxDesc");
+    redactCb.addEventListener("change", () => {
+      if (redactCb.checked) {
+        this.replacement = generateRedaction(this.source || REDACTION_CHAR);
+        this.useClass = false;
+        if (replacementInput) {
+          replacementInput.value = this.replacement;
+          replacementInput.setAttr("disabled", "true");
+        }
+      } else {
+        this.replacement = "";
+        if (replacementInput) {
+          replacementInput.value = "";
+          replacementInput.removeAttribute("disabled");
+        }
+      }
+    });
     new import_obsidian3.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(t("ruleModal.submit")).setCta().onClick(() => void this.createRule())
     );
@@ -32765,7 +32808,7 @@ var RuleModal = class extends import_obsidian3.Modal {
       await this.app.vault.create(mappingPath, json);
     }
     new import_obsidian3.Notice(t("notice.ruleCreated", this.source.trim(), this.replacement.trim()));
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
   /**
@@ -32809,7 +32852,7 @@ var RuleModal = class extends import_obsidian3.Modal {
 var import_obsidian4 = require("obsidian");
 init_i18n();
 var QuickPseudonymizeModal = class extends import_obsidian4.Modal {
-  constructor(app, plugin, editor, prefillReplacement = "", suggestions = []) {
+  constructor(app, plugin, editor, prefillReplacement = "", suggestions = [], isRedactionMode = false) {
     super(app);
     this.replacement = "";
     this.category = "custom";
@@ -32817,8 +32860,9 @@ var QuickPseudonymizeModal = class extends import_obsidian4.Modal {
     this.plugin = plugin;
     this.editor = editor;
     this.source = editor.getSelection();
-    this.replacement = prefillReplacement;
+    this.replacement = prefillReplacement || (isRedactionMode ? generateRedaction(this.source) : "");
     this.suggestions = suggestions;
+    this.isRedactionMode = isRedactionMode;
     if (suggestions.length > 0)
       this.category = "first_name";
     this.from = editor.getCursor("from");
@@ -32870,6 +32914,30 @@ var QuickPseudonymizeModal = class extends import_obsidian4.Modal {
       d.setValue("file");
       d.onChange((v) => this.applyScope = v);
     });
+    const redactRow = contentEl.createDiv("pseudobs-redact-row");
+    const redactCb = redactRow.createEl("input");
+    redactCb.type = "checkbox";
+    redactCb.checked = this.isRedactionMode;
+    redactCb.addClass("pseudobs-dict-review-cb");
+    const redactLabel = redactRow.createSpan({ text: ` ${t("redaction.checkbox")}` });
+    redactLabel.title = t("redaction.checkboxDesc");
+    redactCb.addEventListener("change", () => {
+      this.isRedactionMode = redactCb.checked;
+      if (this.isRedactionMode) {
+        this.replacement = generateRedaction(this.source);
+        if (replacementInput)
+          replacementInput.value = this.replacement;
+        replacementInput?.setAttr("disabled", "true");
+      } else {
+        this.replacement = "";
+        if (replacementInput)
+          replacementInput.value = "";
+        replacementInput?.removeAttribute("disabled");
+      }
+    });
+    if (this.isRedactionMode && replacementInput) {
+      replacementInput.setAttr("disabled", "true");
+    }
     new import_obsidian4.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(t("quickModal.submit")).setCta().onClick(() => void this.apply())
     );
@@ -32896,7 +32964,7 @@ var QuickPseudonymizeModal = class extends import_obsidian4.Modal {
       const count = await this.plugin.applyRuleToFile(activeFile, this.source, marked);
       new import_obsidian4.Notice(t("notice.appliedFile", this.source, marked, String(count), count > 1 ? "s" : ""));
     }
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
   async saveRule(activeFile, replacement) {
@@ -33098,15 +33166,15 @@ var EditRuleModal = class extends import_obsidian5.Modal {
     });
     await this.plugin.scopeResolver.saveStore(store, filePath);
     new import_obsidian5.Notice(t("notice.ruleCreated", rule.source, this.replacement.trim()));
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
   async delete() {
     const { store, filePath, rule } = this.location;
     store.remove(rule.id);
     await this.plugin.scopeResolver.saveStore(store, filePath);
-    new import_obsidian5.Notice(`\u2713 "${rule.source}"`);
-    void this.plugin.refreshHighlightData();
+    await this.plugin.revertRuleInFile(rule.source, rule.replacement);
+    new import_obsidian5.Notice(t("notice.ruleDeleted", rule.source));
     this.close();
   }
   onClose() {
@@ -33339,7 +33407,7 @@ var MappingScanReviewModal = class extends import_obsidian6.Modal {
     }
     const modified = applySpans(this.content, resolved);
     await this.app.vault.modify(this.file, modified);
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     const total = resolved.length;
     new import_obsidian6.Notice(t(
       "notice.occurrencesPseudonymized",
@@ -33428,6 +33496,11 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       pane.style.display = id === tab ? "" : "none";
     }
     await this.renderTab(tab);
+  }
+  /** Appelé par le plugin pour forcer un re-rendu de l'onglet actif. */
+  async refreshActiveTab() {
+    if (!this._renderingTab)
+      await this.renderTab(this.activeTab);
   }
   async renderTab(tab) {
     const pane = this.panes[tab];
@@ -33701,10 +33774,24 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
   async renderNerTab(el) {
     const s = this.plugin.settings;
     const nerScanBtn = el.createEl("button", { cls: "pseudobs-view-action-btn mod-cta" });
-    (0, import_obsidian7.setIcon)(nerScanBtn, "scan-search");
-    nerScanBtn.createSpan({ text: t("panel.ner.scanBtn") });
+    const nerScanIcon = nerScanBtn.createSpan();
+    (0, import_obsidian7.setIcon)(nerScanIcon, "scan-search");
+    nerScanBtn.createSpan({ text: ` ${t("panel.ner.scanBtn")}` });
     nerScanBtn.title = t("panel.ner.scanBtn");
-    nerScanBtn.addEventListener("click", () => void this.plugin.scanCurrentFileNer());
+    nerScanBtn.addEventListener("click", () => {
+      void (async () => {
+        nerScanBtn.setAttr("disabled", "true");
+        (0, import_obsidian7.setIcon)(nerScanIcon, "loader-circle");
+        nerScanIcon.addClass("pseudobs-spin");
+        try {
+          await this.plugin.scanCurrentFileNer();
+        } finally {
+          nerScanBtn.removeAttribute("disabled");
+          (0, import_obsidian7.setIcon)(nerScanIcon, "scan-search");
+          nerScanIcon.removeClass("pseudobs-spin");
+        }
+      })();
+    });
     el.createEl("hr");
     el.createEl("p", { text: t("panel.ner.hint"), cls: "pseudobs-view-hint" });
     const scoreSection = el.createDiv("pseudobs-ner-section");
@@ -33787,6 +33874,36 @@ var TAG_TO_CATEGORY = {
   MISC: "custom"
 };
 var MIN_ENTITY_LENGTH = 2;
+var PREAMBLE_PATTERNS = [
+  // VTT noScribe : *HH:MM:SS.mmm → HH:MM:SS.mmm* **SPEAKER**
+  /^\*[\d:.]+\s*→\s*[\d:.]+\*(?:\s*\*\*[^*]+\*\*)?\s*/,
+  // SRT bloc de texte : **[N]** *HH:MM:SS,mmm → HH:MM:SS,mmm*  (ligne à ignorer entièrement)
+  /^\*\*\[\d+\]\*\*\s*\*[^*]+\*/,
+  // CHAT tour de parole : **SPEAKER** :
+  /^\*\*[A-Z0-9_]+\*\*\s*:\s*/
+];
+var SKIP_PATTERNS = [
+  /^---/,
+  // frontmatter YAML
+  /^pseudobs-/,
+  // clés frontmatter du plugin
+  /^> /,
+  // métadonnées CHAT (@, %)
+  /^\*\*\[\d+\]\*\*/
+  // en-tête de bloc SRT (index + timestamp sur la même ligne)
+];
+function stripMarkdownPreamble(line) {
+  for (const skip of SKIP_PATTERNS) {
+    if (skip.test(line))
+      return { cleanText: "", preambleLength: line.length };
+  }
+  for (const pat of PREAMBLE_PATTERNS) {
+    const m = pat.exec(line);
+    if (m)
+      return { cleanText: line.slice(m[0].length), preambleLength: m[0].length };
+  }
+  return { cleanText: line, preambleLength: 0 };
+}
 var _pipeline = null;
 var _loadingPromise = null;
 var _loadError = null;
@@ -33837,6 +33954,7 @@ var OnnxNerScanner = class {
       if (pluginDir) {
         env3.backends.onnx.wasm.wasmPaths = pluginDir + path3.sep;
         env3.backends.onnx.wasm.numThreads = 1;
+        env3.backends.onnx.wasm.proxy = true;
       }
       env3.allowRemoteModels = true;
       env3.allowLocalModels = false;
@@ -33866,9 +33984,10 @@ var OnnxNerScanner = class {
     const results = [];
     let offset = 0;
     for (const line of lines) {
-      if (line.trim().length > 2) {
+      const { cleanText, preambleLength } = stripMarkdownPreamble(line);
+      if (cleanText.trim().length > 2) {
         try {
-          const entities = await _pipeline(line, { aggregation_strategy: "simple" });
+          const entities = await _pipeline(cleanText, { aggregation_strategy: "simple" });
           for (const ent of entities) {
             if (ent.score < minScore)
               continue;
@@ -33878,8 +33997,8 @@ var OnnxNerScanner = class {
             if (functionWords.has(word.toLowerCase()))
               continue;
             const category = TAG_TO_CATEGORY[ent.entity_group] ?? "custom";
-            const start = offset + ent.start;
-            const end = offset + ent.end;
+            const start = offset + preambleLength + ent.start;
+            const end = offset + preambleLength + ent.end;
             const ctxLen = 45;
             results.push({
               id: `ner_${Date.now()}_${++_counter2}`,
@@ -34415,7 +34534,7 @@ var DictScanReviewModal = class extends import_obsidian9.Modal {
     }
     const n = toCreate.length;
     new import_obsidian9.Notice(t("notice.rulesCreated", String(n), n > 1 ? t("notice.rulesCreated.rules") : t("notice.rulesCreated.rule")));
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
   onClose() {
@@ -34659,6 +34778,150 @@ var ChatParser = class {
   }
 };
 
+// src/parsers/VttParser.ts
+var TIME_RE = /(\d{1,2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})/;
+var TIMESTAMP_LINE_RE = new RegExp(
+  `^${TIME_RE.source}\\s+-->\\s+${TIME_RE.source}\\s*(.*)$`
+);
+var WORD_TIME_RE = /<(\d{1,2}:\d{2}:\d{2}\.\d{3}|\d{2}:\d{2}\.\d{3})>/g;
+var CLASS_TAG_RE = /<\/?c>/g;
+var SPEAKER_V_RE = /^<v(?:\.[^\s>]+)?\s+([^>]+)>/;
+var SPEAKER_BRACKET_RE = /^\[([^\]]+)\]/;
+var ALL_TAGS_RE = /<[^>]+>/g;
+function normalizeTime(t2) {
+  return t2.includes(":") && t2.split(":").length === 2 ? `00:${t2}` : t2;
+}
+function stripTags(text) {
+  return text.replace(ALL_TAGS_RE, "").trim();
+}
+function extractWords(rawText) {
+  const hasWordTimes = WORD_TIME_RE.test(rawText);
+  WORD_TIME_RE.lastIndex = 0;
+  if (!hasWordTimes) {
+    const clean = stripTags(rawText);
+    return clean ? [{ text: clean, time: "" }] : [];
+  }
+  const words = [];
+  let remaining = rawText;
+  let currentTime = "";
+  const parts = remaining.split(WORD_TIME_RE);
+  for (let i2 = 0; i2 < parts.length; i2++) {
+    const part = parts[i2];
+    if (TIME_RE.test(part) && part.match(/^\d/)) {
+      currentTime = normalizeTime(part);
+    } else {
+      const clean = part.replace(CLASS_TAG_RE, "").replace(ALL_TAGS_RE, "");
+      if (clean.trim()) {
+        words.push({ text: clean, time: currentTime });
+        currentTime = "";
+      }
+    }
+  }
+  return words;
+}
+function extractSpeakerAndText(line) {
+  const vMatch = SPEAKER_V_RE.exec(line);
+  if (vMatch) {
+    return { speaker: vMatch[1].trim(), text: line.slice(vMatch[0].length) };
+  }
+  const bMatch = SPEAKER_BRACKET_RE.exec(line);
+  if (bMatch) {
+    return { speaker: bMatch[1].trim(), text: line.slice(bMatch[0].length).trim() };
+  }
+  return { speaker: void 0, text: line };
+}
+var VttParser = class {
+  parse(content) {
+    const trailingNewline = content.endsWith("\n");
+    const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trimEnd();
+    const lines = normalized.split("\n");
+    let i2 = 0;
+    while (i2 < lines.length && !lines[i2].startsWith("WEBVTT"))
+      i2++;
+    i2++;
+    const cues = [];
+    while (i2 < lines.length) {
+      while (i2 < lines.length && lines[i2].trim() === "")
+        i2++;
+      if (i2 >= lines.length)
+        break;
+      let cueId;
+      if (i2 < lines.length && !TIMESTAMP_LINE_RE.test(lines[i2])) {
+        cueId = lines[i2].trim();
+        i2++;
+      }
+      if (i2 >= lines.length)
+        break;
+      const tsMatch = TIMESTAMP_LINE_RE.exec(lines[i2]);
+      if (!tsMatch) {
+        i2++;
+        continue;
+      }
+      const startTime = normalizeTime(tsMatch[1]);
+      const endTime = normalizeTime(tsMatch[2]);
+      i2++;
+      const rawLines = [];
+      while (i2 < lines.length && lines[i2].trim() !== "") {
+        rawLines.push(lines[i2]);
+        i2++;
+      }
+      if (rawLines.length === 0)
+        continue;
+      const firstLineResult = extractSpeakerAndText(rawLines[0]);
+      const speaker = firstLineResult.speaker;
+      const textLines = [firstLineResult.text, ...rawLines.slice(1)];
+      const fullRaw = textLines.join("\n");
+      const words = extractWords(fullRaw);
+      const text = words.map((w) => w.text).join("");
+      cues.push({ id: cueId, startTime, endTime, speaker, text, words, rawLines });
+    }
+    return { cues, trailingNewline };
+  }
+  reconstruct(doc) {
+    const parts = ["WEBVTT", ""];
+    for (const cue of doc.cues) {
+      if (cue.id !== void 0)
+        parts.push(cue.id);
+      parts.push(`${cue.startTime} --> ${cue.endTime}`);
+      if (cue.words.length > 0 && cue.words.some((w) => w.time !== "")) {
+        const line = this.reconstructWithWordTimestamps(cue);
+        parts.push(line);
+      } else {
+        const speaker = cue.speaker;
+        const textLine = speaker ? `<v ${speaker}>${cue.text}` : cue.text;
+        parts.push(textLine);
+      }
+      parts.push("");
+    }
+    const body = parts.join("\n");
+    return doc.trailingNewline ? body : body.trimEnd();
+  }
+  reconstructWithWordTimestamps(cue) {
+    let line = cue.speaker ? `<v ${cue.speaker}>` : "";
+    for (const word of cue.words) {
+      if (word.time)
+        line += `<${word.time}>`;
+      line += `<c>${word.text}</c>`;
+    }
+    return line;
+  }
+  /**
+   * Met à jour le texte d'une cue après pseudonymisation.
+   * Propage le remplacement dans le tableau words pour maintenir le round-trip.
+   */
+  static applyTextToWords(cue, newText) {
+    cue.text = newText;
+    if (cue.words.length === 0 || cue.words.every((w) => w.time === "")) {
+      cue.words = [{ text: newText, time: "" }];
+      return;
+    }
+    cue.words[0].text = newText;
+    for (let i2 = 1; i2 < cue.words.length; i2++) {
+      cue.words[i2].text = "";
+    }
+  }
+};
+
 // src/parsers/TranscriptConverter.ts
 function srtToMarkdown(doc, sourceName) {
   const lines = [
@@ -34716,6 +34979,27 @@ function chatToMarkdown(doc, sourceName) {
   lines.push("");
   return lines.join("\n");
 }
+function vttToMarkdown(doc, sourceName) {
+  const lines = [
+    "---",
+    `pseudobs-format: vtt`,
+    `pseudobs-source: "${sourceName}"`,
+    "---",
+    ""
+  ];
+  for (const cue of doc.cues) {
+    const ts = `*${cue.startTime} \u2192 ${cue.endTime}*`;
+    const speaker = cue.speaker ? ` **${cue.speaker}**` : "";
+    const hasWordTs = cue.words.length > 0 && cue.words.some((w) => w.time !== "");
+    const wordTsComment = hasWordTs ? `<!-- vtt-words:${JSON.stringify(cue.words)} -->` : "";
+    lines.push(`${ts}${speaker} ${cue.text}${wordTsComment ? "  " + wordTsComment : ""}`);
+    lines.push("");
+  }
+  while (lines[lines.length - 1] === "")
+    lines.pop();
+  lines.push("");
+  return lines.join("\n");
+}
 function lineGroup(line) {
   if (line.type === "meta" || line.type === "dependent")
     return "structural";
@@ -34731,16 +35015,24 @@ var ScopeResolver = class {
     this.vault = vault;
     this.mappingFolder = mappingFolder;
   }
+  /** Collecte récursivement tous les fichiers .mapping.json dans un dossier. */
+  collectMappingFiles(folder) {
+    const files = [];
+    for (const child of folder.children) {
+      if (child instanceof import_obsidian11.TFile && child.name.endsWith(".mapping.json")) {
+        files.push(child);
+      } else if (child instanceof import_obsidian11.TFolder) {
+        files.push(...this.collectMappingFiles(child));
+      }
+    }
+    return files;
+  }
   async getRulesFor(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
     if (!(folder instanceof import_obsidian11.TFolder))
       return [];
     const allRules = [];
-    for (const child of folder.children) {
-      if (!(child instanceof import_obsidian11.TFile))
-        continue;
-      if (!child.name.endsWith(".mapping.json"))
-        continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const raw = await this.vault.read(child);
         const data = JSON.parse(raw);
@@ -34765,9 +35057,7 @@ var ScopeResolver = class {
     if (!(folder instanceof import_obsidian11.TFolder))
       return null;
     const needle = term.toLowerCase();
-    for (const child of folder.children) {
-      if (!(child instanceof import_obsidian11.TFile) || !child.name.endsWith(".mapping.json"))
-        continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const data = JSON.parse(await this.vault.read(child));
         const store = MappingStore.fromJSON(data);
@@ -34788,9 +35078,7 @@ var ScopeResolver = class {
     if (!(folder instanceof import_obsidian11.TFolder))
       return [];
     const result = [];
-    for (const child of folder.children) {
-      if (!(child instanceof import_obsidian11.TFile) || !child.name.endsWith(".mapping.json"))
-        continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const data = JSON.parse(await this.vault.read(child));
         const store = MappingStore.fromJSON(data);
@@ -34816,9 +35104,7 @@ var ScopeResolver = class {
     if (!(folder instanceof import_obsidian11.TFolder))
       return [];
     const result = [];
-    for (const child of folder.children) {
-      if (!(child instanceof import_obsidian11.TFile) || !child.name.endsWith(".mapping.json"))
-        continue;
+    for (const child of this.collectMappingFiles(folder)) {
       try {
         const data = JSON.parse(await this.vault.read(child));
         const store = MappingStore.fromJSON(data);
@@ -34871,7 +35157,7 @@ var PseudonymizationEngine = class {
 };
 
 // src/main.ts
-var CONVERTIBLE_EXTS = ["srt", "cha", "chat"];
+var CONVERTIBLE_EXTS = ["srt", "cha", "chat", "vtt"];
 var PseudObsPlugin = class extends import_obsidian12.Plugin {
   constructor() {
     super(...arguments);
@@ -34880,6 +35166,10 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     // Candidats NER par fichier (effacés au changement de fichier ou à un nouveau scan)
     this.nerCandidateFile = null;
     this.nerCandidates = [];
+    // Dernière MarkdownView connue — pour mettre à jour le surlignage même
+    // quand le panneau latéral a le focus (getActiveViewOfType retourne null dans ce cas)
+    this.lastMarkdownView = null;
+    this._viewRefreshTimer = null;
   }
   async onload() {
     await this.loadSettings();
@@ -34897,11 +35187,21 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       createPseudonymHighlighter(() => this.highlightData)
     );
     this.registerEvent(
-      this.app.workspace.on("active-leaf-change", () => {
-        void this.refreshHighlightData();
+      this.app.workspace.on("active-leaf-change", (leaf) => {
+        const v = leaf?.view;
+        if (v instanceof import_obsidian12.MarkdownView)
+          this.lastMarkdownView = v;
+        void this.refresh();
       })
     );
-    void this.refreshHighlightData();
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => {
+        if (file instanceof import_obsidian12.TFile && !file.name.endsWith(".mapping.json") && file === this.app.workspace.getActiveFile()) {
+          void this.refresh();
+        }
+      })
+    );
+    void this.refresh();
     if (!this.settings.onboardingCompleted) {
       this.app.workspace.onLayoutReady(() => {
         new OnboardingModal(this.app, this).open();
@@ -34988,7 +35288,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
                 return;
               }
               editor.replaceSelection(location.rule.source);
-              void this.refreshHighlightData();
+              void this.refresh();
             })
           );
         }
@@ -35006,6 +35306,9 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
         }
         menu.addItem(
           (item) => item.setTitle(t("contextMenu.pseudonymize", truncate(selection))).setIcon("eye-off").onClick(() => new QuickPseudonymizeModal(this.app, this, editor).open())
+        );
+        menu.addItem(
+          (item) => item.setTitle(t("contextMenu.redact", truncate(selection))).setIcon("square").onClick(() => new QuickPseudonymizeModal(this.app, this, editor, generateRedaction(selection), [], true).open())
         );
         menu.addItem(
           (item) => item.setTitle(t("contextMenu.coulmont")).setIcon("book-user").onClick(async () => {
@@ -35088,9 +35391,37 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
         this.highlightData = { sources: [], replacements: [], nerCandidates };
       }
     }
-    const view = this.app.workspace.getActiveViewOfType(import_obsidian12.MarkdownView);
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian12.MarkdownView) ?? this.lastMarkdownView;
     const cm = view?.editor && view.editor.cm;
     cm?.dispatch({ effects: highlightDataChanged.of(void 0) });
+  }
+  /**
+   * Rafraîchit à la fois le surlignage CM6 ET le panneau latéral.
+   * À appeler après toute action qui crée, modifie ou supprime une règle.
+   */
+  async refresh() {
+    await this.refreshHighlightData();
+    this.refreshView();
+  }
+  /**
+   * Demande au panneau latéral ouvert de re-rendre son onglet actif.
+   * Debounce 80 ms pour coalescer les appels multiples rapides
+   * (vault watcher + appel explicite dans la même action).
+   */
+  refreshView() {
+    if (this._viewRefreshTimer !== null) {
+      window.clearTimeout(this._viewRefreshTimer);
+    }
+    this._viewRefreshTimer = window.setTimeout(() => {
+      this._viewRefreshTimer = null;
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_PSEUDOBS);
+      for (const leaf of leaves) {
+        const view = leaf.view;
+        if (view instanceof PseudonymizationView) {
+          void view.refreshActiveTab();
+        }
+      }
+    }, 80);
   }
   // --- Conversion automatique ---
   async autoConvert(file) {
@@ -35103,6 +35434,8 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       let mdContent;
       if (ext === "srt") {
         mdContent = srtToMarkdown(new SrtParser().parse(raw), file.name);
+      } else if (ext === "vtt") {
+        mdContent = vttToMarkdown(new VttParser().parse(raw), file.name);
       } else {
         mdContent = chatToMarkdown(new ChatParser().parse(raw), file.name);
       }
@@ -35111,9 +35444,13 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
         return;
       }
       await this.app.vault.create(mdPath, mdContent);
-      const mappingPath = `${this.settings.mappingFolder}/${basename}.mapping.json`;
+      const transcRoot = this.settings.transcriptionsFolder;
+      const fileFolder = file.parent?.path ?? "";
+      const relSubFolder = fileFolder.startsWith(transcRoot) ? fileFolder.slice(transcRoot.length).replace(/^\//, "") : "";
+      const mappingDir = relSubFolder ? `${this.settings.mappingFolder}/${relSubFolder}` : this.settings.mappingFolder;
+      const mappingPath = `${mappingDir}/${basename}.mapping.json`;
       if (!this.app.vault.getAbstractFileByPath(mappingPath)) {
-        await this.ensureFolder(this.settings.mappingFolder);
+        await this.ensureFolder(mappingDir);
         const store = new MappingStore({ type: "file", path: mdPath });
         await this.app.vault.create(mappingPath, JSON.stringify(store.toJSON(), null, 2));
       }
@@ -35131,7 +35468,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
   openFilePicker() {
     const input = activeDocument.createElement("input");
     input.type = "file";
-    input.accept = ".srt,.cha,.chat,.txt,.md";
+    input.accept = ".srt,.vtt,.cha,.chat,.txt,.md";
     input.multiple = true;
     input.classList.add("pseudobs-hidden-input");
     activeDocument.body.appendChild(input);
@@ -35248,7 +35585,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
       this.nerCandidateFile = file;
       this.nerCandidates = unique;
-      void this.refreshHighlightData();
+      void this.refresh();
       new import_obsidian12.Notice(t("notice.nerEntitiesFound", String(unique.length), unique.length > 1 ? t("notice.nerEntitiesFound.entities") : t("notice.nerEntitiesFound.entity")), 6e3);
     } catch (e) {
       new import_obsidian12.Notice(`NER error: ${e.message}`);
@@ -35323,14 +35660,14 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     }
     this.nerCandidateFile = file;
     this.nerCandidates = results.map((r) => r.term);
-    void this.refreshHighlightData();
+    void this.refresh();
     new DictScanReviewModal(this.app, this, file, results, existingReplacements).open();
   }
   // Efface les candidats NER pour le fichier courant (appelé après création de règle si besoin)
   clearNerCandidates() {
     this.nerCandidates = [];
     this.nerCandidateFile = null;
-    void this.refreshHighlightData();
+    void this.refresh();
   }
   async exportMappingForFile(file) {
     const mappingPath = `${this.settings.mappingFolder}/${file.basename}.mapping.json`;
@@ -35426,6 +35763,51 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     spans.sort((a, b) => b.start - a.start);
     await this.app.vault.modify(file, applySpans(content, spans));
     return spans.length;
+  }
+  /**
+   * Annule l'application d'une règle dans le fichier actif :
+   * cherche le remplacement (avec ou sans marqueurs) et le réécrit avec la source.
+   * Appelé automatiquement à la suppression d'une règle dans EditRuleModal.
+   */
+  async revertRuleInFile(source, replacement) {
+    const file = this.app.workspace.getActiveFile();
+    if (!file)
+      return;
+    const s = this.settings;
+    const variants = [];
+    if (s.useMarkerInExport) {
+      variants.push(`${s.markerOpen}${replacement}${s.markerClose}`);
+    }
+    variants.push(replacement);
+    let content = await this.app.vault.read(file);
+    let changed = false;
+    for (const variant of variants) {
+      const fakeRule = {
+        id: "_revert",
+        source: variant,
+        replacement: source,
+        category: "custom",
+        scope: { type: "file", path: file.path },
+        status: "validated",
+        priority: 0,
+        createdBy: "user",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      const spans = findSpansForRule(content, fakeRule, {
+        caseSensitive: false,
+        wholeWordOnly: false
+        // le remplacement peut contenir des 🀫 ou marqueurs
+      });
+      if (spans.length > 0) {
+        spans.sort((a, b) => b.start - a.start);
+        content = applySpans(content, spans);
+        changed = true;
+      }
+    }
+    if (changed) {
+      await this.app.vault.modify(file, content);
+      void this.refresh();
+    }
   }
   // --- Utilitaires ---
   async ensureFolder(folderPath) {

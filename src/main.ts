@@ -1,4 +1,4 @@
-import { Plugin, Notice, TFile, TAbstractFile, Editor, Menu, MarkdownView, requestUrl, WorkspaceLeaf } from 'obsidian';
+import { Plugin, Notice, TFile, TFolder, TAbstractFile, Editor, Menu, MarkdownView, requestUrl, WorkspaceLeaf } from 'obsidian';
 import { t, setLocale } from './i18n';
 import { EditorView } from '@codemirror/view';
 import { PseudObsSettings, DEFAULT_SETTINGS, PseudObsSettingTab } from './settings';
@@ -11,6 +11,7 @@ import { OnboardingModal } from './ui/OnboardingModal';
 import { OnnxNerScanner } from './scanner/OnnxNerScanner';
 import { DictionaryLoader } from './dictionaries/DictionaryLoader';
 import { DictScanReviewModal } from './ui/DictScanReviewModal';
+import { generateRedaction } from './pseudonymizer/Redaction';
 import { CorpusModal, ClassSelectModal, getCorpusClasses } from './ui/CorpusModal';
 import type { DictScanResultItem } from './ui/DictScanReviewModal';
 import { MappingScanReviewModal } from './ui/MappingScanReviewModal';
@@ -18,7 +19,10 @@ import type { MappingRuleResult } from './ui/MappingScanReviewModal';
 import { scanOccurrences } from './scanner/OccurrenceScanner';
 import { SrtParser } from './parsers/SrtParser';
 import { ChatParser } from './parsers/ChatParser';
-import { srtToMarkdown, chatToMarkdown } from './parsers/TranscriptConverter';
+import { VttParser } from './parsers/VttParser';
+import { NoScribeHtmlParser } from './parsers/NoScribeHtmlParser';
+import { NoScribeVttParser } from './parsers/NoScribeVttParser';
+import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, type VttCueData } from './parsers/TranscriptConverter';
 import { MappingStore } from './mappings/MappingStore';
 import { ScopeResolver } from './mappings/ScopeResolver';
 import { PseudonymizationEngine } from './pseudonymizer/PseudonymizationEngine';
@@ -26,7 +30,7 @@ import { findSpansForRule } from './pseudonymizer/ReplacementPlanner';
 import { applySpans } from './pseudonymizer/SpanProtector';
 import type { MappingRule, MappingStatus, Occurrence } from './types';
 
-const CONVERTIBLE_EXTS = ['srt', 'cha', 'chat'];
+const CONVERTIBLE_EXTS = ['srt', 'cha', 'chat', 'vtt', 'html'];
 
 export default class PseudObsPlugin extends Plugin {
   settings!: PseudObsSettings;
@@ -34,10 +38,14 @@ export default class PseudObsPlugin extends Plugin {
   nerScanner!: OnnxNerScanner;
   dictionaryLoader!: DictionaryLoader;
   // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
-  private highlightData: HighlightData = { sources: [], replacements: [], nerCandidates: [] };
+  private highlightData: HighlightData = { sources: [], replacements: [], nerCandidates: [], ignoredTerms: [] };
   // Candidats NER par fichier (effacés au changement de fichier ou à un nouveau scan)
   private nerCandidateFile: TFile | null = null;
   private nerCandidates: string[] = [];
+  // Dernière MarkdownView connue — pour mettre à jour le surlignage même
+  // quand le panneau latéral a le focus (getActiveViewOfType retourne null dans ce cas)
+  private lastMarkdownView: MarkdownView | null = null;
+  private _viewRefreshTimer: number | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -57,12 +65,31 @@ export default class PseudObsPlugin extends Plugin {
       createPseudonymHighlighter(() => this.highlightData)
     );
 
-    // Rafraîchir le cache de surlignage à chaque changement de fichier actif
+    // Tracker la dernière MarkdownView pour garder le surlignage actif
+    // même quand le panneau latéral prend le focus
     this.registerEvent(
-      this.app.workspace.on('active-leaf-change', () => { void this.refreshHighlightData(); })
+      this.app.workspace.on('active-leaf-change', (leaf) => {
+        const v = leaf?.view;
+        if (v instanceof MarkdownView) this.lastMarkdownView = v;
+        void this.refresh();
+      })
     );
+
+    // Rafraîchir panneau + surlignage quand le FICHIER TRANSCRIPT actif est modifié.
+    // Les fichiers .mapping.json sont exclus — leurs changements sont déjà gérés
+    // par les appels explicites à refresh() dans les modales, évitant le double rendu.
+    this.registerEvent(
+      this.app.vault.on('modify', (file) => {
+        if (file instanceof TFile
+            && !file.name.endsWith('.mapping.json')
+            && file === this.app.workspace.getActiveFile()) {
+          void this.refresh();
+        }
+      })
+    );
+
     // Premier chargement au démarrage
-    void this.refreshHighlightData();
+    void this.refresh();
 
     // Onboarding au premier lancement
     if (!this.settings.onboardingCompleted) {
@@ -127,6 +154,12 @@ export default class PseudObsPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'export-as-vtt',
+      name: t('command.exportAsVtt'),
+      callback: () => void this.exportCurrentFileAsVtt(),
+    });
+
+    this.addCommand({
       id: 'pseudonymize-selection',
       name: t('command.pseudonymizeSelection'),
       editorCheckCallback: (checking, editor) => {
@@ -164,7 +197,7 @@ export default class PseudObsPlugin extends Plugin {
                 const location = await this.scopeResolver.findRuleByTerm(bare);
                 if (!location) { new Notice(t('notice.ruleNotFound')); return; }
                 editor.replaceSelection(location.rule.source);
-                void this.refreshHighlightData();
+                void this.refresh();
               })
           );
         }
@@ -190,6 +223,13 @@ export default class PseudObsPlugin extends Plugin {
             .setTitle(t('contextMenu.pseudonymize', truncate(selection)))
             .setIcon('eye-off')
             .onClick(() => new QuickPseudonymizeModal(this.app, this, editor).open())
+        );
+
+        menu.addItem((item) =>
+          item
+            .setTitle(t('contextMenu.redact', truncate(selection)))
+            .setIcon('square')
+            .onClick(() => new QuickPseudonymizeModal(this.app, this, editor, generateRedaction(selection), [], true).open())
         );
 
         menu.addItem((item) =>
@@ -262,9 +302,8 @@ export default class PseudObsPlugin extends Plugin {
   async refreshHighlightData(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      this.highlightData = { sources: [], replacements: [], nerCandidates: [] };
+      this.highlightData = { sources: [], replacements: [], nerCandidates: [], ignoredTerms: [] };
     } else {
-      // Candidats NER : uniquement si le fichier actif est celui du dernier scan
       const nerCandidates = file === this.nerCandidateFile ? this.nerCandidates : [];
 
       try {
@@ -287,22 +326,55 @@ export default class PseudObsPlugin extends Plugin {
         } else {
           rules = await this.scopeResolver.getRulesFor(file.path);
         }
+        // Termes ignorés : extraits des ignoredOccurrences de chaque règle
+        const ignoredTerms = rules.flatMap((r) =>
+          (r.ignoredOccurrences ?? []).map((o) => o.text)
+        );
         this.highlightData = {
           sources: rules.map((r) => r.source).filter(Boolean),
           replacements: rules.map((r) => r.replacement).filter(Boolean),
           nerCandidates,
+          ignoredTerms,
         };
       } catch {
-        this.highlightData = { sources: [], replacements: [], nerCandidates };
+        this.highlightData = { sources: [], replacements: [], nerCandidates, ignoredTerms: [] };
       }
     }
 
-    // Dispatcher le StateEffect sur l'éditeur actif pour déclencher
-    // la reconstruction des décorations CM6 (le ViewPlugin ne se déclenche
-    // pas sur un changement de données externe sans ce signal)
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    // Dispatcher le StateEffect — utiliser lastMarkdownView si le panneau a le focus
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView) ?? this.lastMarkdownView;
     const cm = view?.editor && ((view.editor as unknown as { cm?: EditorView }).cm);
     cm?.dispatch({ effects: highlightDataChanged.of(undefined) });
+  }
+
+  /**
+   * Rafraîchit à la fois le surlignage CM6 ET le panneau latéral.
+   * À appeler après toute action qui crée, modifie ou supprime une règle.
+   */
+  async refresh(): Promise<void> {
+    await this.refreshHighlightData();
+    this.refreshView();
+  }
+
+  /**
+   * Demande au panneau latéral ouvert de re-rendre son onglet actif.
+   * Debounce 80 ms pour coalescer les appels multiples rapides
+   * (vault watcher + appel explicite dans la même action).
+   */
+  refreshView(): void {
+    if (this._viewRefreshTimer !== null) {
+      window.clearTimeout(this._viewRefreshTimer);
+    }
+    this._viewRefreshTimer = window.setTimeout(() => {
+      this._viewRefreshTimer = null;
+      const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_PSEUDOBS);
+      for (const leaf of leaves) {
+        const view = leaf.view;
+        if (view instanceof PseudonymizationView) {
+          void view.refreshActiveTab();
+        }
+      }
+    }, 80);
   }
 
   // --- Conversion automatique ---
@@ -315,26 +387,74 @@ export default class PseudObsPlugin extends Plugin {
       const folder = file.parent?.path ?? '';
       const mdPath = folder ? `${folder}/${basename}.md` : `${basename}.md`;
 
-      let mdContent: string;
-      if (ext === 'srt') {
-        mdContent = srtToMarkdown(new SrtParser().parse(raw), file.name);
-      } else {
-        mdContent = chatToMarkdown(new ChatParser().parse(raw), file.name);
-      }
-
-      // Si un .md du même nom existe déjà, ne pas écraser
+      // Ne pas écraser un .md existant
       if (this.app.vault.getAbstractFileByPath(mdPath) instanceof TFile) {
         new Notice(t('notice.conversionSkipped', basename, file.name));
         return;
       }
 
+      // Chercher un fichier audio déjà présent dans le même dossier du vault
+      let audioFilename = this.findAudioInVaultFolder(folder);
+
+      // Conversion
+      let mdContent: string;
+      let wordData: ReturnType<typeof extractWordData> | null = null;
+
+      if (ext === 'srt') {
+        mdContent = srtToMarkdown(new SrtParser().parse(raw), file.name);
+      } else if (ext === 'vtt') {
+        const doc = NoScribeVttParser.isNoScribeVtt(raw)
+          ? new NoScribeVttParser().parse(raw)
+          : new VttParser().parse(raw);
+        wordData = extractWordData(doc);
+        // Pour les VTT noScribe, chercher aussi l'audio via NOTE media
+        if (!audioFilename && NoScribeVttParser.isNoScribeVtt(raw)) {
+          const audioSource = NoScribeVttParser.extractAudioSource(raw);
+          if (audioSource) audioFilename = await this.importAudioFromPath(audioSource, folder || this.settings.transcriptionsFolder);
+        }
+        const toMd = NoScribeVttParser.isNoScribeVtt(raw) ? noScribeHtmlToMarkdown : vttToMarkdown;
+        mdContent = toMd(doc, file.name, audioFilename ?? undefined);
+      } else if (ext === 'html') {
+        if (!NoScribeHtmlParser.isNoScribeHtml(raw)) return;
+        const doc = new NoScribeHtmlParser().parse(raw);
+        wordData = extractWordData(doc);
+        // Importer l'audio depuis le chemin absolu dans la meta tag si pas encore dans le vault
+        if (!audioFilename) {
+          const audioSource = NoScribeHtmlParser.extractAudioSource(raw);
+          if (audioSource) {
+            audioFilename = await this.importAudioFromPath(audioSource, folder || this.settings.transcriptionsFolder);
+          }
+        }
+        mdContent = noScribeHtmlToMarkdown(doc, file.name, audioFilename ?? undefined);
+      } else {
+        mdContent = chatToMarkdown(new ChatParser().parse(raw), file.name);
+      }
+
       await this.app.vault.create(mdPath, mdContent);
 
-      const mappingPath = `${this.settings.mappingFolder}/${basename}.mapping.json`;
+      // Structure miroir pour les mappings
+      const transcRoot = this.settings.transcriptionsFolder;
+      const fileFolder = file.parent?.path ?? '';
+      const relSubFolder = fileFolder.startsWith(transcRoot)
+        ? fileFolder.slice(transcRoot.length).replace(/^\//, '')
+        : '';
+      const mappingDir = relSubFolder
+        ? `${this.settings.mappingFolder}/${relSubFolder}`
+        : this.settings.mappingFolder;
+      await this.ensureFolder(mappingDir);
+
+      const mappingPath = `${mappingDir}/${basename}.mapping.json`;
       if (!this.app.vault.getAbstractFileByPath(mappingPath)) {
-        await this.ensureFolder(this.settings.mappingFolder);
         const store = new MappingStore({ type: 'file', path: mdPath });
         await this.app.vault.create(mappingPath, JSON.stringify(store.toJSON(), null, 2));
+      }
+
+      // Écrire les timestamps word-level dans un fichier auxiliaire
+      if (wordData && wordData.length > 0) {
+        const wordsPath = `${mappingDir}/${basename}.words.json`;
+        if (!this.app.vault.getAbstractFileByPath(wordsPath)) {
+          await this.app.vault.create(wordsPath, JSON.stringify(wordData, null, 2));
+        }
       }
 
       await this.app.fileManager.trashFile(file);
@@ -350,12 +470,51 @@ export default class PseudObsPlugin extends Plugin {
     }
   }
 
+  /** Retourne le nom du premier fichier audio trouvé dans un dossier du vault. */
+  private findAudioInVaultFolder(folderPath: string): string | null {
+    const AUDIO_EXTS = new Set(['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff']);
+    const folder = this.app.vault.getAbstractFileByPath(folderPath || '/');
+    if (!(folder instanceof TFolder)) return null;
+    const audioFile = folder.children.find(
+      (f) => f instanceof TFile && AUDIO_EXTS.has((f as TFile).extension.toLowerCase())
+    ) as TFile | undefined;
+    return audioFile?.name ?? null;
+  }
+
+  /**
+   * Copie un fichier audio externe (chemin absolu sur disque) dans le vault.
+   * Utilise l'API Node.js fs — desktop uniquement.
+   * Retourne le nom du fichier importé, ou null en cas d'échec.
+   */
+  private async importAudioFromPath(sourcePath: string, targetFolder: string): Promise<string | null> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const nodeFs = require('fs') as typeof import('fs');
+      if (!nodeFs.existsSync(sourcePath)) return null;
+
+      const audioFilename = sourcePath.replace(/\\/g, '/').split('/').pop()!;
+      const destPath = targetFolder ? `${targetFolder}/${audioFilename}` : audioFilename;
+
+      if (this.app.vault.getAbstractFileByPath(destPath) instanceof TFile) {
+        return audioFilename; // déjà présent
+      }
+
+      const buffer: Buffer = await nodeFs.promises.readFile(sourcePath);
+      await this.ensureFolder(targetFolder);
+      await this.app.vault.createBinary(destPath, buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
+      new Notice(`Audio importé : ${audioFilename}`);
+      return audioFilename;
+    } catch {
+      return null;
+    }
+  }
+
   // --- Commande "Ajouter une transcription" ---
 
   private openFilePicker(): void {
     const input = activeDocument.createElement('input');
     input.type = 'file';
-    input.accept = '.srt,.cha,.chat,.txt,.md';
+    input.accept = '.srt,.vtt,.cha,.chat,.html,.txt,.md';
     input.multiple = true;
     // Pas de display:none — bloque le change event dans certaines versions d'Electron
     input.classList.add('pseudobs-hidden-input');
@@ -376,6 +535,7 @@ export default class PseudObsPlugin extends Plugin {
 
   private async copyToVault(browserFile: File): Promise<void> {
     const raw = await browserFile.text();
+    const ext = browserFile.name.split('.').pop()?.toLowerCase() ?? '';
 
     // Sélection de classe si le corpus est organisé en sous-dossiers
     const classes = getCorpusClasses(this.app, this.settings.transcriptionsFolder);
@@ -397,6 +557,39 @@ export default class PseudObsPlugin extends Plugin {
     }
 
     await this.app.vault.create(destPath, raw);
+
+    // Pour VTT : chercher un fichier audio dans le dossier source (Electron expose le chemin complet)
+    if (ext === 'vtt') {
+      const sourcePath = (browserFile as unknown as { path?: string }).path;
+      if (sourcePath) {
+        const sourceDir = sourcePath.replace(/\\/g, '/').replace(/\/[^/]+$/, '');
+        const audioPath = await this.findAudioInSourceFolder(sourceDir);
+        if (audioPath) await this.importAudioFromPath(audioPath, targetFolder);
+      }
+    }
+    // Pour HTML : l'audio sera importé par autoConvert via la meta tag audio_source
+  }
+
+  /**
+   * Cherche un fichier audio dans un dossier sur le disque (hors vault).
+   * Retourne le chemin absolu du seul fichier audio trouvé, ou null si 0 ou >1.
+   */
+  private async findAudioInSourceFolder(folderPath: string): Promise<string | null> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const nodeFs = require('fs') as typeof import('fs');
+      const AUDIO_EXTS = new Set(['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff']);
+      const entries = await nodeFs.promises.readdir(folderPath);
+      const audioFiles = entries.filter((f) => {
+        const ext = f.split('.').pop()?.toLowerCase() ?? '';
+        return AUDIO_EXTS.has(ext);
+      });
+      // Import uniquement s'il y a exactement un fichier audio (évite l'ambiguïté)
+      if (audioFiles.length === 1) return `${folderPath}/${audioFiles[0]}`;
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   // --- Pseudonymisation ---
@@ -490,7 +683,7 @@ export default class PseudObsPlugin extends Plugin {
       const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
       this.nerCandidateFile = file;
       this.nerCandidates = unique;
-      void this.refreshHighlightData();
+      void this.refresh();
 
       new Notice(t('notice.nerEntitiesFound', String(unique.length), unique.length > 1 ? t('notice.nerEntitiesFound.entities') : t('notice.nerEntitiesFound.entity')), 6000);
     } catch (e) {
@@ -576,7 +769,7 @@ export default class PseudObsPlugin extends Plugin {
     // Surlignage bleu préventif (aperçu pendant que la modale est ouverte)
     this.nerCandidateFile = file;
     this.nerCandidates = results.map((r) => r.term);
-    void this.refreshHighlightData();
+    void this.refresh();
 
     new DictScanReviewModal(this.app, this, file, results, existingReplacements).open();
   }
@@ -585,8 +778,9 @@ export default class PseudObsPlugin extends Plugin {
   clearNerCandidates(): void {
     this.nerCandidates = [];
     this.nerCandidateFile = null;
-    void this.refreshHighlightData();
+    void this.refresh();
   }
+
 
   async exportMappingForFile(file: TFile): Promise<void> {
     const mappingPath = `${this.settings.mappingFolder}/${file.basename}.mapping.json`;
@@ -611,6 +805,77 @@ export default class PseudObsPlugin extends Plugin {
     new Notice(t('notice.mappingExported', destPath));
   }
 
+  /**
+   * Exporte le fichier Markdown noScribe actif en WebVTT pseudonymisé.
+   * Lit le .words.json correspondant pour les timestamps précis.
+   */
+  async exportCurrentFileAsVtt(): Promise<void> {
+    const file = this.app.workspace.getActiveFile();
+    if (!file || file.extension !== 'md') {
+      new Notice(t('notice.noActiveFile'));
+      return;
+    }
+
+    const content = await this.app.vault.read(file);
+
+    // Vérifier que c'est bien un fichier noScribe converti
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    const format = formatMatch?.[1];
+    if (format !== 'vtt' && format !== 'html') {
+      new Notice(t('notice.notNoScribeFormat'));
+      return;
+    }
+
+    // Trouver le .words.json : même basename, dans le dossier mappings
+    // Le basename peut être "juste-leblanc" ou "juste-leblanc.pseudonymized"
+    const rawBasename = file.basename.replace(/\.pseudonymized$/, '');
+    const wordsJson = await this.findWordsJson(rawBasename);
+    if (!wordsJson) {
+      new Notice(t('notice.wordsJsonMissing', rawBasename));
+      return;
+    }
+
+    const wordData = JSON.parse(wordsJson) as VttCueData[];
+    const { vtt, mismatch } = markdownToVtt(content, wordData);
+
+    if (mismatch) {
+      new Notice(t('notice.vttMismatch'));
+    }
+
+    await this.ensureFolder(this.settings.exportsFolder);
+    const outputPath = `${this.settings.exportsFolder}/${rawBasename}.pseudonymized.vtt`;
+    const existing = this.app.vault.getAbstractFileByPath(outputPath);
+    if (existing instanceof TFile) {
+      await this.app.vault.modify(existing, vtt);
+    } else {
+      await this.app.vault.create(outputPath, vtt);
+    }
+
+    new Notice(t('notice.vttExported', outputPath));
+  }
+
+  /** Cherche <basename>.words.json dans le dossier mappings et ses sous-dossiers. */
+  private async findWordsJson(basename: string): Promise<string | null> {
+    const filename = `${basename}.words.json`;
+    // Chercher dans l'ensemble du dossier mappings
+    const search = (folder: TFolder): TFile | null => {
+      for (const child of folder.children) {
+        if (child instanceof TFile && child.name === filename) return child;
+        if (child instanceof TFolder) {
+          const found = search(child);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const mappingRoot = this.app.vault.getAbstractFileByPath(this.settings.mappingFolder);
+    if (!(mappingRoot instanceof TFolder)) return null;
+
+    const wordsFile = search(mappingRoot);
+    return wordsFile ? this.app.vault.read(wordsFile) : null;
+  }
+
   private async scanCurrentFile(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
     if (!file) { new Notice(t('notice.noActiveFile')); return; }
@@ -632,14 +897,19 @@ export default class PseudObsPlugin extends Plugin {
       return;
     }
 
-    const countByRule = new Map<string, number>();
+    const occsByRule = new Map<string, Occurrence[]>();
     for (const occ of occurrences) {
       const id = occ.mappingId ?? '';
-      countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+      if (!occsByRule.has(id)) occsByRule.set(id, []);
+      occsByRule.get(id)!.push(occ);
     }
     const ruleResults: MappingRuleResult[] = rules
-      .filter((r) => countByRule.has(r.id))
-      .map((r) => ({ rule: r, matchCount: countByRule.get(r.id)! }));
+      .filter((r) => occsByRule.has(r.id))
+      .map((r) => ({
+        rule: r,
+        matchCount: occsByRule.get(r.id)!.length,
+        occurrences: occsByRule.get(r.id)!,
+      }));
 
     new MappingScanReviewModal(this.app, this, file, content, ruleResults).open();
   }
@@ -692,6 +962,50 @@ export default class PseudObsPlugin extends Plugin {
     spans.sort((a, b) => b.start - a.start);
     await this.app.vault.modify(file, applySpans(content, spans));
     return spans.length;
+  }
+
+  /**
+   * Annule l'application d'une règle dans le fichier actif :
+   * cherche le remplacement (avec ou sans marqueurs) et le réécrit avec la source.
+   * Appelé automatiquement à la suppression d'une règle dans EditRuleModal.
+   */
+  async revertRuleInFile(source: string, replacement: string): Promise<void> {
+    const file = this.app.workspace.getActiveFile();
+    if (!file) return;
+
+    const s = this.settings;
+    // Chercher la version avec marqueurs EN PREMIER — sinon on trouve le texte
+    // à l'intérieur des marqueurs et on obtient {{source}} au lieu de source.
+    const variants: string[] = [];
+    if (s.useMarkerInExport) {
+      variants.push(`${s.markerOpen}${replacement}${s.markerClose}`);
+    }
+    variants.push(replacement); // version sans marqueurs en dernier
+
+    let content = await this.app.vault.read(file);
+    let changed = false;
+
+    for (const variant of variants) {
+      const fakeRule: MappingRule = {
+        id: '_revert', source: variant, replacement: source, category: 'custom',
+        scope: { type: 'file', path: file.path }, status: 'validated',
+        priority: 0, createdBy: 'user', createdAt: new Date().toISOString(),
+      };
+      const spans = findSpansForRule(content, fakeRule, {
+        caseSensitive: false,
+        wholeWordOnly: false,  // le remplacement peut contenir des 🀫 ou marqueurs
+      });
+      if (spans.length > 0) {
+        spans.sort((a, b) => b.start - a.start);
+        content = applySpans(content, spans);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await this.app.vault.modify(file, content);
+      void this.refresh();
+    }
   }
 
   // --- Utilitaires ---

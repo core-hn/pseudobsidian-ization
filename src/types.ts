@@ -35,6 +35,13 @@ export interface OccurrenceRef {
   status: MappingStatus;
 }
 
+/** Occurrence d'une règle explicitement ignorée par l'utilisateur. */
+export interface IgnoredOccurrence {
+  text: string;           // texte exact trouvé dans le document (sensible à la casse)
+  contextBefore: string;
+  contextAfter: string;
+}
+
 export interface MappingRule {
   id: string;
   source: string;
@@ -50,6 +57,7 @@ export interface MappingRule {
   updatedAt?: string;
   notes?: string;
   occurrences?: OccurrenceRef[];
+  ignoredOccurrences?: IgnoredOccurrence[];
 }
 
 export interface Occurrence {

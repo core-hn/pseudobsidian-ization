@@ -7,6 +7,14 @@
   outline: 1px solid rgba(80, 160, 255, 0.45);
 }
 
+/* Occurrences explicitement ignorées — exceptions (sensibles à la casse) */
+.pseudobs-exception {
+  background-color: rgba(220, 50, 50, 0.15);
+  border-radius: 2px;
+  outline: 1px solid rgba(220, 50, 50, 0.4);
+  border-bottom: 2px solid rgba(220, 50, 50, 0.7);
+}
+
 /* Termes sources encore présents dans le texte (à pseudonymiser) */
 .pseudobs-source {
   background-color: rgba(255, 160, 0, 0.22);
@@ -955,6 +963,7 @@
 }
 .pseudobs-onboarding-icon-btn-loading { cursor: wait; }
 .pseudobs-onboarding-icon-btn-loading svg { animation: pseudobs-spin 0.9s linear infinite; }
+.pseudobs-spin svg { animation: pseudobs-spin 0.9s linear infinite; }
 
 /* ---- CorpusModal ---- */
 
@@ -1047,4 +1056,72 @@
   margin: 0;
   font-size: 0.95em;
   line-height: 1.55;
+}
+
+/* ---- Section Exceptions (onglet Mappings) ---- */
+.pseudobs-exceptions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.pseudobs-exception-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(220, 50, 50, 0.35);
+  background: rgba(220, 50, 50, 0.06);
+  position: relative;
+}
+
+.pseudobs-exception-card-rule {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.pseudobs-exception-card-ctx {
+  font-size: 0.9em;
+}
+
+.pseudobs-exception-card-term {
+  background: rgba(220, 50, 50, 0.2);
+  border-radius: 2px;
+  outline: 1px solid rgba(220, 50, 50, 0.45);
+  padding: 0 2px;
+  font-weight: 500;
+}
+
+.pseudobs-exception-card-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.pseudobs-exception-card-del:hover {
+  color: var(--text-error);
+  background: var(--background-modifier-error-hover);
+}
+
+.pseudobs-save-exceptions-btn {
+  margin-right: auto;
+}
+
+/* Ligne checkbox caviardage (QuickPseudonymizeModal, RuleModal) */
+.pseudobs-redact-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 10px;
+  font-size: 0.88em;
+  color: var(--text-muted);
 }
