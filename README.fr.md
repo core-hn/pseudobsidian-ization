@@ -10,13 +10,13 @@ Plugin Obsidian de **pseudonymisation et de correction de transcriptions** pour 
 ## Workflow
 
 ```
-Transcription brute (.srt, .cha, .md, .txt)
-        ↓ import automatique
-Obsidian — édition native Markdown
-        ↓ pseudonymisation (manuelle ou NER)
-Fichier source annoté  +  table de correspondance (séparée)
+noScribe (.html, .vtt)  ou  transcription brute (.srt, .cha, .md, .txt)
+        ↓ import automatique  (fichier audio importé en même temps)
+Obsidian — édition native Markdown  (**S00** [HH:MM:SS] : texte)
+        ↓ pseudonymisation  (manuelle · NER · scan dictionnaires)
+Fichier source annoté  +  table de correspondance  +  timestamps (.words.json)
         ↓ export
-Transcription pseudonymisée (.pseudonymized.*)
+Transcription pseudonymisée (.pseudonymized.md / .pseudonymized.vtt)
 ```
 
 Deux approches, combinables librement :
@@ -44,12 +44,17 @@ L'assistant est relançable à tout moment : Paramètres → Pseudonymizer tool 
 
 | Format | Extension | Notes |
 |---|---|---|
+| **HTML noScribe** | `.html` | Qt Rich Text produit par noScribe — locuteurs, timestamps word-level, chemin audio |
+| **VTT noScribe** | `.vtt` | Sortie noScribe v0.7 — aussi WebVTT Whisper standard avec timestamps mot par mot |
 | Sous-titres horodatés | `.srt` | Sortie Whisper / IA — horodatages et structure préservés |
 | CHAT / CLAN | `.cha`, `.chat` | Lignes `@`, `*`, `%` préservées |
 | Markdown annoté | `.md` | Conventions Jefferson ou ICOR |
 | Texte brut | `.txt` | Sans marqueurs de convention |
 
-Les fichiers `.srt` et `.cha` sont automatiquement convertis en Markdown à l'import. Un fichier de mapping JSON vide est créé en même temps.
+Tous les formats sont automatiquement convertis en Markdown à l'import. En parallèle, le plugin crée :
+- `<basename>.mapping.json` — règles de pseudonymisation
+- `<basename>.words.json` — timestamps word-level (noScribe / Whisper uniquement), utilisé pour le re-export VTT
+- Si un fichier audio est référencé dans la transcription, il est importé dans le vault automatiquement.
 
 > Installez le plugin [Data Files Editor](https://github.com/zuktol/obsidian-data-files-editor) pour visionner les fichiers de mapping JSON directement depuis votre vault.
 

@@ -9,13 +9,13 @@ An Obsidian plugin for **pseudonymizing and correcting interactional transcripts
 ## Workflow
 
 ```
-Raw transcript (.srt, .cha, .md, .txt)
-        ↓ automatic import
-Obsidian — native Markdown editing
-        ↓ pseudonymization (manual or NER)
-Annotated source file  +  correspondence table (separate)
+noScribe (.html, .vtt)  or  raw transcript (.srt, .cha, .md, .txt)
+        ↓ automatic import  (audio file imported alongside)
+Obsidian — native Markdown editing  (**S00** [HH:MM:SS] : text)
+        ↓ pseudonymization  (manual · NER · dictionary scan)
+Annotated source file  +  correspondence table  +  word timestamps (.words.json)
         ↓ export
-Pseudonymized transcript (.pseudonymized.*)
+Pseudonymized transcript (.pseudonymized.md / .pseudonymized.vtt)
 ```
 
 Two approaches, freely combined:
@@ -45,12 +45,17 @@ The wizard can be relaunched at any time: Settings → Pseudonymizer Tool → Se
 
 | Format | Extension | Notes |
 |---|---|---|
+| **noScribe HTML** | `.html` | Qt Rich Text from noScribe — speaker labels, word timestamps, audio path |
+| **noScribe VTT** | `.vtt` | noScribe v0.7 output — also standard Whisper WebVTT with word timestamps |
 | Timestamped subtitles | `.srt` | Whisper / AI output — timestamps and structure preserved |
 | CHAT / CLAN | `.cha`, `.chat` | `@`, `*`, `%` lines preserved |
 | Annotated Markdown | `.md` | Jefferson or ICOR conventions |
 | Plain text | `.txt` | No convention markers |
 
-`.srt` and `.cha` files are automatically converted to Markdown on import. An empty mapping JSON file is created at the same time.
+All formats are automatically converted to Markdown on import. Alongside the `.md`, the plugin creates:
+- `<basename>.mapping.json` — pseudonymization rules
+- `<basename>.words.json` — word-level timestamps (noScribe / Whisper only), used for VTT re-export
+- If an audio file is referenced in the transcript, it is imported to the vault automatically.
 
 > Install the [Data Files Editor](https://github.com/zuktol/obsidian-data-files-editor) plugin to view mapping JSON files directly in your vault.
 
@@ -103,9 +108,9 @@ Accessible via the ribbon icon or `Ctrl+P → Pseudonymization: open panel`.
 
 | Tab | Content |
 |---|---|
-| **Mappings** | Active rules · Edit · Delete · Add · Scan file |
+| **Mappings** | Active rules · Edit · Delete · Add · Scan file · **Exceptions section** |
 | **Dictionaries** | Mini cards · Dictionary scan · Local import |
-| **Exports** | Pseudonymize and export · Export correspondence table |
+| **Exports** | Pseudonymize and export · Export correspondence table · **Export as VTT** |
 | **NER** | Visible if NER enabled · Identify candidates · Confidence threshold · Function words |
 
 ### Highlighting and markers
@@ -117,13 +122,15 @@ Highlighting is active in all open files, including `.pseudonymized.*` export fi
 | 🟠 Orange + outline | Source term still present — to be pseudonymized |
 | 🟢 Green + underline | Pseudonym applied directly in the file |
 | 🔵 Blue + outline | NER candidate — no rule yet |
+| 🔴 Red + underline | **Exception** — occurrence explicitly ignored during scan (case-sensitive; persisted in mapping) |
 
 In exported files, pseudonyms are wrapped in `{{Pierre}}` markers to distinguish them from raw data (enabled by default, configurable in settings).
 
 ### Correspondence tables
 
 - Three scope levels: `file.mapping.json` · `folder.mapping.json` · `vault.mapping.json`
-- Per-occurrence statuses: `validated`, `ignored`, `partial`, `conflict`, `needs_review`
+- Per-rule statuses: **Active** (validated), **Partial**, **Ignored**, **Suggested**
+- Per-occurrence ignored exceptions: `IgnoredOccurrence {text, contextBefore, contextAfter}` stored in the rule
 - **Z-index priority**: free integer — longer entities take precedence (`Saint-Jean-de-Luz` > `Jean`)
 - JSON format documented in `SPECS.md §5`
 
@@ -183,14 +190,16 @@ Repository structure:
 src/
 ├── main.ts               # Obsidian entry point
 ├── settings.ts           # Persistent settings
-├── types.ts              # Shared types
+├── types.ts              # Shared types (MappingRule, IgnoredOccurrence, …)
 ├── i18n/                 # Internationalization (en, fr)
-├── parsers/              # SrtParser, ChatParser, TranscriptConverter
+├── parsers/              # SrtParser, ChatParser, VttParser,
+│                         # NoScribeHtmlParser, NoScribeVttParser, TranscriptConverter
 ├── mappings/             # MappingStore, ScopeResolver
-├── pseudonymizer/        # Engine, ReplacementPlanner, SpanProtector
+├── pseudonymizer/        # Engine, ReplacementPlanner, SpanProtector, Redaction
 ├── scanner/              # OccurrenceScanner, OnnxNerScanner
 ├── dictionaries/         # DictionaryLoader
-└── ui/                   # PseudonymizationView, modals, CM6 highlighting
+└── ui/                   # PseudonymizationView, modals (incl. OccurrencesContextModal),
+                          # CM6 highlighting (PseudonymHighlighter)
 ```
 
 ---
@@ -203,7 +212,7 @@ src/
 | 7 — Coulmont | ✅ | Equivalent first name suggestions · JSON/CSV import |
 | 8 — Side panel | ✅ | 3 tabs · Embedded NER · Wizard · Cancellation · Export highlighting |
 | 9 — Structured dictionaries | ✅ | Format v1.1 · DictionaryLoader · Dictionary scan · Review modal · French communes |
-| 10 — Refinement | 🔄 | i18n · Corpus organization · Settings redesign · Phase in progress |
+| 10 — Refinement & noScribe | 🔄 | i18n · Corpus org · noScribe HTML/VTT import · per-occurrence scan · exceptions · VTT re-export |
 | 11 — EMCA functions | ⏳ | Turn navigation · Jefferson/ICOR correction · ELAN export |
 
 See [ROADMAP.md](ROADMAP.md) for the full phase breakdown and planned features.

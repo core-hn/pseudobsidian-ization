@@ -1,5 +1,40 @@
 # Changelog
 
+## [dev] v0.1.5 — branche `dev`
+
+### Nouvelles fonctionnalités
+
+**Intégration noScribe**
+- **`VttParser`** — WebVTT standard avec word timestamps Whisper (`<00:00:01.240><c>mot</c>`), tags `<v Nom>`, round-trip garanti
+- **`NoScribeHtmlParser`** — HTML Qt Rich Text noScribe : ancres `ts_DEBUT_FIN_SXX` (ms), labels locuteurs (`S00:`, `S01:`), timestamps d'affichage filtrés, entités HTML décodées ; `extractAudioSource()` lit `<meta name="audio_source">`
+- **`NoScribeVttParser`** — VTT noScribe v0.7 : cues splitées (label / timestamp affichage / texte), détection locuteur par préfixe `SXX:`, entités HTML, source audio depuis `NOTE media:`
+- **Format Markdown noScribe** — `**S00** [HH:MM:SS] : texte` par tour ; `pseudobs-format: html|vtt` et `pseudobs-audio` optionnel en frontmatter ; timestamps word-level dans `<basename>.words.json`
+- **Import audio automatique** — depuis la meta tag HTML ou le dossier source (VTT, un seul fichier audio)
+- **`Redaction.ts`** — caviardage par syllabes avec `🀫` ; `generateRedaction()` et `isRedaction()`
+- **Re-export VTT** (commande "Exporter en VTT") — WebVTT propre depuis `.md` pseudonymisé + `.words.json`
+
+**Modale de scan — candidats par occurrence**
+- **`MappingScanReviewModal`** — colonne occurrences cliquable (compteur mis à jour en direct : `N / total` si exceptions)
+- **`OccurrencesContextModal`** — cartes par occurrence (✓ / ✗ / ⚠) avec contexte, callback "Confirmer la sélection", sans application immédiate
+- **Bouton "Enregistrer les exceptions"** — sauvegarde les décisions dans le `mapping.json` sans pseudonymiser
+- `MappingRuleResult` porte maintenant `occurrences: Occurrence[]`
+
+**Exceptions**
+- Type **`IgnoredOccurrence`** (`{text, contextBefore, contextAfter}`) sur `MappingRule.ignoredOccurrences`
+- Persistance dans `mapping.json`, chargement au démarrage — surlignage rouge sans re-scan
+- **Surlignage rouge** (`pseudobs-exception`, sensible à la casse, priorité 0)
+- **Section "Exceptions" dans l'onglet Mappings** — cartes contextuelles avec bouton supprimer
+
+### Modifications
+- Labels de statut clarifiés : `validated` → "Actif", `ignored` → "Ignoré", `partial` → "Partiel", `suggested` → "Suggéré" ; colonne renommée "État"
+- `getValidatedFor()` inclut maintenant `partial` comme état actif (avec `validated`)
+- Bouton "Scanner" de `PseudonymizationView` corrigé (`occurrences` manquant dans `MappingRuleResult`)
+
+### Tests
+149 tests · 10 suites · `VttParser`, `NoScribeHtmlParser`, `NoScribeVttParser`, `markdownToVtt`, `extractWordData` couverts ; fixtures : `fight_club.vtt`, `juste-leblanc.html`
+
+---
+
 ## [prod] v0.1.3 — 14 mai 2026
 
 **Branche :** `main` | **Tag :** `0.1.3`

@@ -15,7 +15,9 @@ Architectural decision (May 2026): **identifying entity detection** is handled b
 ```
 ✅ Phases 0–8   Parsers · Engine · UI · Scopes · Highlighting · Validation · Coulmont · Panel · NER · Wizard
 ✅ Phase 9      Structured dictionaries · DictionaryLoader · Review modals · French communes
-🔄 Phase 10     Refinement & EMCA specialization (v0.1.x → v0.2.0)
+🔄 Phase 10     Refinement & noScribe integration (v0.1.x → v0.2.0)
+               ✅ i18n · Corpus org · noScribe HTML/VTT/audio · Scan candidates · Exceptions · VTT re-export
+               ⏳ Test coverage · Jefferson/ICOR checker · Audio redaction · Timestamp UI
 ⏳ Phase 11     Interactional analysis functions (v1.0.0)
 ```
 
@@ -219,9 +221,11 @@ Goal: consolidate all existing features and add the EMCA-specific functions that
 - [x] **Settings redesign** — 6 sections ordered by frequency of use
 - [x] **Broad-scope warning** — callout in RuleModal / EditRuleModal for name rules with folder/vault scope
 - [x] **Mappings tab grouped by scope** — File / Folder / Vault sections with active-file filter
+- [x] **Status labels clarified** — "Active / Partial / Ignored / Suggested" instead of ✓/◑/✗/?; `getValidatedFor()` includes `partial`
+- [x] **Scan modal — per-occurrence candidates** — `MappingScanReviewModal` count column opens `OccurrencesContextModal` (✓/✗/⚠ per occurrence, "Save exceptions" button)
+- [x] **Exceptions** — `IgnoredOccurrence` on `MappingRule`, persisted in mapping.json, red highlighting (`pseudobs-exception`, case-sensitive, priority 0), Exceptions section in Mappings tab
 - [ ] Unit test coverage ≥ 80% for parsers, engine, NER scanner, DictionaryLoader
 - [ ] Jefferson / ICOR convention checker: hover suggestions, editor highlighting
-- [ ] Exports in original format for corpus re-opening
 - [ ] EMCA publication exports (PNG)
 - [ ] NER performance: measure and optimize on a 500-turn file
 - [ ] [Meld Encrypt](https://github.com/meld-cp/obsidian-encrypt) integration in Exports tab for encrypting correspondence tables and pseudonymized exports
@@ -229,14 +233,20 @@ Goal: consolidate all existing features and add the EMCA-specific functions that
 
 ### noScribe integration & audio pseudonymization
 
-[noScribe](https://github.com/kaixxx/noScribe) is a local transcription tool (Whisper + pyannote) widely used in qualitative research. It produces VTT files with **word-level timestamps** and **speaker diarization**.
+[noScribe](https://github.com/kaixxx/noScribe) is a local transcription tool (Whisper + pyannote) widely used in qualitative research. It produces HTML and VTT files with **word-level timestamps** and **speaker diarization**.
 
-- [ ] **`VttParser.ts`** — import noScribe VTT: word-level timestamps, speaker labels, round-trip guarantee; auto-conversion to `.md` on import alongside `.mapping.json`
-- [ ] **Timestamp adjustment UI** — when a word timestamp from Whisper is imprecise, the researcher can fine-tune it: playback of ±1 s around the word (Web Audio API, no external dependency), editable start/end fields, saved back to the mapping metadata
-- [ ] **Audio redaction export** — once terms are pseudonymized and timestamps are validated, generate an audio export where each pseudonymized occurrence is replaced by the chosen redaction signal; export as WAV via Web Audio API. Three modes configurable in settings: **bleep** (sine tone, 1000 Hz), **silence**, or **white noise**
-- [ ] **Speaker-aware pseudonymization** — rules can be scoped to a specific speaker label (e.g. `SPEAKER_1`); when a name is pseudonymized in one turn, offer to apply the rule to all turns by the same speaker
+- [x] **`VttParser.ts`** — standard WebVTT with Whisper word-level timestamps, speaker tags, round-trip guarantee; auto-conversion to `.md` + `.words.json`
+- [x] **`NoScribeHtmlParser.ts`** — Qt Rich Text HTML: `ts_START_END_SXX` anchors, speaker extraction, audio source meta, HTML entities
+- [x] **`NoScribeVttParser.ts`** — noScribe VTT v0.7: split-cue format, `SXX:` speaker detection, `NOTE media:` audio source
+- [x] **noScribe Markdown format** — `**S00** [HH:MM:SS] : text`, `pseudobs-format: html|vtt`, `pseudobs-audio`; word timestamps in `.words.json`
+- [x] **Audio import** — automatic from `audio_source` meta (HTML) or single audio in source folder (VTT)
+- [x] **`Redaction.ts`** — syllable-count redaction with `🀫`
+- [x] **VTT re-export** — `Export as VTT` command: clean WebVTT from pseudonymized `.md` + `.words.json`
+- [ ] **Timestamp adjustment UI** — playback of ±1 s around a word (Web Audio API), editable start/end, saved to mapping metadata
+- [ ] **Audio redaction export** — WAV export with bleep / silence / white noise at pseudonymized positions
+- [ ] **Speaker-aware pseudonymization** — rules scoped to a speaker label (e.g. `S01`)
 
-**Testable (v0.2.0):** stable end-to-end workflow on a real corpus of 10 interviews, including noScribe VTT import, audio bleep export, and timestamp adjustment.
+**Testable (v0.2.0):** stable end-to-end workflow on a real corpus of 10 interviews, including noScribe import, audio bleep export, and timestamp adjustment.
 
 ---
 
