@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile, requestUrl, setIcon } from 'obsidian';
+import { FolderSuggest } from './FolderSuggest';
 import type PseudObsPlugin from '../main';
 import type { NerBackend } from '../settings';
 import type { DictionaryFile, DictionaryManifest, DictionaryManifestEntry } from '../types';
@@ -162,6 +163,11 @@ export class OnboardingModal extends Modal {
       const input = row.createEl('input');
       input.type = 'text';
       input.value = String(this.plugin.settings[key]);
+      new FolderSuggest(this.app, input).onFolderSelect(async (folder) => {
+        (this.plugin.settings as unknown as Record<string, unknown>)[key] = folder.path;
+        input.value = folder.path;
+        await this.plugin.saveSettings();
+      });
       input.addEventListener('change', () => { void (async () => {
         (this.plugin.settings as unknown as Record<string, unknown>)[key] = input.value.trim() || String(this.plugin.settings[key]);
         await this.plugin.saveSettings();

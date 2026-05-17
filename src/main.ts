@@ -4,7 +4,7 @@ import { EditorView } from '@codemirror/view';
 import { PseudObsSettings, DEFAULT_SETTINGS, PseudObsSettingTab } from './settings';
 import { RuleModal } from './ui/RuleModal';
 import { QuickPseudonymizeModal } from './ui/QuickPseudonymizeModal';
-import { createPseudonymHighlighter, highlightDataChanged, type HighlightData } from './ui/PseudonymHighlighter';
+import { createPseudonymHighlighter, highlightDataChanged, type HighlightData, type ExceptionRange } from './ui/PseudonymHighlighter';
 import { EditRuleModal } from './ui/EditRuleModal';
 import { PseudonymizationView, VIEW_TYPE_PSEUDOBS } from './ui/PseudonymizationView';
 import { OnboardingModal } from './ui/OnboardingModal';
@@ -22,7 +22,7 @@ import { ChatParser } from './parsers/ChatParser';
 import { VttParser } from './parsers/VttParser';
 import { NoScribeHtmlParser } from './parsers/NoScribeHtmlParser';
 import { NoScribeVttParser } from './parsers/NoScribeVttParser';
-import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, type VttCueData } from './parsers/TranscriptConverter';
+import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, markdownToSrt, markdownToCha, type VttCueData } from './parsers/TranscriptConverter';
 import { MappingStore } from './mappings/MappingStore';
 import { ScopeResolver } from './mappings/ScopeResolver';
 import { PseudonymizationEngine } from './pseudonymizer/PseudonymizationEngine';
@@ -32,19 +32,22 @@ import type { MappingRule, MappingStatus, Occurrence } from './types';
 
 const CONVERTIBLE_EXTS = ['srt', 'cha', 'chat', 'vtt', 'html'];
 
+
 export default class PseudObsPlugin extends Plugin {
   settings!: PseudObsSettings;
   scopeResolver!: ScopeResolver;
   nerScanner!: OnnxNerScanner;
   dictionaryLoader!: DictionaryLoader;
   // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
-  private highlightData: HighlightData = { sources: [], replacements: [], nerCandidates: [], ignoredTerms: [] };
+  private highlightData: HighlightData = { sources: [], replacements: [], nerCandidates: [], exceptionRanges: [] };
   // Candidats NER par fichier (effacés au changement de fichier ou à un nouveau scan)
   private nerCandidateFile: TFile | null = null;
   private nerCandidates: string[] = [];
   // Dernière MarkdownView connue — pour mettre à jour le surlignage même
   // quand le panneau latéral a le focus (getActiveViewOfType retourne null dans ce cas)
   private lastMarkdownView: MarkdownView | null = null;
+  // Guard contre les boucles quand le plugin renomme lui-même des fichiers liés
+  private _renamingRelated = false;
   private _viewRefreshTimer: number | null = null;
 
   async onload(): Promise<void> {
@@ -109,6 +112,15 @@ export default class PseudObsPlugin extends Plugin {
       })
     );
 
+    // Watcher : cascader le renommage d'une transcription à tous ses fichiers liés
+    this.registerEvent(
+      this.app.vault.on('rename', (file: TAbstractFile, oldPath: string) => {
+        if (this._renamingRelated) return;
+        if (!(file instanceof TFile)) return;
+        void this.onTranscriptionRenamed(file, oldPath);
+      })
+    );
+
     this.addCommand({
       id: 'organize-corpus',
       name: t('command.organizeCorpus'),
@@ -160,6 +172,18 @@ export default class PseudObsPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'export-as-srt',
+      name: t('command.exportAsSrt'),
+      callback: () => void this.exportCurrentFileAsFormat('srt'),
+    });
+
+    this.addCommand({
+      id: 'export-as-cha',
+      name: t('command.exportAsCha'),
+      callback: () => void this.exportCurrentFileAsFormat('cha'),
+    });
+
+    this.addCommand({
       id: 'pseudonymize-selection',
       name: t('command.pseudonymizeSelection'),
       editorCheckCallback: (checking, editor) => {
@@ -186,6 +210,13 @@ export default class PseudObsPlugin extends Plugin {
         const isReplacement = this.highlightData.replacements.some((r) => r.toLowerCase() === bareLower);
         const isKnown       = isSource || isReplacement;
 
+        // Vérifier si cette occurrence précise est déjà une exception
+        const editorContent = editor.getValue();
+        const selStart = editor.posToOffset(editor.getCursor('from'));
+        const isException = this.highlightData.exceptionRanges.some(
+          (r) => r.from === selStart && r.to === selStart + bare.length
+        );
+
         const truncate = (s: string) => s.slice(0, 25) + (s.length > 25 ? '…' : '');
 
         if (isReplacement) {
@@ -198,6 +229,22 @@ export default class PseudObsPlugin extends Plugin {
                 if (!location) { new Notice(t('notice.ruleNotFound')); return; }
                 editor.replaceSelection(location.rule.source);
                 void this.refresh();
+              })
+          );
+        }
+
+        // "Déclarer une exception" : visible sur les sources orange non encore exceptions
+        if (isSource && !isException) {
+          menu.addItem((item) =>
+            item
+              .setTitle(t('contextMenu.declareException', truncate(bare)))
+              .setIcon('ban')
+              .onClick(() => {
+                const offset = editor.posToOffset(editor.getCursor('from'));
+                const ctxLen = 30;
+                const ctxBefore = editorContent.slice(Math.max(0, offset - ctxLen), offset);
+                const ctxAfter  = editorContent.slice(offset + bare.length, offset + bare.length + ctxLen);
+                void this.declareException(bare, ctxBefore, ctxAfter);
               })
           );
         }
@@ -269,6 +316,413 @@ export default class PseudObsPlugin extends Plugin {
     void workspace.revealLeaf(leaf);
   }
 
+  /**
+   * Retourne le fichier actif, ou le dernier fichier Markdown ouvert si le panneau
+   * latéral a le focus (getActiveFile() retourne null dans ce cas).
+   */
+  private getActiveOrLastFile(): TFile | null {
+    return this.app.workspace.getActiveFile() ?? this.lastMarkdownView?.file ?? null;
+  }
+
+  /**
+   * Calcule les positions des occurrences ignorées dans le texte par correspondance
+   * de contexte (contextBefore + text + contextAfter).
+   * Une seule occurrence par (text, contexte) — évite les faux positifs.
+   */
+  private findExceptionRanges(content: string, rules: MappingRule[]): ExceptionRange[] {
+    const ranges: ExceptionRange[] = [];
+    for (const rule of rules) {
+      for (const ignored of rule.ignoredOccurrences ?? []) {
+        const range = this.findByContext(content, ignored.text, ignored.contextBefore, ignored.contextAfter);
+        if (range) ranges.push(range);
+      }
+    }
+    return ranges;
+  }
+
+  private findByContext(
+    content: string,
+    term: string,
+    ctxBefore: string,
+    ctxAfter: string,
+  ): ExceptionRange | null {
+    let pos = 0;
+    while (pos < content.length) {
+      const idx = content.indexOf(term, pos);
+      if (idx === -1) break;
+
+      const before = content.slice(Math.max(0, idx - ctxBefore.length), idx);
+      const after  = content.slice(idx + term.length, idx + term.length + ctxAfter.length);
+
+      if (before.endsWith(ctxBefore) && after.startsWith(ctxAfter)) {
+        return { from: idx, to: idx + term.length };
+      }
+      pos = idx + 1;
+    }
+    return null;
+  }
+
+  /**
+   * Déclare une occurrence comme exception : l'ajoute à rule.ignoredOccurrences
+   * et sauvegarde dans le mapping.json.
+   */
+  async declareException(term: string, contextBefore: string, contextAfter: string): Promise<void> {
+    const location = await this.scopeResolver.findRuleByTerm(term);
+    if (!location) { new Notice(t('notice.ruleNotFound')); return; }
+
+    const existing = location.rule.ignoredOccurrences ?? [];
+    // Ne pas dupliquer si même texte + contexte
+    const alreadyExists = existing.some(
+      (o) => o.text === term && o.contextBefore === contextBefore && o.contextAfter === contextAfter
+    );
+    if (alreadyExists) return;
+
+    location.store.update(location.rule.id, {
+      ignoredOccurrences: [...existing, { text: term, contextBefore, contextAfter }],
+    });
+    await this.scopeResolver.saveStore(location.store, location.filePath);
+    void this.refresh();
+    void this.refreshView();
+  }
+
+  /**
+   * Calcule le chemin de l'export final selon les paramètres de destination.
+   * Retourne { vaultPath } si dans le vault, { externalPath } si hors vault.
+   */
+  resolveExportPath(
+    file: TFile,
+    ext: string,
+  ): { vaultPath: string; externalPath: null } | { vaultPath: null; externalPath: string } {
+    const s = this.settings;
+    const rawBase = file.basename.replace(/\.pseudonymized$/, '');
+    const outputName = `${rawBase}.pseudonymized.${ext}`;
+    const fileFolder = file.parent?.path ?? '';
+
+    // Sous-dossier de classe pour le mirroring.
+    // Si le fichier est dans transcriptionsFolder, on le lit directement.
+    // Sinon (fichier pseudonymisé dans exports/), on remonte via l'emplacement
+    // du .mapping.json qui reflète fidèlement la structure de classes.
+    let classSub = '';
+    if (s.exportMirrorClasses) {
+      const transcRoot = s.transcriptionsFolder;
+      const fileFolder = file.parent?.path ?? '';
+      if (fileFolder.startsWith(transcRoot)) {
+        classSub = fileFolder.slice(transcRoot.length).replace(/^\//, '');
+      } else {
+        // Retrouver la classe depuis l'emplacement du mapping
+        const mappingFile = this.findInMappings(`${rawBase}.mapping.json`);
+        if (mappingFile) {
+          const mFolder = mappingFile.parent?.path ?? '';
+          const mRoot = s.mappingFolder;
+          if (mFolder.startsWith(mRoot)) {
+            classSub = mFolder.slice(mRoot.length).replace(/^\//, '');
+          }
+        }
+      }
+    }
+
+    const join = (base: string) =>
+      classSub ? `${base}/${classSub}/${outputName}` : `${base}/${outputName}`;
+
+    if (s.exportDestinationType === 'next-to-source') {
+      return { vaultPath: `${fileFolder}/${outputName}`, externalPath: null };
+    }
+    if (s.exportDestinationType === 'external' && s.exportExternalPath) {
+      return { vaultPath: null, externalPath: join(s.exportExternalPath) };
+    }
+    // 'vault' (défaut)
+    return { vaultPath: join(s.exportFinalFolder || s.exportsFolder), externalPath: null };
+  }
+
+  /**
+   * Déplace un fichier de transcription vers une nouvelle classe (sous-dossier).
+   * Déplace aussi .mapping.json et .words.json en miroir.
+   * `targetClass` = '' pour déplacer à la racine du dossier de transcriptions.
+   */
+  async moveFileToClass(file: TFile, targetClass: string): Promise<void> {
+    const s = this.settings;
+    const transcRoot = s.transcriptionsFolder;
+    const mappingRoot = s.mappingFolder;
+    const base = file.basename;
+
+    // Nouveau chemin de la transcription
+    const targetFolder = targetClass ? `${transcRoot}/${targetClass}` : transcRoot;
+    const newMdPath = `${targetFolder}/${file.name}`;
+
+    if (newMdPath === file.path) return; // déjà en place
+
+    // Capturer le dossier source AVANT le rename (file.parent change après)
+    const sourceFolder = file.parent?.path ?? '';
+
+    // Déplacer le fichier .md
+    await this.ensureFolder(targetFolder);
+    await this.app.vault.rename(file, newMdPath);
+
+    // Déplacer .mapping.json en miroir
+    const mappingTargetDir = targetClass
+      ? `${mappingRoot}/${targetClass}`
+      : mappingRoot;
+    await this.ensureFolder(mappingTargetDir);
+
+    for (const suffix of ['.mapping.json', '.words.json']) {
+      // Chercher dans tout le dossier mappings (la source peut être dans n'importe quel sous-dossier)
+      const found = this.findInMappings(`${base}${suffix}`);
+      if (found) {
+        const newPath = `${mappingTargetDir}/${base}${suffix}`;
+        if (found.path !== newPath) {
+          // Mettre à jour le scope.path des règles fichier après déplacement
+          if (suffix === '.mapping.json') {
+            try {
+              const raw = await this.app.vault.read(found);
+              const data = JSON.parse(raw);
+              let changed = false;
+              for (const rule of data.mappings ?? []) {
+                if (rule.scope?.type === 'file' && rule.scope.path === file.path) {
+                  rule.scope.path = newMdPath;
+                  changed = true;
+                }
+              }
+              if (changed) await this.app.vault.modify(found, JSON.stringify(data, null, 2));
+            } catch { /* ignore */ }
+          }
+          await this.app.vault.rename(found, newPath);
+        }
+      }
+    }
+
+    // Déplacer les fichiers audio liés à la transcription.
+    // Double stratégie :
+    //   1. Même basename que le .md (entretien_01.m4a, entretien_01.mp3…)
+    //   2. Nom référencé dans pseudobs-audio (peut différer du basename pour les fichiers noScribe)
+    {
+      const AUDIO_EXTS = new Set(['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff']);
+      const audioToMove = new Set<string>(); // chemins vault à déplacer
+
+      // Stratégie 1 : même basename
+      for (const ext of AUDIO_EXTS) {
+        const candidate = sourceFolder ? `${sourceFolder}/${base}.${ext}` : `${base}.${ext}`;
+        if (this.app.vault.getAbstractFileByPath(candidate) instanceof TFile) {
+          audioToMove.add(candidate);
+        }
+      }
+
+      // Stratégie 2 : pseudobs-audio dans le frontmatter du .md déplacé
+      try {
+        const mdFile = this.app.vault.getAbstractFileByPath(newMdPath);
+        if (mdFile instanceof TFile) {
+          const mdContent = await this.app.vault.read(mdFile);
+          const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(mdContent);
+          if (audioMatch) {
+            const refPath = sourceFolder ? `${sourceFolder}/${audioMatch[1]}` : audioMatch[1];
+            if (this.app.vault.getAbstractFileByPath(refPath) instanceof TFile) {
+              audioToMove.add(refPath);
+            }
+          }
+        }
+      } catch { /* ignore */ }
+
+      // Déplacer chaque fichier audio trouvé
+      for (const audioPath of audioToMove) {
+        const audioFile = this.app.vault.getAbstractFileByPath(audioPath);
+        if (!(audioFile instanceof TFile)) continue;
+        const newAudioPath = targetFolder
+          ? `${targetFolder}/${audioFile.name}`
+          : audioFile.name;
+        if (audioPath !== newAudioPath) {
+          await this.app.vault.rename(audioFile, newAudioPath);
+        }
+      }
+    }
+
+    void this.refresh();
+  }
+
+  /**
+   * Vérifie si le basename d'un fichier contient des termes sources de règles actives.
+   * Retourne un nom neutre suggéré (transcript_N) si le nom est problématique, null sinon.
+   */
+  async suggestCorrectedFilename(file: TFile): Promise<string | null> {
+    const rules = await this.scopeResolver.getRulesFor(file.path);
+    if (rules.length === 0) return null;
+
+    const basenameLower = file.basename.toLowerCase();
+    const hasProblem = rules.some((r) => basenameLower.includes(r.source.toLowerCase()));
+    if (!hasProblem) return null;
+
+    // Proposer un nom neutre transcript_N, N = prochain entier libre dans le même dossier
+    const folder = file.parent;
+    const existing = new Set(
+      (folder?.children ?? [])
+        .filter((c): c is TFile => c instanceof TFile)
+        .map((c) => c.basename.toLowerCase())
+    );
+    let n = 1;
+    while (existing.has(`transcript_${n}`)) n++;
+    return `transcript_${n}`;
+  }
+
+  /**
+   * Renomme un fichier de transcription ET tous ses fichiers liés.
+   * Déclenché depuis la bannière de warning du panneau.
+   */
+  async renameFileAndRelated(file: TFile, newBasename: string): Promise<void> {
+    const oldBase = file.basename;
+    const folder = file.parent?.path ?? '';
+    const newPath = folder ? `${folder}/${newBasename}.${file.extension}` : `${newBasename}.${file.extension}`;
+
+    this._renamingRelated = true;
+    try {
+      await this.app.vault.rename(file, newPath);
+      const newFile = this.app.vault.getAbstractFileByPath(newPath);
+      if (newFile instanceof TFile) {
+        await this.cascadeRelatedRename(oldBase, newBasename, newFile, file.path);
+      }
+    } finally {
+      this._renamingRelated = false;
+    }
+    void this.refresh();
+  }
+
+  /**
+   * Écouteur vault.rename — déclenché par tout renommage utilisateur dans Obsidian.
+   * Cascade vers les fichiers liés si c'est une transcription.
+   */
+  private async onTranscriptionRenamed(file: TFile, oldPath: string): Promise<void> {
+    const s = this.settings;
+    const fileFolder = file.parent?.path ?? '';
+    const transcRoot = s.transcriptionsFolder;
+
+    // Uniquement les fichiers de transcription (dans transcriptionsFolder)
+    if (fileFolder !== transcRoot && !fileFolder.startsWith(`${transcRoot}/`)) return;
+    if (!['md', 'srt', 'cha', 'chat', 'txt', 'vtt'].includes(file.extension.toLowerCase())) return;
+
+    const oldFilename = oldPath.split('/').pop() ?? '';
+    const oldBase = oldFilename.replace(/\.[^.]+$/, '');
+    const newBase = file.basename;
+    if (oldBase === newBase) return; // simple déplacement de dossier, pas un renommage
+
+    this._renamingRelated = true;
+    try {
+      await this.cascadeRelatedRename(oldBase, newBase, file, oldPath);
+    } finally {
+      this._renamingRelated = false;
+    }
+    void this.refresh();
+  }
+
+  /**
+   * Cascade un renommage de basename sur tous les fichiers liés :
+   * frontmatter, .mapping.json, .words.json, exports, audio, source originale.
+   */
+  private async cascadeRelatedRename(
+    oldBase: string,
+    newBase: string,
+    file: TFile,
+    oldFilePath: string,
+  ): Promise<void> {
+    const s = this.settings;
+    const fileFolder = file.parent?.path ?? '';
+
+    // 1. Mettre à jour le frontmatter pseudobs-source dans le fichier renommé
+    if (file.extension === 'md') {
+      try {
+        const content = await this.app.vault.read(file);
+        const updated = content.replace(
+          /^pseudobs-source:\s*"[^"]*"/m,
+          `pseudobs-source: "${newBase}.${file.extension}"`
+        );
+        if (updated !== content) await this.app.vault.modify(file, updated);
+      } catch { /* ignore */ }
+    }
+
+    // 2. Mapping et words.json
+    for (const suffix of ['.mapping.json', '.words.json']) {
+      const found = this.findInMappings(`${oldBase}${suffix}`);
+      if (!found) continue;
+      const newMappingPath = found.path.replace(`${oldBase}${suffix}`, `${newBase}${suffix}`);
+      if (suffix === '.mapping.json') {
+        try {
+          const raw = await this.app.vault.read(found);
+          const data = JSON.parse(raw);
+          for (const rule of data.mappings ?? []) {
+            if (rule.scope?.type === 'file' && rule.scope.path === oldFilePath) {
+              rule.scope.path = file.path;
+            }
+          }
+          await this.app.vault.modify(found, JSON.stringify(data, null, 2));
+        } catch { /* ignore */ }
+      }
+      if (found.path !== newMappingPath) await this.app.vault.rename(found, newMappingPath);
+    }
+
+    // 3. Exports pseudonymisés
+    const EXPORT_EXTS = ['md', 'vtt', 'srt', 'cha'];
+    for (const root of [s.exportsFolder, s.exportFinalFolder].filter(Boolean)) {
+      for (const ext of EXPORT_EXTS) {
+        const exportFile = this.app.vault.getAbstractFileByPath(`${root}/${oldBase}.pseudonymized.${ext}`);
+        if (!(exportFile instanceof TFile)) continue;
+        const newExportPath = `${root}/${newBase}.pseudonymized.${ext}`;
+        await this.app.vault.rename(exportFile, newExportPath);
+        if (ext === 'md') {
+          const ef = this.app.vault.getAbstractFileByPath(newExportPath);
+          if (ef instanceof TFile) {
+            try {
+              const c = await this.app.vault.read(ef);
+              const u = c.replace(/^pseudobs-source:\s*"[^"]*"/m, `pseudobs-source: "${newBase}.${file.extension}"`);
+              if (u !== c) await this.app.vault.modify(ef, u);
+            } catch { /* ignore */ }
+          }
+        }
+      }
+    }
+
+    // 4. Fichiers audio avec le même basename dans le même dossier
+    const AUDIO_EXTS = ['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff'];
+    for (const ext of AUDIO_EXTS) {
+      const audioPath = fileFolder ? `${fileFolder}/${oldBase}.${ext}` : `${oldBase}.${ext}`;
+      const audioFile = this.app.vault.getAbstractFileByPath(audioPath);
+      if (!(audioFile instanceof TFile)) continue;
+      const newAudioName = `${newBase}.${ext}`;
+      const newAudioPath = fileFolder ? `${fileFolder}/${newAudioName}` : newAudioName;
+      await this.app.vault.rename(audioFile, newAudioPath);
+      // Mettre à jour pseudobs-audio dans le frontmatter du .md
+      if (file.extension === 'md') {
+        try {
+          const c = await this.app.vault.read(file);
+          const u = c.replace(/^pseudobs-audio:\s*"[^"]*"/m, `pseudobs-audio: "${newAudioName}"`);
+          if (u !== c) await this.app.vault.modify(file, u);
+        } catch { /* ignore */ }
+      }
+    }
+
+    // 5. Fichier source originale (même basename, extension différente — .srt, .vtt, .cha, .html, .yml…)
+    const SOURCE_EXTS = ['srt', 'vtt', 'cha', 'chat', 'html', 'txt', 'yml', 'yaml'];
+    for (const ext of SOURCE_EXTS) {
+      if (ext === file.extension) continue; // déjà le fichier renommé
+      const srcPath = fileFolder ? `${fileFolder}/${oldBase}.${ext}` : `${oldBase}.${ext}`;
+      const srcFile = this.app.vault.getAbstractFileByPath(srcPath);
+      if (!(srcFile instanceof TFile)) continue;
+      const newSrcPath = fileFolder ? `${fileFolder}/${newBase}.${ext}` : `${newBase}.${ext}`;
+      await this.app.vault.rename(srcFile, newSrcPath);
+    }
+  }
+
+  /** Cherche un fichier par nom dans le dossier mappings et ses sous-dossiers. */
+  private findInMappings(filename: string): TFile | null {
+    const search = (folder: TFolder): TFile | null => {
+      for (const child of folder.children) {
+        if (child instanceof TFile && child.name === filename) return child;
+        if (child instanceof TFolder) {
+          const found = search(child);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    const root = this.app.vault.getAbstractFileByPath(this.settings.mappingFolder);
+    return root instanceof TFolder ? search(root) : null;
+  }
+
   // --- Coulmont ---
 
   // Interroge l'outil de Baptiste Coulmont pour suggérer un prénom équivalent.
@@ -302,7 +756,7 @@ export default class PseudObsPlugin extends Plugin {
   async refreshHighlightData(): Promise<void> {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      this.highlightData = { sources: [], replacements: [], nerCandidates: [], ignoredTerms: [] };
+      this.highlightData = { sources: [], replacements: [], nerCandidates: [], exceptionRanges: [] };
     } else {
       const nerCandidates = file === this.nerCandidateFile ? this.nerCandidates : [];
 
@@ -313,7 +767,6 @@ export default class PseudObsPlugin extends Plugin {
         let rules: MappingRule[];
         if (file.basename.endsWith('.pseudonymized')) {
           const originalBasename = file.basename.slice(0, -'.pseudonymized'.length);
-          // Vault/dossier + règles fichier de la source (sans filtre de scope path)
           const vaultFolderRules = await this.scopeResolver.getRulesFor(file.path);
           const fileRules = await this.scopeResolver.getRulesFromMappingFile(
             `${originalBasename}.mapping.json`
@@ -326,18 +779,19 @@ export default class PseudObsPlugin extends Plugin {
         } else {
           rules = await this.scopeResolver.getRulesFor(file.path);
         }
-        // Termes ignorés : extraits des ignoredOccurrences de chaque règle
-        const ignoredTerms = rules.flatMap((r) =>
-          (r.ignoredOccurrences ?? []).map((o) => o.text)
-        );
+
+        // Positions exactes des occurrences ignorées — calculées par correspondance de contexte
+        const content = await this.app.vault.read(file);
+        const exceptionRanges = this.findExceptionRanges(content, rules);
+
         this.highlightData = {
           sources: rules.map((r) => r.source).filter(Boolean),
           replacements: rules.map((r) => r.replacement).filter(Boolean),
           nerCandidates,
-          ignoredTerms,
+          exceptionRanges,
         };
       } catch {
-        this.highlightData = { sources: [], replacements: [], nerCandidates, ignoredTerms: [] };
+        this.highlightData = { sources: [], replacements: [], nerCandidates, exceptionRanges: [] };
       }
     }
 
@@ -503,7 +957,7 @@ export default class PseudObsPlugin extends Plugin {
       await this.ensureFolder(targetFolder);
       const arrayBuf = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
       await this.app.vault.createBinary(destPath, arrayBuf);
-      new Notice(`Audio importé : ${audioFilename}`);
+      new Notice(t('notice.audioImported', audioFilename));
       return audioFilename;
     } catch {
       return null;
@@ -596,7 +1050,7 @@ export default class PseudObsPlugin extends Plugin {
   // --- Pseudonymisation ---
 
   async pseudonymizeActiveFile(): Promise<void> {
-    const file = this.app.workspace.getActiveFile();
+    const file = this.getActiveOrLastFile();
     if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const ext = file.extension.toLowerCase();
@@ -660,7 +1114,7 @@ export default class PseudObsPlugin extends Plugin {
       return;
     }
 
-    const file = this.app.workspace.getActiveFile();
+    const file = this.getActiveOrLastFile();
     if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const ext = file.extension.toLowerCase();
@@ -698,7 +1152,7 @@ export default class PseudObsPlugin extends Plugin {
       return;
     }
 
-    const file = this.app.workspace.getActiveFile();
+    const file = this.getActiveOrLastFile();
     if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const ext = file.extension.toLowerCase();
@@ -811,7 +1265,7 @@ export default class PseudObsPlugin extends Plugin {
    * Lit le .words.json correspondant pour les timestamps précis.
    */
   async exportCurrentFileAsVtt(): Promise<void> {
-    const file = this.app.workspace.getActiveFile();
+    const file = this.getActiveOrLastFile();
     if (!file || file.extension !== 'md') {
       new Notice(t('notice.noActiveFile'));
       return;
@@ -843,15 +1297,68 @@ export default class PseudObsPlugin extends Plugin {
       new Notice(t('notice.vttMismatch'));
     }
 
-    await this.ensureFolder(this.settings.exportsFolder);
-    const outputPath = `${this.settings.exportsFolder}/${rawBasename}.pseudonymized.vtt`;
-    const existing = this.app.vault.getAbstractFileByPath(outputPath);
-    if (existing instanceof TFile) {
-      await this.app.vault.modify(existing, vtt);
-    } else {
-      await this.app.vault.create(outputPath, vtt);
+    await this.writeExport(file, 'vtt', vtt);
+  }
+
+  /**
+   * Re-exporte le Markdown pseudonymisé courant au format d'origine (srt ou cha).
+   */
+  async exportCurrentFileAsFormat(targetFormat: 'srt' | 'cha'): Promise<void> {
+    const file = this.getActiveOrLastFile();
+    if (!file || file.extension !== 'md') {
+      new Notice(t('notice.noActiveFile'));
+      return;
     }
 
+    const content = await this.app.vault.read(file);
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    const format = formatMatch?.[1];
+
+    const expectedFormat = targetFormat === 'cha' ? 'chat' : 'srt';
+    if (format !== expectedFormat) {
+      new Notice(t('notice.notNoScribeFormat'));
+      return;
+    }
+
+    const ext = targetFormat === 'cha' ? 'cha' : 'srt';
+    const outputContent = targetFormat === 'srt' ? markdownToSrt(content) : markdownToCha(content);
+    await this.writeExport(file, ext, outputContent);
+  }
+
+  /**
+   * Écrit le contenu d'un export final selon les paramètres de destination.
+   * Gère vault, next-to-source et external.
+   */
+  private async writeExport(file: TFile, ext: string, content: string): Promise<void> {
+    const dest = this.resolveExportPath(file, ext);
+
+    if (dest.externalPath) {
+      // Export hors vault via Node.js fs
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const nodeFs = require('fs') as typeof import('fs');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const nodePath = require('path') as typeof import('path');
+        await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
+        await nodeFs.promises.writeFile(dest.externalPath, content, 'utf-8');
+        new Notice(t('notice.vttExported', dest.externalPath));
+      } catch (e) {
+        new Notice(`Export error: ${(e as Error).message}`);
+      }
+      return;
+    }
+
+    // Export dans le vault
+    const outputPath = dest.vaultPath!;
+    const dir = outputPath.includes('/') ? outputPath.slice(0, outputPath.lastIndexOf('/')) : '';
+    if (dir) await this.ensureFolder(dir);
+
+    const existing = this.app.vault.getAbstractFileByPath(outputPath);
+    if (existing instanceof TFile) {
+      await this.app.vault.modify(existing, content);
+    } else {
+      await this.app.vault.create(outputPath, content);
+    }
     new Notice(t('notice.vttExported', outputPath));
   }
 
@@ -878,7 +1385,7 @@ export default class PseudObsPlugin extends Plugin {
   }
 
   private async scanCurrentFile(): Promise<void> {
-    const file = this.app.workspace.getActiveFile();
+    const file = this.getActiveOrLastFile();
     if (!file) { new Notice(t('notice.noActiveFile')); return; }
 
     const rules = await this.scopeResolver.getRulesFor(file.path);
@@ -971,7 +1478,7 @@ export default class PseudObsPlugin extends Plugin {
    * Appelé automatiquement à la suppression d'une règle dans EditRuleModal.
    */
   async revertRuleInFile(source: string, replacement: string): Promise<void> {
-    const file = this.app.workspace.getActiveFile();
+    const file = this.getActiveOrLastFile();
     if (!file) return;
 
     const s = this.settings;

@@ -1,9 +1,11 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
+import { FolderSuggest } from './ui/FolderSuggest';
 import type PseudObsPlugin from './main';
 import { OnboardingModal } from './ui/OnboardingModal';
 import { t, setLocale, AVAILABLE_LANGUAGES } from './i18n';
 
 export type NerBackend = 'none' | 'spacy' | 'transformers-js';
+export type ExportDestinationType = 'vault' | 'next-to-source' | 'external';
 
 export interface PseudObsSettings {
   transcriptionsFolder: string;
@@ -20,6 +22,11 @@ export interface PseudObsSettings {
   useMarkerInExport: boolean;
   markerOpen: string;
   markerClose: string;
+  // Destination des exports finaux (VTT, SRT, CHA)
+  exportDestinationType: ExportDestinationType;
+  exportFinalFolder: string;       // vault path (si type === 'vault')
+  exportExternalPath: string;      // chemin absolu hors vault (si type === 'external')
+  exportMirrorClasses: boolean;    // répercuter la structure de classes dans le dossier d'export
   // Langue de l'interface
   language: string;
   // Onboarding
@@ -46,6 +53,10 @@ export const DEFAULT_SETTINGS: PseudObsSettings = {
   useMarkerInExport: true,
   markerOpen: '{{',
   markerClose: '}}',
+  exportDestinationType: 'vault',
+  exportFinalFolder: '_pseudonymisation/exports',
+  exportExternalPath: '',
+  exportMirrorClasses: false,
   language: 'en',
   onboardingCompleted: false,
   nerBackend: 'none',
@@ -209,41 +220,45 @@ export class PseudObsSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName(t('settings.transcriptionsFolder'))
       .setDesc(t('settings.transcriptionsFolderDesc'))
-      .addText((text) =>
-        text.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
+      .addSearch((cb) => {
+        new FolderSuggest(this.app, cb.inputEl);
+        cb.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
           this.plugin.settings.transcriptionsFolder = value;
           await this.plugin.saveSettings();
-        })
-      );
+        });
+      });
 
     new Setting(containerEl)
       .setName(t('settings.mappingFolder'))
       .setDesc(t('settings.mappingFolderDesc'))
-      .addText((text) =>
-        text.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
+      .addSearch((cb) => {
+        new FolderSuggest(this.app, cb.inputEl);
+        cb.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
           this.plugin.settings.mappingFolder = value;
           await this.plugin.saveSettings();
-        })
-      );
+        });
+      });
 
     new Setting(containerEl)
       .setName(t('settings.dictionariesFolder'))
       .setDesc(t('settings.dictionariesFolderDesc'))
-      .addText((text) =>
-        text.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
+      .addSearch((cb) => {
+        new FolderSuggest(this.app, cb.inputEl);
+        cb.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
           this.plugin.settings.dictionariesFolder = value;
           await this.plugin.saveSettings();
-        })
-      );
+        });
+      });
 
     new Setting(containerEl)
       .setName(t('settings.exportsFolder'))
-      .addText((text) =>
-        text.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
+      .addSearch((cb) => {
+        new FolderSuggest(this.app, cb.inputEl);
+        cb.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
           this.plugin.settings.exportsFolder = value;
           await this.plugin.saveSettings();
-        })
-      );
+        });
+      });
 
     // ---- Sécurité -------------------------------------------------------
     new Setting(containerEl).setName(t('settings.heading.security')).setHeading();

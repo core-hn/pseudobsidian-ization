@@ -5,11 +5,13 @@ import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@
 // À dispatcher sur l'EditorView après chaque refreshHighlightData().
 export const highlightDataChanged = StateEffect.define<void>();
 
+export interface ExceptionRange { from: number; to: number; }
+
 export interface HighlightData {
-  sources: string[];       // termes originaux encore présents → orange
-  replacements: string[];  // pseudonymes déjà appliqués → vert + souligné
-  nerCandidates: string[]; // entités NER → bleu
-  ignoredTerms: string[];  // textes exacts des occurrences ignorées → rouge (sensible à la casse)
+  sources: string[];                // termes originaux encore présents → orange
+  replacements: string[];           // pseudonymes déjà appliqués → vert + souligné
+  nerCandidates: string[];          // entités NER → bleu
+  exceptionRanges: ExceptionRange[]; // positions exactes des occurrences ignorées → rouge
 }
 
 // Extension CodeMirror 6 qui surligne dans l'éditeur :
@@ -35,9 +37,9 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
       }
 
       private build(view: EditorView): DecorationSet {
-        const { sources, replacements, nerCandidates, ignoredTerms } = getData();
+        const { sources, replacements, nerCandidates, exceptionRanges } = getData();
         if (sources.length === 0 && replacements.length === 0
-            && nerCandidates.length === 0 && ignoredTerms.length === 0)
+            && nerCandidates.length === 0 && exceptionRanges.length === 0)
           return Decoration.none;
 
         const text = view.state.doc.toString();
@@ -62,19 +64,12 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
           }
         };
 
-        // Matching SENSIBLE à la casse (exceptions — "juste" ≠ "Juste")
-        const collectExact = (terms: string[], cls: string, prio: number) => {
-          for (const term of terms) {
-            if (!term) continue;
-            let pos = 0;
-            while (pos < text.length) {
-              const idx = text.indexOf(term, pos);
-              if (idx === -1) break;
-              spans.push({ from: idx, to: idx + term.length, cls, prio });
-              pos = idx + term.length;
-            }
+        // Exceptions par position exacte calculée depuis le contexte
+        for (const { from, to } of exceptionRanges) {
+          if (from >= 0 && to <= text.length) {
+            spans.push({ from, to, cls: 'pseudobs-exception', prio: 0 });
           }
-        };
+        }
 
         // Les candidats NER ne sont affichés que s'ils n'ont pas déjà une règle active
         // et ne sont pas des sous-chaînes d'une source composée connue
@@ -92,8 +87,8 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
         });
 
         // Priorités explicites : 0 = gagne en cas de chevauchement
-        collectExact(ignoredTerms,  'pseudobs-exception',     0);
-        collect(replacements,       'pseudobs-replaced',      1);
+        // (exceptionRanges déjà ajoutés par position ci-dessus, prio 0)
+        collect(replacements,  'pseudobs-replaced',      1);
         collect(sources,            'pseudobs-source',        2);
         collect(freshCandidates,    'pseudobs-ner-candidate', 3);
 

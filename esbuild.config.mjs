@@ -3,10 +3,29 @@ import process from "process";
 import { builtinModules as builtins } from "module";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { copyFileSync, existsSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const prod = process.argv[2] === "production";
+
+const PLUGIN_DIR = "test_vault/.obsidian/plugins/pseudonymizer-tool";
+
+// En mode dev : copie styles.css dans le vault de test après chaque rebuild.
+const copyStylesPlugin = {
+  name: "copy-styles",
+  setup(build) {
+    build.onEnd(() => {
+      if (existsSync("styles.css")) {
+        try {
+          copyFileSync("styles.css", `${PLUGIN_DIR}/styles.css`);
+        } catch {
+          // vault de test absent — pas bloquant
+        }
+      }
+    });
+  },
+};
 
 const context = await esbuild.context({
   entryPoints: ["src/main.ts"],
@@ -55,9 +74,8 @@ const context = await esbuild.context({
   logLevel: "info",
   sourcemap: prod ? false : "inline",
   treeShaking: true,
-  outfile: prod
-    ? "main.js"
-    : "test_vault/.obsidian/plugins/pseudonymizer-tool/main.js",
+  outfile: prod ? "main.js" : `${PLUGIN_DIR}/main.js`,
+  plugins: prod ? [] : [copyStylesPlugin],
 });
 
 if (prod) {
