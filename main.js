@@ -36542,6 +36542,10 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
               const raw = await this.app.vault.read(found);
               const data = JSON.parse(raw);
               let changed = false;
+              if (data.scope?.type === "file" && data.scope.path === file.path) {
+                data.scope.path = newMdPath;
+                changed = true;
+              }
               for (const rule of data.mappings ?? []) {
                 if (rule.scope?.type === "file" && rule.scope.path === file.path) {
                   rule.scope.path = newMdPath;
@@ -36619,6 +36623,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
    */
   async renameFileAndRelated(file, newBasename) {
     const oldBase = file.basename;
+    const oldFilePath = file.path;
     const folder = file.parent?.path ?? "";
     const newPath = folder ? `${folder}/${newBasename}.${file.extension}` : `${newBasename}.${file.extension}`;
     this._renamingRelated = true;
@@ -36626,7 +36631,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       await this.app.vault.rename(file, newPath);
       const newFile = this.app.vault.getAbstractFileByPath(newPath);
       if (newFile instanceof import_obsidian14.TFile) {
-        await this.cascadeRelatedRename(oldBase, newBasename, newFile, file.path);
+        await this.cascadeRelatedRename(oldBase, newBasename, newFile, oldFilePath);
       }
     } finally {
       this._renamingRelated = false;
@@ -36667,13 +36672,11 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     const fileFolder = file.parent?.path ?? "";
     if (file.extension === "md") {
       try {
-        const content = await this.app.vault.read(file);
-        const updated = content.replace(
-          /^pseudobs-source:\s*"[^"]*"/m,
-          `pseudobs-source: "${newBase}.${file.extension}"`
-        );
-        if (updated !== content)
-          await this.app.vault.modify(file, updated);
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          if (fm["pseudobs-source"] !== void 0) {
+            fm["pseudobs-source"] = `${newBase}.${file.extension}`;
+          }
+        });
       } catch {
       }
     }
@@ -36686,6 +36689,9 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         try {
           const raw = await this.app.vault.read(found);
           const data = JSON.parse(raw);
+          if (data.scope?.type === "file" && data.scope.path === oldFilePath) {
+            data.scope.path = file.path;
+          }
           for (const rule of data.mappings ?? []) {
             if (rule.scope?.type === "file" && rule.scope.path === oldFilePath) {
               rule.scope.path = file.path;
@@ -36710,10 +36716,11 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
           const ef = this.app.vault.getAbstractFileByPath(newExportPath);
           if (ef instanceof import_obsidian14.TFile) {
             try {
-              const c = await this.app.vault.read(ef);
-              const u = c.replace(/^pseudobs-source:\s*"[^"]*"/m, `pseudobs-source: "${newBase}.${file.extension}"`);
-              if (u !== c)
-                await this.app.vault.modify(ef, u);
+              await this.app.fileManager.processFrontMatter(ef, (fm) => {
+                if (fm["pseudobs-source"] !== void 0) {
+                  fm["pseudobs-source"] = `${newBase}.${file.extension}`;
+                }
+              });
             } catch {
             }
           }
@@ -36721,22 +36728,48 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       }
     }
     const AUDIO_EXTS = ["m4a", "mp3", "wav", "ogg", "flac", "mp4", "aac", "aiff"];
+    const audioRenamed = /* @__PURE__ */ new Map();
     for (const ext of AUDIO_EXTS) {
       const audioPath = fileFolder ? `${fileFolder}/${oldBase}.${ext}` : `${oldBase}.${ext}`;
       const audioFile = this.app.vault.getAbstractFileByPath(audioPath);
       if (!(audioFile instanceof import_obsidian14.TFile))
         continue;
+      const oldAudioName = audioFile.name;
       const newAudioName = `${newBase}.${ext}`;
       const newAudioPath = fileFolder ? `${fileFolder}/${newAudioName}` : newAudioName;
       await this.app.vault.rename(audioFile, newAudioPath);
-      if (file.extension === "md") {
-        try {
-          const c = await this.app.vault.read(file);
-          const u = c.replace(/^pseudobs-audio:\s*"[^"]*"/m, `pseudobs-audio: "${newAudioName}"`);
-          if (u !== c)
-            await this.app.vault.modify(file, u);
-        } catch {
+      audioRenamed.set(oldAudioName, newAudioName);
+    }
+    if (file.extension === "md") {
+      try {
+        const mdContent = await this.app.vault.read(file);
+        const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(mdContent);
+        if (audioMatch) {
+          const oldAudioName = audioMatch[1];
+          if (!audioRenamed.has(oldAudioName)) {
+            const oldAudioPath = fileFolder ? `${fileFolder}/${oldAudioName}` : oldAudioName;
+            const audioFile = this.app.vault.getAbstractFileByPath(oldAudioPath);
+            if (audioFile instanceof import_obsidian14.TFile) {
+              const ext = oldAudioName.split(".").pop() ?? "";
+              const newAudioName = ext ? `${newBase}.${ext}` : newBase;
+              const newAudioPath = fileFolder ? `${fileFolder}/${newAudioName}` : newAudioName;
+              await this.app.vault.rename(audioFile, newAudioPath);
+              audioRenamed.set(oldAudioName, newAudioName);
+            }
+          }
         }
+      } catch {
+      }
+    }
+    if (file.extension === "md" && audioRenamed.size > 0) {
+      try {
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          const current = fm["pseudobs-audio"];
+          if (current && audioRenamed.has(current)) {
+            fm["pseudobs-audio"] = audioRenamed.get(current);
+          }
+        });
+      } catch {
       }
     }
     const SOURCE_EXTS = ["srt", "vtt", "cha", "chat", "html", "txt", "yml", "yaml"];
