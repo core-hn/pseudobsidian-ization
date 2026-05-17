@@ -2,6 +2,61 @@
 
 > Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
 
+## [prod] v0.1.6 — 17 May 2026
+
+### New features
+
+**Corpus tab**
+- New **Corpus** tab (last in the panel) — transcription files organized by class with status badges: rule count, pseudonymized version, final export format
+- **Class management**: create, rename (coming), delete classes (moves files to root)
+- **Move files between classes**: dropdown per file — moves `.md` + `.mapping.json` + `.words.json` + audio + source files in sync
+- **Export destination settings** (inline in the tab): vault folder (with optional class-structure mirroring), next to source, or external folder; `FolderSuggest` autocomplete on all folder fields
+- `FolderSuggest` component — folder autocomplete in Settings and Onboarding wizard
+
+**Scan modal — per-occurrence candidates**
+- `MappingScanReviewModal`: occurrence count column is now a clickable button showing `N / total` when some are ignored
+- `OccurrencesContextModal`: per-occurrence cards (✓ / ✗ / ⚠) with context, "Confirm selection" callback, no immediate application
+- **"Save exceptions" button**: persists ignored decisions in `mapping.json` without pseudonymizing
+- Pre-fills decisions from existing `ignoredOccurrences` on re-open
+- `MappingRuleResult` now carries `occurrences: Occurrence[]`
+
+**Exceptions**
+- `IgnoredOccurrence {text, contextBefore, contextAfter}` on `MappingRule.ignoredOccurrences`
+- Persisted in `mapping.json`, loaded at startup — red highlighting without re-scanning
+- Red highlighting: context-aware, position-based via `findByContext()` — only the specific ignored occurrence is red, not all occurrences of the word
+- `findSpansForRule()` skips ignored occurrences — they are not pseudonymized on export
+- Right-click "Declare as exception here" on orange terms (captures 30-char context)
+- Exceptions section in Mappings tab with context cards and delete button
+
+**Exports**
+- `markdownToSrt()` and `markdownToCha()` — re-export pseudonymized Markdown back to SRT/CHAT
+- `resolveExportPath()` — mirroring class structure from mapping folder when file is in exports
+- `writeExport()` — vault, next-to-source, or external (Node.js fs); ensures parent folder
+- Exports tab: button adapts based on whether active file is source or pseudonymized export; hides pseudonymize button for files already in exports folder
+
+**Filename warning**
+- Banner above the tab bar when active file's name contains a pseudonymizable term
+- Two buttons: ✏ manual rename prompt · ✨ apply neutral suggestion (`transcript_N`)
+- `suggestCorrectedFilename()` — neutral naming, auto-incremented, no replacement leak
+- Status labels clarified: "Active / Partial / Ignored / Suggested"
+- `getValidatedFor()` includes `partial` as active
+
+**Rename cascade**
+- `vault.on('rename')` listener — automatic cascade when user renames via Obsidian explorer
+- `cascadeRelatedRename()` — updates: frontmatter (`app.fileManager.processFrontMatter`), `.mapping.json` (store scope + rule scopes), `.words.json`, pseudonymized exports, audio (same basename + `pseudobs-audio` reference), source files (.srt/.vtt/.cha/.html/.yml)
+- Audio strategy: renames audio with same basename AND audio referenced by `pseudobs-audio` (noScribe, different basename)
+- Guard flag `_renamingRelated` prevents cascade loops
+- `moveFileToClass()` also moves audio and updates both store-level and rule-level scope paths
+
+### Fixes
+- `renameFileAndRelated`: capture `oldFilePath` before `vault.rename()` (TFile mutated in-place)
+- Audio rename: capture `oldAudioName` before rename (same mutation issue)
+- `processFrontMatter` for all frontmatter updates (regex was unreliable)
+- Both store-level `scope.path` and individual rule `scope.path` updated on move/rename
+- `esbuild`: `copyStylesPlugin` copies `styles.css` to test vault on each dev rebuild
+
+---
+
 ## [prod] v0.1.5 — 17 May 2026
 
 ### New features

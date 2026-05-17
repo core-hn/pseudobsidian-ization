@@ -1,5 +1,57 @@
 # Changelog
 
+## [prod] v0.1.6 — 17 mai 2026
+
+### Nouvelles fonctionnalités
+
+**Onglet Corpus**
+- Nouvel onglet **Corpus** (dernier dans le panneau) — transcriptions par classe, badges statut : règles, version pseudo, format d'export final
+- **Gestion des classes** : créer, supprimer (déplace les fichiers à la racine)
+- **Déplacer des fichiers entre classes** : dropdown par fichier — déplace `.md` + `.mapping.json` + `.words.json` + audio + fichiers source en miroir
+- **Paramètres de destination des exports finaux** (inline dans l'onglet) : dossier vault (avec option miroir de classes), à côté du fichier source, ou dossier externe ; `FolderSuggest` autocomplete sur tous les champs de dossier
+- Composant `FolderSuggest` — autocomplete dossiers vault dans les Paramètres et le wizard
+
+**Modale de scan — candidats par occurrence**
+- `MappingScanReviewModal` : colonne occurrences cliquable (`N / total` si exceptions)
+- `OccurrencesContextModal` : cartes par occurrence (✓ / ✗ / ⚠) avec contexte, callback "Confirmer la sélection", sans application immédiate
+- **Bouton "Enregistrer les exceptions"** : persiste les décisions ignorées dans `mapping.json` sans pseudonymiser
+- Pré-remplit les décisions depuis `ignoredOccurrences` existantes à la réouverture
+
+**Exceptions**
+- `IgnoredOccurrence {text, contextBefore, contextAfter}` sur `MappingRule.ignoredOccurrences`
+- Persistance dans `mapping.json`, chargée au démarrage — rouge sans re-scan
+- Surlignage rouge : positionnel, par contexte (`findByContext`) — seulement l'occurrence précise est rouge
+- `findSpansForRule()` exclut les occurrences ignorées du remplacement à l'export
+- Clic droit "Déclarer une exception ici" sur les termes orange (contexte 30 caractères)
+- Section Exceptions dans l'onglet Mappings avec cartes contextuelles et suppression
+
+**Exports**
+- `markdownToSrt()` et `markdownToCha()` — re-export du Markdown pseudonymisé en SRT/CHAT
+- `resolveExportPath()` — miroir de classes depuis le dossier mapping quand le fichier est dans exports
+- `writeExport()` — vault, à côté du source, ou externe (Node.js fs)
+- Onglet Exports : bouton adapté selon source ou pseudonymisé ; masque pseudonymiser pour les fichiers déjà exportés
+
+**Avertissement nom de fichier**
+- Bannière au-dessus des onglets si le nom contient un terme pseudonymisable
+- Deux boutons : ✏ renommage manuel · ✨ suggestion neutre (`transcript_N`)
+- Statuts clarifiés : "Actif / Partiel / Ignoré / Suggéré"
+- `getValidatedFor()` inclut `partial` comme état actif
+
+**Cascade de renommage**
+- Écouteur `vault.on('rename')` — cascade automatique au renommage natif Obsidian
+- `cascadeRelatedRename()` — met à jour : frontmatter (`processFrontMatter`), `.mapping.json` (scope store + règles), `.words.json`, exports pseudonymisés, audio (même basename + référence `pseudobs-audio`), fichiers source (.srt/.vtt/.cha/.html/.yml)
+- `moveFileToClass()` déplace aussi l'audio et met à jour les deux niveaux de scope
+- Guard `_renamingRelated` prévient les boucles
+
+### Corrections
+- `renameFileAndRelated` : `oldFilePath` capturé avant `vault.rename()` (TFile muté in-place)
+- Renommage audio : `oldAudioName` capturé avant rename (même problème de mutation)
+- `processFrontMatter` pour toutes les modifications de frontmatter (regex peu fiable)
+- Scope store ET scope des règles mis à jour lors du déplacement/renommage
+- `esbuild` : `copyStylesPlugin` copie `styles.css` dans le vault de test à chaque rebuild dev
+
+---
+
 ## [prod] v0.1.5 — 17 mai 2026
 
 ### Nouvelles fonctionnalités

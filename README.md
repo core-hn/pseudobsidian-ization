@@ -108,10 +108,11 @@ Accessible via the ribbon icon or `Ctrl+P → Pseudonymization: open panel`.
 
 | Tab | Content |
 |---|---|
-| **Mappings** | Active rules · Edit · Delete · Add · Scan file · **Exceptions section** |
+| **Mappings** | Active rules · Edit · Delete · Add · Scan file · Exceptions section |
 | **Dictionaries** | Mini cards · Dictionary scan · Local import |
-| **Exports** | Pseudonymize and export · Export correspondence table · **Export as VTT** |
+| **Exports** | Create pseudonymized version · Export correspondence table · Re-export as VTT/SRT/CHAT |
 | **NER** | Visible if NER enabled · Identify candidates · Confidence threshold · Function words |
+| **Corpus** | Files by class · Class management · Move files · **Final export destination** |
 
 ### Highlighting and markers
 
@@ -122,7 +123,7 @@ Highlighting is active in all open files, including `.pseudonymized.*` export fi
 | 🟠 Orange + outline | Source term still present — to be pseudonymized |
 | 🟢 Green + underline | Pseudonym applied directly in the file |
 | 🔵 Blue + outline | NER candidate — no rule yet |
-| 🔴 Red + underline | **Exception** — occurrence explicitly ignored during scan (case-sensitive; persisted in mapping) |
+| 🔴 Red + underline | **Exception** — specific occurrence explicitly ignored (context-aware; persisted in mapping) |
 
 In exported files, pseudonyms are wrapped in `{{Pierre}}` markers to distinguish them from raw data (enabled by default, configurable in settings).
 
@@ -212,7 +213,7 @@ src/
 | 7 — Coulmont | ✅ | Equivalent first name suggestions · JSON/CSV import |
 | 8 — Side panel | ✅ | 3 tabs · Embedded NER · Wizard · Cancellation · Export highlighting |
 | 9 — Structured dictionaries | ✅ | Format v1.1 · DictionaryLoader · Dictionary scan · Review modal · French communes |
-| 10 — Refinement & noScribe | 🔄 | i18n · Corpus org · noScribe HTML/VTT import · per-occurrence scan · exceptions · VTT re-export |
+| 10 — Refinement & noScribe | 🔄 | i18n · Corpus UI · noScribe import · per-occurrence scan · exceptions · rename cascade · export destination |
 | 11 — EMCA functions | ⏳ | Turn navigation · Jefferson/ICOR correction · ELAN export |
 
 See [ROADMAP.md](ROADMAP.md) for the full phase breakdown and planned features.
