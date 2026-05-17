@@ -94,6 +94,11 @@ export class PseudonymizationView extends ItemView {
     await this.renderTab(tab);
   }
 
+  /** Appelé par le plugin pour forcer un re-rendu de l'onglet actif. */
+  async refreshActiveTab(): Promise<void> {
+    if (!this._renderingTab) await this.renderTab(this.activeTab);
+  }
+
   private async renderTab(tab: Tab): Promise<void> {
     const pane = this.panes[tab];
     pane.empty();
@@ -153,14 +158,19 @@ export class PseudonymizationView extends ItemView {
           caseSensitive: this.plugin.settings.caseSensitive,
           wholeWordOnly: this.plugin.settings.wholeWordOnly,
         });
-        const countByRule = new Map<string, number>();
+        const occsByRule = new Map<string, typeof occs>();
         for (const occ of occs) {
           const id = occ.mappingId ?? '';
-          countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+          if (!occsByRule.has(id)) occsByRule.set(id, []);
+          occsByRule.get(id)!.push(occ);
         }
         const ruleResults: MappingRuleResult[] = rules
-          .filter((r) => countByRule.has(r.id))
-          .map((r) => ({ rule: r, matchCount: countByRule.get(r.id)! }));
+          .filter((r) => occsByRule.has(r.id))
+          .map((r) => ({
+            rule: r,
+            matchCount: occsByRule.get(r.id)!.length,
+            occurrences: occsByRule.get(r.id)!,
+          }));
         if (ruleResults.length === 0) { new Notice(t('notice.noOccurrences')); return; }
         new MappingScanReviewModal(this.app, this.plugin, file, content, ruleResults).open();
       } finally {
@@ -238,6 +248,46 @@ export class PseudonymizationView extends ItemView {
         const editBtn = row.createEl('td').createEl('button', { cls: 'pseudobs-mappings-edit-btn' });
         setIcon(editBtn, 'pencil');
         editBtn.addEventListener('click', () => new EditRuleModal(this.app, this.plugin, loc).open());
+      }
+    }
+
+    // ---- Section Exceptions ----
+    const allIgnored = locations.flatMap(({ rule, store, filePath }) =>
+      (rule.ignoredOccurrences ?? []).map((occ) => ({ occ, rule, store, filePath }))
+    );
+
+    if (allIgnored.length > 0) {
+      el.createEl('h3', { text: t('panel.mappings.exceptions'), cls: 'pseudobs-mappings-scope-heading' });
+      el.createEl('p', { text: t('panel.mappings.exceptions.hint'), cls: 'pseudobs-view-hint' });
+
+      const exceptionsGrid = el.createDiv('pseudobs-exceptions-grid');
+
+      for (const { occ, rule, store, filePath } of allIgnored) {
+        const card = exceptionsGrid.createDiv('pseudobs-exception-card');
+
+        // En-tête : règle concernée
+        card.createEl('div', {
+          text: `${rule.source} → ${rule.replacement}`,
+          cls: 'pseudobs-exception-card-rule',
+        });
+
+        // Contexte
+        const ctx = card.createDiv('pseudobs-exception-card-ctx');
+        ctx.createSpan({ text: occ.contextBefore, cls: 'pseudobs-ctx-side' });
+        ctx.createSpan({ text: occ.text, cls: 'pseudobs-exception-card-term' });
+        ctx.createSpan({ text: occ.contextAfter, cls: 'pseudobs-ctx-side' });
+
+        // Bouton supprimer
+        const delBtn = card.createEl('button', { cls: 'pseudobs-exception-card-del' });
+        setIcon(delBtn, 'x');
+        delBtn.title = 'Supprimer cette exception';
+        delBtn.addEventListener('click', async () => {
+          const updated = (rule.ignoredOccurrences ?? []).filter((o) => o.text !== occ.text);
+          store.update(rule.id, { ignoredOccurrences: updated });
+          await this.plugin.scopeResolver.saveStore(store, filePath);
+          void this.plugin.refresh();
+          void this.renderTab('mappings');
+        });
       }
     }
   }
@@ -386,10 +436,22 @@ export class PseudonymizationView extends ItemView {
     const s = this.plugin.settings;
 
     const nerScanBtn = el.createEl('button', { cls: 'pseudobs-view-action-btn mod-cta' });
-    setIcon(nerScanBtn, 'scan-search');
-    nerScanBtn.createSpan({ text: t('panel.ner.scanBtn') });
+    const nerScanIcon = nerScanBtn.createSpan();
+    setIcon(nerScanIcon, 'scan-search');
+    nerScanBtn.createSpan({ text: ` ${t('panel.ner.scanBtn')}` });
     nerScanBtn.title = t('panel.ner.scanBtn');
-    nerScanBtn.addEventListener('click', () => void this.plugin.scanCurrentFileNer());
+    nerScanBtn.addEventListener('click', () => { void (async () => {
+      nerScanBtn.setAttr('disabled', 'true');
+      setIcon(nerScanIcon, 'loader-circle');
+      nerScanIcon.addClass('pseudobs-spin');
+      try {
+        await this.plugin.scanCurrentFileNer();
+      } finally {
+        nerScanBtn.removeAttribute('disabled');
+        setIcon(nerScanIcon, 'scan-search');
+        nerScanIcon.removeClass('pseudobs-spin');
+      }
+    })(); });
 
     el.createEl('hr');
 

@@ -64,8 +64,13 @@ export class MappingStore {
 
   // Règles validées applicables à un fichier donné (cascade file → folder → vault)
   getValidatedFor(filePath: string): MappingRule[] {
+    // 'validated' et 'partial' sont des règles actives.
+    // 'ignored' = l'utilisateur a ignoré toutes les occurrences au dernier scan
+    //             → la règle reste définie mais désactivée.
+    // 'suggested' = non encore confirmée → inactive.
+    const ACTIVE: Set<string> = new Set(['validated', 'partial']);
     return this.getAll().filter((r) => {
-      if (r.status !== 'validated') return false;
+      if (!ACTIVE.has(r.status)) return false;
       if (r.scope.type === 'vault') return true;
       if (r.scope.type === 'folder') return filePath.startsWith(r.scope.path ?? '');
       return r.scope.path === filePath;

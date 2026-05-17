@@ -2,6 +2,41 @@
 
 > Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
 
+## [prod] v0.1.5 — 17 May 2026
+
+### New features
+
+**noScribe integration**
+- **`VttParser`** — standard WebVTT with Whisper word-level timestamps (`<00:00:01.240><c>word</c>`), speaker tags `<v Name>`, round-trip guarantee
+- **`NoScribeHtmlParser`** — Qt Rich Text HTML produced by noScribe: `ts_START_END_SXX` anchors (ms), speaker labels (`S00:`, `S01:`), display timestamps filtered, HTML entities decoded; `extractAudioSource()` reads `<meta name="audio_source">`
+- **`NoScribeVttParser`** — noScribe VTT v0.7: split cues (label / display timestamp / text), speaker detection from `SXX:` prefix, HTML entity decoding, audio source from `NOTE media:`
+- **noScribe Markdown format** — `**S00** [HH:MM:SS] : text` per turn; `pseudobs-format: html|vtt` and optional `pseudobs-audio` in frontmatter; word timestamps in `<basename>.words.json`
+- **Audio import** — automatic on HTML import (via `audio_source` meta) and on VTT import via file picker (single audio file in source folder)
+- **`Redaction.ts`** — syllable-count redaction with `🀫`; `generateRedaction()` and `isRedaction()`
+- **VTT re-export** (`Export as VTT` command) — clean WebVTT from pseudonymized `.md` + `.words.json`
+
+**Scan modal — per-occurrence candidates**
+- **`MappingScanReviewModal`** — occurrences column is a clickable button (count updated live to `N / total` when some are ignored)
+- **`OccurrencesContextModal`** — per-occurrence cards (✓ / ✗ / ⚠) with context, "Confirm selection" callback, no immediate application
+- **"Save exceptions" button** — saves ignored decisions to `mapping.json` without pseudonymizing
+- `MappingRuleResult` now carries `occurrences: Occurrence[]`
+
+**Exceptions**
+- **`IgnoredOccurrence`** type (`{text, contextBefore, contextAfter}`) on `MappingRule.ignoredOccurrences`
+- Persisted in `mapping.json`, loaded at startup — red highlighting without re-scanning
+- **Red highlighting** (`pseudobs-exception`, case-sensitive, priority 0)
+- **Exceptions section in Mappings tab** — context cards with delete button
+
+### Changes
+- Status labels: `validated` → "Active", `ignored` → "Ignored", `partial` → "Partial", `suggested` → "Suggested"; column renamed "State"
+- `getValidatedFor()` now includes `partial` as active (alongside `validated`)
+- `PseudonymizationView` scan button fixed (missing `occurrences` in `MappingRuleResult`)
+
+### Tests
+149 tests · 10 suites · `VttParser`, `NoScribeHtmlParser`, `NoScribeVttParser`, `markdownToVtt`, `extractWordData` covered; fixtures: `fight_club.vtt`, `juste-leblanc.html`
+
+---
+
 ## [prod] v0.1.4 — 16 May 2026
 
 **Branch:** `main` | **Tag:** upcoming

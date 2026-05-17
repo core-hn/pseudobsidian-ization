@@ -18,6 +18,39 @@ const TAG_TO_CATEGORY: Record<string, EntityCategory> = {
 
 const MIN_ENTITY_LENGTH = 2;
 
+// Préambules Markdown à stripper avant envoi au modèle NER.
+// Chaque regex matche le début d'une ligne (format produit par les parsers du plugin).
+// Le résultat : { cleanText, preambleLength } pour recaler les positions.
+const PREAMBLE_PATTERNS: RegExp[] = [
+  // VTT noScribe : *HH:MM:SS.mmm → HH:MM:SS.mmm* **SPEAKER**
+  /^\*[\d:.]+\s*→\s*[\d:.]+\*(?:\s*\*\*[^*]+\*\*)?\s*/,
+  // SRT bloc de texte : **[N]** *HH:MM:SS,mmm → HH:MM:SS,mmm*  (ligne à ignorer entièrement)
+  /^\*\*\[\d+\]\*\*\s*\*[^*]+\*/,
+  // CHAT tour de parole : **SPEAKER** :
+  /^\*\*[A-Z0-9_]+\*\*\s*:\s*/,
+];
+
+// Lignes à ignorer entièrement (pas de texte à analyser)
+const SKIP_PATTERNS: RegExp[] = [
+  /^---/,           // frontmatter YAML
+  /^pseudobs-/,     // clés frontmatter du plugin
+  /^> /,            // métadonnées CHAT (@, %)
+  /^\*\*\[\d+\]\*\*/, // en-tête de bloc SRT (index + timestamp sur la même ligne)
+];
+
+function stripMarkdownPreamble(line: string): { cleanText: string; preambleLength: number } {
+  // Lignes à ignorer complètement
+  for (const skip of SKIP_PATTERNS) {
+    if (skip.test(line)) return { cleanText: '', preambleLength: line.length };
+  }
+  // Stripper le préambule
+  for (const pat of PREAMBLE_PATTERNS) {
+    const m = pat.exec(line);
+    if (m) return { cleanText: line.slice(m[0].length), preambleLength: m[0].length };
+  }
+  return { cleanText: line, preambleLength: 0 };
+}
+
 type NerResult = {
   entity_group: string;
   score: number;
@@ -103,6 +136,9 @@ export class OnnxNerScanner {
         // numThreads=1 : SharedArrayBuffer non disponible dans Electron renderer
         // sans COOP/COEP → pas de WASM threadé.
         env.backends.onnx.wasm.numThreads = 1;
+        // proxy=true : délègue la compilation WASM à un worker thread Node.js
+        // → libère le thread renderer pendant l'initialisation du modèle.
+        env.backends.onnx.wasm.proxy = true;
       }
 
       // Autoriser le téléchargement depuis HuggingFace Hub
@@ -147,18 +183,20 @@ export class OnnxNerScanner {
     let offset = 0;
 
     for (const line of lines) {
-      if (line.trim().length > 2) {
+      const { cleanText, preambleLength } = stripMarkdownPreamble(line);
+
+      if (cleanText.trim().length > 2) {
         try {
-          const entities: NerResult[] = await _pipeline(line, { aggregation_strategy: 'simple' });
+          const entities: NerResult[] = await _pipeline(cleanText, { aggregation_strategy: 'simple' });
           for (const ent of entities) {
             if (ent.score < minScore) continue;
-            const word = ent.word.trim().replace(/^#+/, ''); // supprimer les ## de sous-mots
-            // Filtrer les artefacts de tokenisation BERT (mots fonctionnels, tokens trop courts)
+            const word = ent.word.trim().replace(/^#+/, '');
             if (word.length < MIN_ENTITY_LENGTH) continue;
             if (functionWords.has(word.toLowerCase())) continue;
             const category = TAG_TO_CATEGORY[ent.entity_group] ?? 'custom';
-            const start = offset + ent.start;
-            const end = offset + ent.end;
+            // Positions recalées : offset de ligne + préambule strippé + position dans cleanText
+            const start = offset + preambleLength + ent.start;
+            const end   = offset + preambleLength + ent.end;
             const ctxLen = 45;
             results.push({
               id: `ner_${Date.now()}_${++_counter}`,

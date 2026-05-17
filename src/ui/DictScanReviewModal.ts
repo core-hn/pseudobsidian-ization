@@ -248,7 +248,7 @@ export class DictScanReviewModal extends Modal {
 
     const n = toCreate.length;
     new Notice(t('notice.rulesCreated', String(n), n > 1 ? t('notice.rulesCreated.rules') : t('notice.rulesCreated.rule')));
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
 

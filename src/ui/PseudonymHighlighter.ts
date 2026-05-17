@@ -6,9 +6,10 @@ import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@
 export const highlightDataChanged = StateEffect.define<void>();
 
 export interface HighlightData {
-  sources: string[];        // termes originaux encore présents → orange (à pseudonymiser)
-  replacements: string[];   // pseudonymes déjà appliqués → vert + souligné
-  nerCandidates: string[];  // entités détectées par NER → bleu (candidats à pseudonymiser)
+  sources: string[];       // termes originaux encore présents → orange
+  replacements: string[];  // pseudonymes déjà appliqués → vert + souligné
+  nerCandidates: string[]; // entités NER → bleu
+  ignoredTerms: string[];  // textes exacts des occurrences ignorées → rouge (sensible à la casse)
 }
 
 // Extension CodeMirror 6 qui surligne dans l'éditeur :
@@ -34,17 +35,20 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
       }
 
       private build(view: EditorView): DecorationSet {
-        const { sources, replacements, nerCandidates } = getData();
-        if (sources.length === 0 && replacements.length === 0 && nerCandidates.length === 0)
+        const { sources, replacements, nerCandidates, ignoredTerms } = getData();
+        if (sources.length === 0 && replacements.length === 0
+            && nerCandidates.length === 0 && ignoredTerms.length === 0)
           return Decoration.none;
 
         const text = view.state.doc.toString();
         const lower = text.toLowerCase();
 
-        type Span = { from: number; to: number; cls: string };
+        // prio : 0 = plus haute priorité (gagne en cas de chevauchement)
+        type Span = { from: number; to: number; cls: string; prio: number };
         const spans: Span[] = [];
 
-        const collect = (terms: string[], cls: string) => {
+        // Matching insensible à la casse (sources, remplacements, NER)
+        const collect = (terms: string[], cls: string, prio: number) => {
           for (const term of terms) {
             if (!term) continue;
             const needle = term.toLowerCase();
@@ -52,7 +56,21 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
             while (pos < lower.length) {
               const idx = lower.indexOf(needle, pos);
               if (idx === -1) break;
-              spans.push({ from: idx, to: idx + term.length, cls });
+              spans.push({ from: idx, to: idx + term.length, cls, prio });
+              pos = idx + term.length;
+            }
+          }
+        };
+
+        // Matching SENSIBLE à la casse (exceptions — "juste" ≠ "Juste")
+        const collectExact = (terms: string[], cls: string, prio: number) => {
+          for (const term of terms) {
+            if (!term) continue;
+            let pos = 0;
+            while (pos < text.length) {
+              const idx = text.indexOf(term, pos);
+              if (idx === -1) break;
+              spans.push({ from: idx, to: idx + term.length, cls, prio });
               pos = idx + term.length;
             }
           }
@@ -73,12 +91,14 @@ export function createPseudonymHighlighter(getData: () => HighlightData): Extens
           return !sourcesLower.some((src) => src !== cl && src.includes(cl));
         });
 
-        collect(freshCandidates, 'pseudobs-ner-candidate');
-        collect(sources, 'pseudobs-source');
-        collect(replacements, 'pseudobs-replaced');
+        // Priorités explicites : 0 = gagne en cas de chevauchement
+        collectExact(ignoredTerms,  'pseudobs-exception',     0);
+        collect(replacements,       'pseudobs-replaced',      1);
+        collect(sources,            'pseudobs-source',        2);
+        collect(freshCandidates,    'pseudobs-ner-candidate', 3);
 
-        // Trier par position (RangeSetBuilder l'exige) et éliminer les chevauchements
-        spans.sort((a, b) => a.from - b.from || a.to - b.to);
+        // Trier par position, puis par priorité (0 = gagne) en cas d'égalité de position
+        spans.sort((a, b) => a.from - b.from || a.prio - b.prio || a.to - b.to);
 
         const builder = new RangeSetBuilder<Decoration>();
         let lastTo = -1;

@@ -3,6 +3,7 @@ import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
 import type { EntityCategory, MappingFile } from '../types';
 import { t } from '../i18n';
+import { generateRedaction } from '../pseudonymizer/Redaction';
 
 type ApplyScope = 'occurrence' | 'file';
 
@@ -18,19 +19,23 @@ export class QuickPseudonymizeModal extends Modal {
   private applyScope: ApplyScope = 'file';
   private suggestions: string[];
 
+  private isRedactionMode: boolean;
+
   constructor(
     app: App,
     plugin: PseudObsPlugin,
     editor: Editor,
     prefillReplacement = '',
-    suggestions: string[] = []
+    suggestions: string[] = [],
+    isRedactionMode = false,
   ) {
     super(app);
     this.plugin = plugin;
     this.editor = editor;
     this.source = editor.getSelection();
-    this.replacement = prefillReplacement;
+    this.replacement = prefillReplacement || (isRedactionMode ? generateRedaction(this.source) : '');
     this.suggestions = suggestions;
+    this.isRedactionMode = isRedactionMode;
     if (suggestions.length > 0) this.category = 'first_name';
     this.from = editor.getCursor('from');
     this.to = editor.getCursor('to');
@@ -48,7 +53,7 @@ export class QuickPseudonymizeModal extends Modal {
         tx.inputEl.addClass('pseudobs-disabled-input');
       });
 
-    let replacementInput: HTMLInputElement;
+    let replacementInput: HTMLInputElement | undefined;
 
     if (this.suggestions.length > 0) {
       const suggBox = contentEl.createDiv('pseudobs-suggestions-box');
@@ -98,6 +103,30 @@ export class QuickPseudonymizeModal extends Modal {
         d.onChange((v) => (this.applyScope = v as ApplyScope));
       });
 
+    // Checkbox caviardage
+    const redactRow = contentEl.createDiv('pseudobs-redact-row');
+    const redactCb = redactRow.createEl('input');
+    redactCb.type = 'checkbox';
+    redactCb.checked = this.isRedactionMode;
+    redactCb.addClass('pseudobs-dict-review-cb');
+    const redactLabel = redactRow.createSpan({ text: ` ${t('redaction.checkbox')}` });
+    redactLabel.title = t('redaction.checkboxDesc');
+    redactCb.addEventListener('change', () => {
+      this.isRedactionMode = redactCb.checked;
+      if (this.isRedactionMode) {
+        this.replacement = generateRedaction(this.source);
+        if (replacementInput) replacementInput.value = this.replacement;
+        replacementInput?.setAttr('disabled', 'true');
+      } else {
+        this.replacement = '';
+        if (replacementInput) replacementInput.value = '';
+        replacementInput?.removeAttribute('disabled');
+      }
+    });
+    if (this.isRedactionMode && replacementInput) {
+      replacementInput.setAttr('disabled', 'true');
+    }
+
     new Setting(contentEl).addButton((btn) =>
       btn.setButtonText(t('quickModal.submit')).setCta().onClick(() => void this.apply())
     );
@@ -133,7 +162,7 @@ export class QuickPseudonymizeModal extends Modal {
       new Notice(t('notice.appliedFile', this.source, marked, String(count), count > 1 ? 's' : ''));
     }
 
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
 

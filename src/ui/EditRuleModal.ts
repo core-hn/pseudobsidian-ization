@@ -128,7 +128,7 @@ export class EditRuleModal extends Modal {
 
     await this.plugin.scopeResolver.saveStore(store, filePath);
     new Notice(t('notice.ruleCreated', rule.source, this.replacement.trim()));
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
 
@@ -136,8 +136,9 @@ export class EditRuleModal extends Modal {
     const { store, filePath, rule } = this.location;
     store.remove(rule.id);
     await this.plugin.scopeResolver.saveStore(store, filePath);
-    new Notice(`✓ "${rule.source}"`);
-    void this.plugin.refreshHighlightData();
+    // Rétablir le texte original dans le fichier actif
+    await this.plugin.revertRuleInFile(rule.source, rule.replacement);
+    new Notice(t('notice.ruleDeleted', rule.source));
     this.close();
   }
 

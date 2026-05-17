@@ -238,7 +238,7 @@ export class OccurrencesModal extends Modal {
     const nv = validated.length, ni = ignored.length;
     new Notice(`✓ ${nv} remplacement${nv > 1 ? 's' : ''} appliqué${nv > 1 ? 's' : ''}` + (ni > 0 ? `, ${ni} ignoré${ni > 1 ? 's' : ''}` : ''));
 
-    void this.plugin.refreshHighlightData();
+    void this.plugin.refresh();
     this.close();
   }
 
