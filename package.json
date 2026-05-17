@@ -1,6 +1,6 @@
 {
   "name": "pseudonymizer-tool",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson, ICOR, SRT, CHAT/CHA).",
   "author": "Axelle Abbadie",
   "homepage": "https://cv.hal.science/axelle-abbadie/",

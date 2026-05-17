@@ -2,7 +2,7 @@
 
 > Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
 
-## [dev] v0.1.5 — branch `dev`
+## [prod] v0.1.5 — 17 May 2026
 
 ### New features
 

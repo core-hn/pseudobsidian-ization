@@ -501,7 +501,8 @@ export default class PseudObsPlugin extends Plugin {
 
       const buffer: Buffer = await nodeFs.promises.readFile(sourcePath);
       await this.ensureFolder(targetFolder);
-      await this.app.vault.createBinary(destPath, buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
+      const arrayBuf = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
+      await this.app.vault.createBinary(destPath, arrayBuf);
       new Notice(`Audio importé : ${audioFilename}`);
       return audioFilename;
     } catch {

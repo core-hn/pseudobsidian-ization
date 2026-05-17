@@ -85,7 +85,7 @@ function extractWords(rawText: string): VttWord[] {
 
   // Découper en segments : [timestamp, texte, timestamp, texte, ...]
   const words: VttWord[] = [];
-  let remaining = rawText;
+  const remaining = rawText;
   let currentTime = '';
 
   // Traiter segment par segment

@@ -3,7 +3,7 @@ import type PseudObsPlugin from '../main';
 import { MappingStore } from '../mappings/MappingStore';
 import type { EntityCategory, MappingFile } from '../types';
 import { t } from '../i18n';
-import { generateRedaction, REDACTION_CHAR } from '../pseudonymizer/Redaction';
+import { generateRedaction } from '../pseudonymizer/Redaction';
 
 type ApplyScope = 'occurrence' | 'file';
 

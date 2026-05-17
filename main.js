@@ -112,6 +112,14 @@ var init_en = __esm({
       "notice.nerModelLoading": "Loading NER model (first use \u2014 ~66 MB)\u2026",
       "notice.ruleNotFound": "Rule not found in mappings.",
       "notice.noCheckedDicts": "No dictionary checked.",
+      "mappingScanModal.saveExceptions": "Save exceptions",
+      "mappingScanModal.exceptionsSaved": "Exceptions saved to mapping.",
+      "panel.mappings.exceptions": "Exceptions",
+      "panel.mappings.exceptions.hint": "Occurrences explicitly ignored for this rule.",
+      "notice.notNoScribeFormat": "This file is not a noScribe transcript (pseudobs-format: vtt or html expected).",
+      "notice.wordsJsonMissing": "Timestamp file not found: {0}.words.json",
+      "notice.vttMismatch": "Warning: Markdown cue count and words.json cue count differ \u2014 exported VTT may be incomplete.",
+      "notice.vttExported": "VTT exported: {0}",
       "command.organizeCorpus": "Organize corpus",
       "command.addTranscription": "Add a transcription",
       "command.pseudonymizeFile": "Pseudonymize current file",
@@ -120,6 +128,7 @@ var init_en = __esm({
       "command.scanNer": "Scan file with NER detection",
       "command.scanDictionaries": "Scan file with dictionaries",
       "command.pseudonymizeSelection": "Pseudonymize selection",
+      "command.exportAsVtt": "Export as VTT",
       "command.openPanel": "Pseudonymization: open panel",
       "contextMenu.cancelPseudonymization": 'Cancel pseudonymization of "{0}"',
       "contextMenu.editRule": 'Edit rule for "{0}"',
@@ -164,13 +173,13 @@ var init_en = __esm({
       "scope.file": "File",
       "scope.folder": "Folder",
       "scope.vault": "Vault",
-      "status.validated": "\u2713",
-      "status.ignored": "\u2717",
-      "status.partial": "\u25D1",
-      "status.suggested": "?",
-      "status.conflict": "\u26A0",
-      "status.disabled": "\u2013",
-      "status.needs_review": "\u{1F441}",
+      "status.validated": "Active",
+      "status.ignored": "Ignored",
+      "status.partial": "Partial",
+      "status.suggested": "Suggested",
+      "status.conflict": "Conflict",
+      "status.disabled": "Inactive",
+      "status.needs_review": "Review",
       "panel.tab.mappings": "Mappings",
       "panel.tab.dictionaries": "Dictionaries",
       "panel.tab.exports": "Exports",
@@ -414,6 +423,14 @@ var init_fr = __esm({
       "notice.nerModelLoading": "Chargement du mod\xE8le NER (premi\xE8re utilisation \u2014 ~66 Mo)\u2026",
       "notice.ruleNotFound": "R\xE8gle introuvable dans les mappings.",
       "notice.noCheckedDicts": "Aucun dictionnaire coch\xE9.",
+      "mappingScanModal.saveExceptions": "Enregistrer les exceptions",
+      "mappingScanModal.exceptionsSaved": "Exceptions enregistr\xE9es dans le mapping.",
+      "panel.mappings.exceptions": "Exceptions",
+      "panel.mappings.exceptions.hint": "Occurrences explicitement ignor\xE9es pour cette r\xE8gle.",
+      "notice.notNoScribeFormat": "Ce fichier n'est pas une transcription noScribe (pseudobs-format: vtt ou html attendu).",
+      "notice.wordsJsonMissing": "Fichier de timestamps introuvable : {0}.words.json",
+      "notice.vttMismatch": "Attention : le nombre de cues du Markdown et du words.json diff\xE8re \u2014 le VTT export\xE9 peut \xEAtre incomplet.",
+      "notice.vttExported": "VTT export\xE9 : {0}",
       "command.organizeCorpus": "Organiser le corpus",
       "command.addTranscription": "Ajouter une transcription",
       "command.pseudonymizeFile": "Pseudonymiser le fichier courant",
@@ -422,6 +439,7 @@ var init_fr = __esm({
       "command.scanNer": "Scanner le fichier avec d\xE9tection NER",
       "command.scanDictionaries": "Scanner le fichier avec les dictionnaires",
       "command.pseudonymizeSelection": "Pseudonymiser la s\xE9lection",
+      "command.exportAsVtt": "Exporter en VTT",
       "command.openPanel": "Pseudonymisation : ouvrir le panneau",
       "contextMenu.cancelPseudonymization": 'Annuler la pseudonymisation de "{0}"',
       "contextMenu.editRule": 'Modifier la r\xE8gle pour "{0}"',
@@ -466,13 +484,13 @@ var init_fr = __esm({
       "scope.file": "Fichier",
       "scope.folder": "Dossier",
       "scope.vault": "Vault",
-      "status.validated": "\u2713",
-      "status.ignored": "\u2717",
-      "status.partial": "\u25D1",
-      "status.suggested": "?",
-      "status.conflict": "\u26A0",
-      "status.disabled": "\u2013",
-      "status.needs_review": "\u{1F441}",
+      "status.validated": "Actif",
+      "status.ignored": "Ignor\xE9",
+      "status.partial": "Partiel",
+      "status.suggested": "Sugg\xE9r\xE9",
+      "status.conflict": "Conflit",
+      "status.disabled": "Inactif",
+      "status.needs_review": "\xC0 r\xE9viser",
       "panel.tab.mappings": "Mappings",
       "panel.tab.dictionaries": "Dictionnaires",
       "panel.tab.exports": "Exports",
@@ -490,7 +508,7 @@ var init_fr = __esm({
       "panel.mappings.col.category": "Cat\xE9gorie",
       "panel.mappings.col.scope": "Port\xE9e",
       "panel.mappings.col.priority": "P.",
-      "panel.mappings.col.status": "Statut",
+      "panel.mappings.col.status": "\xC9tat",
       "panel.dict.noneInstalled": "Aucun dictionnaire install\xE9. Installez-en un depuis le wizard (Param\xE8tres \u2192 Reconfigurer) ou importez un fichier local.",
       "panel.dict.checkbox": "Inclure dans le scan group\xE9",
       "panel.dict.scanAll": "Scanner les dictionnaires coch\xE9s",
@@ -32453,7 +32471,7 @@ __export(main_exports, {
   default: () => PseudObsPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 init_i18n();
 init_settings();
 
@@ -32528,8 +32546,9 @@ var MappingStore = class _MappingStore {
   }
   // Règles validées applicables à un fichier donné (cascade file → folder → vault)
   getValidatedFor(filePath) {
+    const ACTIVE = /* @__PURE__ */ new Set(["validated", "partial"]);
     return this.getAll().filter((r) => {
-      if (r.status !== "validated")
+      if (!ACTIVE.has(r.status))
         return false;
       if (r.scope.type === "vault")
         return true;
@@ -33019,13 +33038,13 @@ function createPseudonymHighlighter(getData) {
         }
       }
       build(view) {
-        const { sources, replacements, nerCandidates } = getData();
-        if (sources.length === 0 && replacements.length === 0 && nerCandidates.length === 0)
+        const { sources, replacements, nerCandidates, ignoredTerms } = getData();
+        if (sources.length === 0 && replacements.length === 0 && nerCandidates.length === 0 && ignoredTerms.length === 0)
           return import_view.Decoration.none;
         const text = view.state.doc.toString();
         const lower = text.toLowerCase();
         const spans = [];
-        const collect = (terms, cls) => {
+        const collect = (terms, cls, prio) => {
           for (const term of terms) {
             if (!term)
               continue;
@@ -33035,7 +33054,21 @@ function createPseudonymHighlighter(getData) {
               const idx = lower.indexOf(needle, pos);
               if (idx === -1)
                 break;
-              spans.push({ from: idx, to: idx + term.length, cls });
+              spans.push({ from: idx, to: idx + term.length, cls, prio });
+              pos = idx + term.length;
+            }
+          }
+        };
+        const collectExact = (terms, cls, prio) => {
+          for (const term of terms) {
+            if (!term)
+              continue;
+            let pos = 0;
+            while (pos < text.length) {
+              const idx = text.indexOf(term, pos);
+              if (idx === -1)
+                break;
+              spans.push({ from: idx, to: idx + term.length, cls, prio });
               pos = idx + term.length;
             }
           }
@@ -33051,10 +33084,11 @@ function createPseudonymHighlighter(getData) {
             return false;
           return !sourcesLower.some((src) => src !== cl && src.includes(cl));
         });
-        collect(freshCandidates, "pseudobs-ner-candidate");
-        collect(sources, "pseudobs-source");
-        collect(replacements, "pseudobs-replaced");
-        spans.sort((a, b) => a.from - b.from || a.to - b.to);
+        collectExact(ignoredTerms, "pseudobs-exception", 0);
+        collect(replacements, "pseudobs-replaced", 1);
+        collect(sources, "pseudobs-source", 2);
+        collect(freshCandidates, "pseudobs-ner-candidate", 3);
+        spans.sort((a, b) => a.from - b.from || a.prio - b.prio || a.to - b.to);
         const builder = new import_state.RangeSetBuilder();
         let lastTo = -1;
         for (const { from, to, cls } of spans) {
@@ -33183,7 +33217,7 @@ var EditRuleModal = class extends import_obsidian5.Modal {
 };
 
 // src/ui/PseudonymizationView.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 init_i18n();
 
 // src/pseudonymizer/ReplacementPlanner.ts
@@ -33283,7 +33317,7 @@ function scanOccurrences(content, filePath, rules, settings = DEFAULT_PLANNER_SE
 }
 
 // src/ui/MappingScanReviewModal.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 init_i18n();
 
 // src/pseudonymizer/SpanProtector.ts
@@ -33316,15 +33350,134 @@ function applySpans(text, spans, marker) {
   return output;
 }
 
+// src/ui/OccurrencesContextModal.ts
+var import_obsidian6 = require("obsidian");
+var OccurrencesContextModal = class extends import_obsidian6.Modal {
+  constructor(app, rule, occurrences, existingDecisions, onConfirm) {
+    super(app);
+    this.cardRefs = /* @__PURE__ */ new Map();
+    this.rule = rule;
+    this.occurrences = occurrences;
+    this.decisions = new Map(existingDecisions);
+    this.onConfirm = onConfirm;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.addClass("pseudobs-ctx-modal");
+    contentEl.createEl("h3", {
+      text: `${this.rule.source}  \u2192  ${this.rule.replacement}`,
+      cls: "pseudobs-ctx-modal-title"
+    });
+    contentEl.createEl("p", {
+      text: `${this.occurrences.length} occurrence${this.occurrences.length > 1 ? "s" : ""} \u2014 s\xE9lectionnez celles \xE0 remplacer.`,
+      cls: "pseudobs-view-hint"
+    });
+    new import_obsidian6.Setting(contentEl).addButton(
+      (b) => b.setButtonText("Tout valider").onClick(() => {
+        for (const occ of this.occurrences)
+          this.decisions.set(occ.id, "validated");
+        this.updateAllCards();
+      })
+    ).addButton(
+      (b) => b.setButtonText("Tout ignorer").onClick(() => {
+        for (const occ of this.occurrences)
+          this.decisions.set(occ.id, "ignored");
+        this.updateAllCards();
+      })
+    );
+    const scroll = contentEl.createDiv("pseudobs-ctx-modal-scroll");
+    for (const occ of this.occurrences) {
+      this.buildCard(scroll, occ);
+    }
+    contentEl.createEl("hr");
+    new import_obsidian6.Setting(contentEl).addButton(
+      (b) => b.setButtonText("Annuler").onClick(() => this.close())
+    ).addButton(
+      (b) => b.setButtonText("Confirmer la s\xE9lection").setCta().onClick(() => {
+        this.onConfirm(new Map(this.decisions));
+        this.close();
+      })
+    );
+  }
+  buildCard(container, occ) {
+    const card = container.createDiv("pseudobs-occ-card");
+    const srcLine = card.createDiv("pseudobs-occ-line");
+    srcLine.createSpan({ text: occ.contextBefore, cls: "pseudobs-ctx-side" });
+    srcLine.createSpan({ text: occ.text, cls: "pseudobs-occ-term" });
+    srcLine.createSpan({ text: occ.contextAfter, cls: "pseudobs-ctx-side" });
+    const arrow = card.createDiv("pseudobs-occ-arrow");
+    arrow.setText("\u2193");
+    const resLine = card.createDiv("pseudobs-occ-line pseudobs-occ-result-line");
+    resLine.createSpan({ text: occ.contextBefore, cls: "pseudobs-ctx-side" });
+    resLine.createSpan({ text: this.rule.replacement, cls: "pseudobs-occ-replacement" });
+    resLine.createSpan({ text: occ.contextAfter, cls: "pseudobs-ctx-side" });
+    const statusLabel2 = card.createDiv("pseudobs-occ-status-label");
+    card.createEl("small", { text: `ligne ${occ.line}`, cls: "pseudobs-occ-meta" });
+    const actions = card.createDiv("pseudobs-occ-actions");
+    const btnRefs = /* @__PURE__ */ new Map();
+    for (const [label, value, title] of [
+      ["\u2713", "validated", "Valider"],
+      ["\u2717", "ignored", "Ignorer"],
+      ["\u26A0", "false_positive", "Faux positif"]
+    ]) {
+      const btn = actions.createEl("button", { text: label });
+      btn.title = title;
+      btn.addClass("pseudobs-occ-btn");
+      btn.addEventListener("click", () => {
+        this.decisions.set(occ.id, value);
+        this.updateCard(occ.id);
+      });
+      btnRefs.set(value, btn);
+    }
+    this.cardRefs.set(occ.id, { card, buttons: btnRefs, arrow, resLine, statusLabel: statusLabel2 });
+    this.updateCard(occ.id);
+  }
+  updateCard(occId) {
+    const ref = this.cardRefs.get(occId);
+    if (!ref)
+      return;
+    const decision = this.decisions.get(occId) ?? "validated";
+    ref.card.removeClass("pseudobs-occ-validated", "pseudobs-occ-ignored", "pseudobs-occ-false_positive");
+    ref.card.addClass(`pseudobs-occ-${decision}`);
+    for (const [value, btn] of ref.buttons) {
+      btn.toggleClass("pseudobs-occ-btn-active", value === decision);
+    }
+    const show = decision === "validated";
+    ref.arrow.toggle(show);
+    ref.resLine.toggle(show);
+    ref.statusLabel.toggle(!show);
+    ref.statusLabel.setText(
+      decision === "ignored" ? "Conserv\xE9 tel quel" : decision === "false_positive" ? "Faux positif \u2014 exclu" : ""
+    );
+  }
+  updateAllCards() {
+    for (const occId of this.cardRefs.keys())
+      this.updateCard(occId);
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
 // src/ui/MappingScanReviewModal.ts
-var MappingScanReviewModal = class extends import_obsidian6.Modal {
+var MappingScanReviewModal = class extends import_obsidian7.Modal {
   constructor(app, plugin, file, content, ruleResults) {
     super(app);
+    // Décisions par règle : ruleId → occId → decision
+    this.decisionsMap = /* @__PURE__ */ new Map();
+    // Cellules de comptage — pour mise à jour live
+    this.countCells = [];
     this.plugin = plugin;
     this.file = file;
     this.content = content;
     this.ruleResults = ruleResults;
     this.checked = ruleResults.map(() => true);
+    for (const { rule, occurrences } of ruleResults) {
+      const map = /* @__PURE__ */ new Map();
+      for (const occ of occurrences)
+        map.set(occ.id, "validated");
+      this.decisionsMap.set(rule.id, map);
+    }
   }
   onOpen() {
     this.modalEl.addClass("pseudobs-modal-review-outer");
@@ -33333,7 +33486,12 @@ var MappingScanReviewModal = class extends import_obsidian6.Modal {
     contentEl.createEl("h2", { text: t("mappingScanModal.title") });
     const nr = this.ruleResults.length;
     contentEl.createEl("p", {
-      text: t("mappingScanModal.summary", String(nr), nr > 1 ? t("mappingScanModal.summary.rules") : t("mappingScanModal.summary.rule"), this.file.name),
+      text: t(
+        "mappingScanModal.summary",
+        String(nr),
+        nr > 1 ? t("mappingScanModal.summary.rules") : t("mappingScanModal.summary.rule"),
+        this.file.name
+      ),
       cls: "pseudobs-scan-summary"
     });
     contentEl.createEl("p", { text: t("mappingScanModal.hint"), cls: "pseudobs-view-hint" });
@@ -33345,7 +33503,7 @@ var MappingScanReviewModal = class extends import_obsidian6.Modal {
       (h) => hr.createEl("th", { text: h })
     );
     const tbody = table.createEl("tbody");
-    this.ruleResults.forEach(({ rule, matchCount }, i2) => {
+    this.ruleResults.forEach(({ rule, occurrences }, i2) => {
       const tr = tbody.createEl("tr", { cls: "pseudobs-dict-review-row" });
       const cb = tr.createEl("td").createEl("input");
       cb.type = "checkbox";
@@ -33362,54 +33520,129 @@ var MappingScanReviewModal = class extends import_obsidian6.Modal {
       const s = this.plugin.settings;
       const displayRep = s.useMarkerInExport ? `${s.markerOpen}${rule.replacement}${s.markerClose}` : rule.replacement;
       repCell.createEl("span", { text: displayRep, cls: "pseudobs-dict-review-rep-static" });
-      tr.createEl("td", { text: String(matchCount), cls: "pseudobs-dict-review-count" });
+      const countCell = tr.createEl("td", { cls: "pseudobs-dict-review-count" });
+      this.countCells.push(countCell);
+      this.renderCountCell(countCell, rule, occurrences, i2);
     });
     const footer = contentEl.createDiv("pseudobs-dict-review-footer");
     footer.createEl("button", { text: t("mappingScanModal.cancel") }).addEventListener("click", () => this.close());
+    footer.createEl("button", { text: t("mappingScanModal.saveExceptions"), cls: "pseudobs-save-exceptions-btn" }).addEventListener("click", () => void this.saveExceptions());
     this.applyBtn = footer.createEl("button", { cls: "mod-cta" });
     this.applyBtn.addEventListener("click", () => void this.apply());
     this.updateApplyLabel();
   }
+  renderCountCell(cell, rule, occurrences, ruleIndex) {
+    cell.empty();
+    const decisions = this.decisionsMap.get(rule.id);
+    const validated = occurrences.filter((o) => decisions.get(o.id) === "validated").length;
+    const total = occurrences.length;
+    if (total === 0) {
+      cell.createSpan({ text: "0" });
+      return;
+    }
+    const btn = cell.createEl("button", { cls: "pseudobs-count-btn" });
+    btn.setText(validated < total ? `${validated} / ${total}` : String(total));
+    btn.title = "Voir et s\xE9lectionner les candidats";
+    btn.addEventListener("click", () => {
+      new OccurrencesContextModal(
+        this.app,
+        rule,
+        occurrences,
+        decisions,
+        (newDecisions) => {
+          this.decisionsMap.set(rule.id, newDecisions);
+          this.renderCountCell(cell, rule, occurrences, ruleIndex);
+          this.updateApplyLabel();
+        }
+      ).open();
+    });
+  }
+  countValidated() {
+    return this.ruleResults.reduce((sum, { rule, occurrences }, i2) => {
+      if (!this.checked[i2])
+        return sum;
+      const decisions = this.decisionsMap.get(rule.id);
+      return sum + occurrences.filter((o) => decisions.get(o.id) === "validated").length;
+    }, 0);
+  }
   updateApplyLabel() {
-    const n = this.checked.filter(Boolean).length;
-    const total = this.ruleResults.filter((_, i2) => this.checked[i2]).reduce((sum, r) => sum + r.matchCount, 0);
-    this.applyBtn.textContent = n === 0 ? t("mappingScanModal.noRules") : t(
+    const rules = this.checked.filter(Boolean).length;
+    const total = this.countValidated();
+    this.applyBtn.textContent = rules === 0 ? t("mappingScanModal.noRules") : t(
       "mappingScanModal.apply",
-      String(n),
-      n > 1 ? t("mappingScanModal.apply.rules") : t("mappingScanModal.apply.rule"),
+      String(rules),
+      rules > 1 ? t("mappingScanModal.apply.rules") : t("mappingScanModal.apply.rule"),
       String(total),
       total > 1 ? t("mappingScanModal.apply.occurrences") : t("mappingScanModal.apply.occurrence")
     );
-    this.applyBtn.toggleClass("pseudobs-dict-review-btn-empty", n === 0);
+    this.applyBtn.toggleClass("pseudobs-dict-review-btn-empty", rules === 0);
+  }
+  /** Enregistre les exceptions dans le mapping sans appliquer de remplacements. */
+  async saveExceptions() {
+    await this.persistIgnoredOccurrences();
+    new import_obsidian7.Notice(t("mappingScanModal.exceptionsSaved"));
+    this.close();
+  }
+  /**
+   * Persiste les occurrences ignorées (✗ et ⚠) dans le mapping.json de chaque règle.
+   * S'appuie sur findRuleByTerm pour localiser le bon mapping file.
+   * Les nouvelles exceptions sont fusionnées avec les existantes (déduplication par texte).
+   */
+  async persistIgnoredOccurrences() {
+    for (let i2 = 0; i2 < this.ruleResults.length; i2++) {
+      const { rule, occurrences } = this.ruleResults[i2];
+      const decisions = this.decisionsMap.get(rule.id);
+      const newIgnored = occurrences.filter((occ) => {
+        const d = decisions.get(occ.id) ?? "validated";
+        return d === "ignored" || d === "false_positive";
+      }).map((occ) => ({ text: occ.text, contextBefore: occ.contextBefore, contextAfter: occ.contextAfter }));
+      if (newIgnored.length === 0)
+        continue;
+      const location = await this.plugin.scopeResolver.findRuleByTerm(rule.source);
+      if (!location)
+        continue;
+      const existing = location.rule.ignoredOccurrences ?? [];
+      const existingTexts = new Set(existing.map((o) => o.text));
+      const merged = [...existing, ...newIgnored.filter((o) => !existingTexts.has(o.text))];
+      location.store.update(rule.id, { ignoredOccurrences: merged });
+      await this.plugin.scopeResolver.saveStore(location.store, location.filePath);
+    }
+    void this.plugin.refresh();
   }
   async apply() {
-    const checkedRules = this.ruleResults.filter((_, i2) => this.checked[i2]).map((r) => r.rule);
-    if (checkedRules.length === 0) {
+    const s = this.plugin.settings;
+    const wrap = (r) => s.useMarkerInExport ? `${s.markerOpen}${r}${s.markerClose}` : r;
+    const spans = [];
+    for (let i2 = 0; i2 < this.ruleResults.length; i2++) {
+      if (!this.checked[i2])
+        continue;
+      const { rule, occurrences } = this.ruleResults[i2];
+      const decisions = this.decisionsMap.get(rule.id);
+      for (const occ of occurrences) {
+        if ((decisions.get(occ.id) ?? "validated") !== "validated")
+          continue;
+        spans.push({
+          start: occ.start,
+          end: occ.end,
+          source: occ.text,
+          replacement: wrap(rule.replacement),
+          mappingId: rule.id,
+          priority: rule.priority
+        });
+      }
+    }
+    if (spans.length === 0) {
+      new import_obsidian7.Notice(t("notice.noOccurrences"));
       this.close();
       return;
     }
     this.applyBtn.setAttr("disabled", "true");
-    const s = this.plugin.settings;
-    const marker = s.useMarkerInExport ? { open: s.markerOpen, close: s.markerClose } : void 0;
-    const allSpans = checkedRules.flatMap(
-      (rule) => findSpansForRule(this.content, rule, {
-        caseSensitive: s.caseSensitive,
-        wholeWordOnly: s.wholeWordOnly
-      }).map(
-        (span) => marker ? { ...span, replacement: `${marker.open}${span.replacement}${marker.close}` } : span
-      )
-    );
-    const resolved = resolveSpans(allSpans);
-    if (resolved.length === 0) {
-      new import_obsidian6.Notice(t("notice.noOccurrences"));
-      this.close();
-      return;
-    }
+    const resolved = resolveSpans(spans);
     const modified = applySpans(this.content, resolved);
     await this.app.vault.modify(this.file, modified);
-    void this.plugin.refresh();
+    await this.persistIgnoredOccurrences();
     const total = resolved.length;
-    new import_obsidian6.Notice(t(
+    new import_obsidian7.Notice(t(
       "notice.occurrencesPseudonymized",
       String(total),
       total > 1 ? t("notice.occurrencesPseudonymized.occurrences") : t("notice.occurrencesPseudonymized.occurrence"),
@@ -33433,7 +33666,7 @@ function scopeLabel(s) {
 function statusLabel(s) {
   return t(`status.${s}`) || s;
 }
-var PseudonymizationView = class extends import_obsidian7.ItemView {
+var PseudonymizationView = class extends import_obsidian8.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.activeTab = "mappings";
@@ -33517,7 +33750,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
   async onFileChange() {
     if (this._renderingTab)
       return;
-    if (this.app.workspace.getActiveViewOfType(import_obsidian7.ItemView) === this)
+    if (this.app.workspace.getActiveViewOfType(import_obsidian8.ItemView) === this)
       return;
     const f = this.app.workspace.getActiveFile();
     if (f)
@@ -33537,11 +33770,11 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     const file = this.getFile();
     const toolbar = el.createDiv("pseudobs-view-toolbar");
     const addRuleBtn = toolbar.createEl("button", { cls: "pseudobs-view-action-btn" });
-    (0, import_obsidian7.setIcon)(addRuleBtn, "list-plus");
+    (0, import_obsidian8.setIcon)(addRuleBtn, "list-plus");
     addRuleBtn.createSpan({ text: t("panel.mappings.addRule") });
     addRuleBtn.addEventListener("click", () => new RuleModal(this.app, this.plugin).open());
     const scanBtn = toolbar.createEl("button", { cls: "pseudobs-view-action-btn" });
-    (0, import_obsidian7.setIcon)(scanBtn, "scan-search");
+    (0, import_obsidian8.setIcon)(scanBtn, "scan-search");
     scanBtn.createSpan({ text: t("panel.mappings.scanFile") });
     if (!file)
       scanBtn.setAttr("disabled", "true");
@@ -33555,21 +33788,27 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
           const content = await this.app.vault.read(file);
           const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
           if (rules.length === 0) {
-            new import_obsidian7.Notice(t("panel.mappings.noRulesHint"));
+            new import_obsidian8.Notice(t("panel.mappings.noRulesHint"));
             return;
           }
           const occs = scanOccurrences(content, file.path, rules, {
             caseSensitive: this.plugin.settings.caseSensitive,
             wholeWordOnly: this.plugin.settings.wholeWordOnly
           });
-          const countByRule = /* @__PURE__ */ new Map();
+          const occsByRule = /* @__PURE__ */ new Map();
           for (const occ of occs) {
             const id = occ.mappingId ?? "";
-            countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+            if (!occsByRule.has(id))
+              occsByRule.set(id, []);
+            occsByRule.get(id).push(occ);
           }
-          const ruleResults = rules.filter((r) => countByRule.has(r.id)).map((r) => ({ rule: r, matchCount: countByRule.get(r.id) }));
+          const ruleResults = rules.filter((r) => occsByRule.has(r.id)).map((r) => ({
+            rule: r,
+            matchCount: occsByRule.get(r.id).length,
+            occurrences: occsByRule.get(r.id)
+          }));
           if (ruleResults.length === 0) {
-            new import_obsidian7.Notice(t("notice.noOccurrences"));
+            new import_obsidian8.Notice(t("notice.noOccurrences"));
             return;
           }
           new MappingScanReviewModal(this.app, this.plugin, file, content, ruleResults).open();
@@ -33634,8 +33873,37 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
         row.createEl("td", { text: String(rule.priority) });
         row.createEl("td", { text: statusLabel(rule.status) });
         const editBtn = row.createEl("td").createEl("button", { cls: "pseudobs-mappings-edit-btn" });
-        (0, import_obsidian7.setIcon)(editBtn, "pencil");
+        (0, import_obsidian8.setIcon)(editBtn, "pencil");
         editBtn.addEventListener("click", () => new EditRuleModal(this.app, this.plugin, loc).open());
+      }
+    }
+    const allIgnored = locations.flatMap(
+      ({ rule, store, filePath }) => (rule.ignoredOccurrences ?? []).map((occ) => ({ occ, rule, store, filePath }))
+    );
+    if (allIgnored.length > 0) {
+      el.createEl("h3", { text: t("panel.mappings.exceptions"), cls: "pseudobs-mappings-scope-heading" });
+      el.createEl("p", { text: t("panel.mappings.exceptions.hint"), cls: "pseudobs-view-hint" });
+      const exceptionsGrid = el.createDiv("pseudobs-exceptions-grid");
+      for (const { occ, rule, store, filePath } of allIgnored) {
+        const card = exceptionsGrid.createDiv("pseudobs-exception-card");
+        card.createEl("div", {
+          text: `${rule.source} \u2192 ${rule.replacement}`,
+          cls: "pseudobs-exception-card-rule"
+        });
+        const ctx = card.createDiv("pseudobs-exception-card-ctx");
+        ctx.createSpan({ text: occ.contextBefore, cls: "pseudobs-ctx-side" });
+        ctx.createSpan({ text: occ.text, cls: "pseudobs-exception-card-term" });
+        ctx.createSpan({ text: occ.contextAfter, cls: "pseudobs-ctx-side" });
+        const delBtn = card.createEl("button", { cls: "pseudobs-exception-card-del" });
+        (0, import_obsidian8.setIcon)(delBtn, "x");
+        delBtn.title = "Supprimer cette exception";
+        delBtn.addEventListener("click", async () => {
+          const updated = (rule.ignoredOccurrences ?? []).filter((o) => o.text !== occ.text);
+          store.update(rule.id, { ignoredOccurrences: updated });
+          await this.plugin.scopeResolver.saveStore(store, filePath);
+          void this.plugin.refresh();
+          void this.renderTab("mappings");
+        });
       }
     }
   }
@@ -33666,7 +33934,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
         info.createEl("small", { text: `${dict.dictionaryId}.dict.json`, cls: "pseudobs-dict-card-filename" });
         if (dict.roles?.detection) {
           const scanBtn = card.createEl("button", { cls: "pseudobs-dict-card-scan mod-cta" });
-          (0, import_obsidian7.setIcon)(scanBtn, "scan-search");
+          (0, import_obsidian8.setIcon)(scanBtn, "scan-search");
           scanBtn.setAttribute("aria-label", t("panel.dict.scanWith", dict.label));
           scanBtn.title = t("panel.dict.scanWith", dict.label);
           scanBtn.addEventListener("click", () => {
@@ -33674,7 +33942,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
           });
         }
         const removeBtn = card.createEl("button", { cls: "pseudobs-dict-card-remove" });
-        (0, import_obsidian7.setIcon)(removeBtn, "trash-2");
+        (0, import_obsidian8.setIcon)(removeBtn, "trash-2");
         removeBtn.setAttribute("aria-label", t("panel.dict.remove"));
         removeBtn.title = t("panel.dict.remove");
         removeBtn.addEventListener("click", () => {
@@ -33682,7 +33950,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
             const f = this.app.vault.getAbstractFileByPath(
               `${this.plugin.settings.dictionariesFolder}/${dict.dictionaryId}.dict.json`
             );
-            if (f instanceof import_obsidian7.TFile)
+            if (f instanceof import_obsidian8.TFile)
               await this.app.fileManager.trashFile(f);
             this.checkedDicts.delete(dict.dictionaryId);
             await this.plugin.dictionaryLoader.load();
@@ -33692,12 +33960,12 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       }
       el.createEl("hr");
       const groupScanBtn = el.createEl("button", { cls: "pseudobs-dict-group-scan mod-cta" });
-      (0, import_obsidian7.setIcon)(groupScanBtn, "scan-search");
+      (0, import_obsidian8.setIcon)(groupScanBtn, "scan-search");
       groupScanBtn.createSpan({ text: t("panel.dict.scanAll") });
       groupScanBtn.addEventListener("click", () => {
         const ids = [...this.checkedDicts];
         if (ids.length === 0) {
-          new import_obsidian7.Notice(t("notice.noCheckedDicts"));
+          new import_obsidian8.Notice(t("notice.noCheckedDicts"));
           return;
         }
         void this.plugin.scanCurrentFileWithDictionaries(ids);
@@ -33731,18 +33999,18 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
                 throw new Error("Format invalide");
               const dest = `${this.plugin.settings.dictionariesFolder}/${f.name}`;
               const existing = this.app.vault.getAbstractFileByPath(dest);
-              if (existing instanceof import_obsidian7.TFile) {
+              if (existing instanceof import_obsidian8.TFile) {
                 await this.app.vault.modify(existing, text);
               } else {
                 await this.app.vault.create(dest, text);
               }
               ok++;
             } catch {
-              new import_obsidian7.Notice(t("notice.invalidFormat", f.name));
+              new import_obsidian8.Notice(t("notice.invalidFormat", f.name));
             }
           }
           if (ok > 0) {
-            new import_obsidian7.Notice(t("notice.dictImported", String(ok), ok > 1 ? t("notice.dictImported.many") : t("notice.dictImported.one")));
+            new import_obsidian8.Notice(t("notice.dictImported", String(ok), ok > 1 ? t("notice.dictImported.many") : t("notice.dictImported.one")));
             await this.plugin.dictionaryLoader.load();
           }
           await this.renderTab("dictionaries");
@@ -33759,12 +34027,12 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       return;
     }
     el.createEl("p", { text: `${file.name}`, cls: "pseudobs-view-filename" });
-    new import_obsidian7.Setting(el).setName(t("panel.exports.pseudonymize")).addButton(
+    new import_obsidian8.Setting(el).setName(t("panel.exports.pseudonymize")).addButton(
       (btn) => btn.setButtonText(t("panel.exports.pseudonymize")).setCta().onClick(() => {
         void this.plugin.pseudonymizeActiveFile();
       })
     );
-    new import_obsidian7.Setting(el).setName(t("panel.exports.exportMapping")).addButton(
+    new import_obsidian8.Setting(el).setName(t("panel.exports.exportMapping")).addButton(
       (btn) => btn.setButtonText(t("panel.exports.exportMapping")).onClick(() => {
         void this.plugin.exportMappingForFile(file);
       })
@@ -33775,19 +34043,19 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
     const s = this.plugin.settings;
     const nerScanBtn = el.createEl("button", { cls: "pseudobs-view-action-btn mod-cta" });
     const nerScanIcon = nerScanBtn.createSpan();
-    (0, import_obsidian7.setIcon)(nerScanIcon, "scan-search");
+    (0, import_obsidian8.setIcon)(nerScanIcon, "scan-search");
     nerScanBtn.createSpan({ text: ` ${t("panel.ner.scanBtn")}` });
     nerScanBtn.title = t("panel.ner.scanBtn");
     nerScanBtn.addEventListener("click", () => {
       void (async () => {
         nerScanBtn.setAttr("disabled", "true");
-        (0, import_obsidian7.setIcon)(nerScanIcon, "loader-circle");
+        (0, import_obsidian8.setIcon)(nerScanIcon, "loader-circle");
         nerScanIcon.addClass("pseudobs-spin");
         try {
           await this.plugin.scanCurrentFileNer();
         } finally {
           nerScanBtn.removeAttribute("disabled");
-          (0, import_obsidian7.setIcon)(nerScanIcon, "scan-search");
+          (0, import_obsidian8.setIcon)(nerScanIcon, "scan-search");
           nerScanIcon.removeClass("pseudobs-spin");
         }
       })();
@@ -33842,7 +34110,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
       })();
     });
     const resetBtn = fwSection.createEl("button", { cls: "pseudobs-view-action-btn" });
-    (0, import_obsidian7.setIcon)(resetBtn, "rotate-ccw");
+    (0, import_obsidian8.setIcon)(resetBtn, "rotate-ccw");
     resetBtn.createSpan({ text: t("panel.ner.reset") });
     resetBtn.addClass("pseudobs-ner-reset-btn");
     resetBtn.addEventListener("click", () => {
@@ -33863,7 +34131,7 @@ var PseudonymizationView = class extends import_obsidian7.ItemView {
 init_OnboardingModal();
 
 // src/scanner/OnnxNerScanner.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 var path3 = __toESM(require("path"));
 var os = __toESM(require("os"));
 var MODEL_ID = "Xenova/bert-base-multilingual-cased-ner-hrl";
@@ -33914,7 +34182,7 @@ var OnnxNerScanner = class {
   }
   getPluginDir() {
     const { adapter } = this.app.vault;
-    if (!(adapter instanceof import_obsidian8.FileSystemAdapter))
+    if (!(adapter instanceof import_obsidian9.FileSystemAdapter))
       return null;
     return path3.join(
       adapter.getBasePath(),
@@ -33940,7 +34208,7 @@ var OnnxNerScanner = class {
     }
   }
   async _doLoad() {
-    const notice = new import_obsidian8.Notice("Chargement du mod\xE8le NER (premi\xE8re utilisation \u2014 ~66 Mo)\u2026", 0);
+    const notice = new import_obsidian9.Notice("Chargement du mod\xE8le NER (premi\xE8re utilisation \u2014 ~66 Mo)\u2026", 0);
     try {
       const t2 = await Promise.resolve().then(() => (init_transformers(), transformers_exports));
       const { env: env3, pipeline: pipeline2 } = t2;
@@ -33960,7 +34228,7 @@ var OnnxNerScanner = class {
       env3.allowLocalModels = false;
       _pipeline = await pipeline2("token-classification", MODEL_ID);
       notice.hide();
-      new import_obsidian8.Notice("\u2713 Mod\xE8le NER charg\xE9", 3e3);
+      new import_obsidian9.Notice("\u2713 Mod\xE8le NER charg\xE9", 3e3);
     } catch (e) {
       notice.hide();
       const err = e;
@@ -34348,9 +34616,9 @@ var DictionaryLoader = class {
 };
 
 // src/ui/DictScanReviewModal.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 init_i18n();
-var DictScanReviewModal = class extends import_obsidian9.Modal {
+var DictScanReviewModal = class extends import_obsidian10.Modal {
   constructor(app, plugin, file, results, existingReplacements) {
     super(app);
     // remplacement fixe pour les entrées word-to-word
@@ -34501,7 +34769,7 @@ var DictScanReviewModal = class extends import_obsidian9.Modal {
     const mappingPath = `${this.plugin.settings.mappingFolder}/${this.file.basename}.mapping.json`;
     let store;
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
-    if (mappingFile instanceof import_obsidian9.TFile) {
+    if (mappingFile instanceof import_obsidian10.TFile) {
       const data = JSON.parse(await this.app.vault.read(mappingFile));
       store = MappingStore.fromJSON(data);
     } else {
@@ -34527,13 +34795,13 @@ var DictScanReviewModal = class extends import_obsidian9.Modal {
       });
     }
     const json = JSON.stringify(store.toJSON(), null, 2);
-    if (mappingFile instanceof import_obsidian9.TFile) {
+    if (mappingFile instanceof import_obsidian10.TFile) {
       await this.app.vault.modify(mappingFile, json);
     } else {
       await this.app.vault.create(mappingPath, json);
     }
     const n = toCreate.length;
-    new import_obsidian9.Notice(t("notice.rulesCreated", String(n), n > 1 ? t("notice.rulesCreated.rules") : t("notice.rulesCreated.rule")));
+    new import_obsidian10.Notice(t("notice.rulesCreated", String(n), n > 1 ? t("notice.rulesCreated.rules") : t("notice.rulesCreated.rule")));
     void this.plugin.refresh();
     this.close();
   }
@@ -34543,15 +34811,15 @@ var DictScanReviewModal = class extends import_obsidian9.Modal {
 };
 
 // src/ui/CorpusModal.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 init_i18n();
 function getCorpusClasses(app, transcriptionsFolder) {
   const folder = app.vault.getAbstractFileByPath(transcriptionsFolder);
-  if (!(folder instanceof import_obsidian10.TFolder))
+  if (!(folder instanceof import_obsidian11.TFolder))
     return [];
-  return folder.children.filter((c) => c instanceof import_obsidian10.TFolder).map((c) => c.name).sort();
+  return folder.children.filter((c) => c instanceof import_obsidian11.TFolder).map((c) => c.name).sort();
 }
-var CorpusModal = class extends import_obsidian10.Modal {
+var CorpusModal = class extends import_obsidian11.Modal {
   constructor(app, plugin) {
     super(app);
     this.plugin = plugin;
@@ -34595,7 +34863,7 @@ var CorpusModal = class extends import_obsidian10.Modal {
     const s = this.plugin.settings;
     const transcPath = `${s.transcriptionsFolder}/${cls}`;
     const folder = this.app.vault.getAbstractFileByPath(transcPath);
-    const fileCount = folder instanceof import_obsidian10.TFolder ? folder.children.filter((c) => !(c instanceof import_obsidian10.TFolder)).length : 0;
+    const fileCount = folder instanceof import_obsidian11.TFolder ? folder.children.filter((c) => !(c instanceof import_obsidian11.TFolder)).length : 0;
     const li = list.createEl("li", { cls: "pseudobs-corpus-class-item" });
     const nameWrap = li.createDiv("pseudobs-corpus-class-name");
     nameWrap.createEl("strong", { text: cls });
@@ -34617,12 +34885,12 @@ var CorpusModal = class extends import_obsidian10.Modal {
   async addClass(name2) {
     const trimmed = name2.trim();
     if (!trimmed) {
-      new import_obsidian10.Notice(t("corpus.modal.classNameEmpty"));
+      new import_obsidian11.Notice(t("corpus.modal.classNameEmpty"));
       return;
     }
     const existing = getCorpusClasses(this.app, this.plugin.settings.transcriptionsFolder);
     if (existing.includes(trimmed)) {
-      new import_obsidian10.Notice(t("corpus.modal.classExists"));
+      new import_obsidian11.Notice(t("corpus.modal.classExists"));
       return;
     }
     const s = this.plugin.settings;
@@ -34649,7 +34917,7 @@ var CorpusModal = class extends import_obsidian10.Modal {
     this.contentEl.empty();
   }
 };
-var ClassSelectModal = class extends import_obsidian10.Modal {
+var ClassSelectModal = class extends import_obsidian11.Modal {
   constructor(app, plugin, classes) {
     super(app);
     this.plugin = plugin;
@@ -34802,7 +35070,7 @@ function extractWords(rawText) {
     return clean ? [{ text: clean, time: "" }] : [];
   }
   const words = [];
-  let remaining = rawText;
+  const remaining = rawText;
   let currentTime = "";
   const parts = remaining.split(WORD_TIME_RE);
   for (let i2 = 0; i2 < parts.length; i2++) {
@@ -34922,6 +35190,258 @@ var VttParser = class {
   }
 };
 
+// src/parsers/NoScribeHtmlParser.ts
+var PARA_RE = /<p(?:\s[^>]*)?>(?<content>.*?)<\/p>/gs;
+var ANCHOR_RE = /<a\s+name="(ts_[^"]+)"[^>]*>(.*?)<\/a>/gs;
+var TS_NAME_RE = /^ts_(\d+)_(\d+)_(\w*)$/;
+var DISPLAY_TS_RE = /^\[\d{2}:\d{2}:\d{2}\]$/;
+var SPEAKER_RE = /^(.+?)\s*:\s*/;
+var ALL_TAGS_RE2 = /<[^>]+>/g;
+var HTML_ENTITIES = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#039;": "'",
+  "&apos;": "'",
+  "&nbsp;": "\xA0"
+};
+function decodeEntities(text) {
+  return text.replace(/&[^;]+;/g, (m) => HTML_ENTITIES[m] ?? m);
+}
+function stripTags2(html) {
+  return decodeEntities(html.replace(ALL_TAGS_RE2, ""));
+}
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+function pad3(n) {
+  return String(n).padStart(3, "0");
+}
+function msToTimestamp(ms) {
+  const h = Math.floor(ms / 36e5);
+  const m = Math.floor(ms % 36e5 / 6e4);
+  const s = Math.floor(ms % 6e4 / 1e3);
+  const mss = ms % 1e3;
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}.${pad3(mss)}`;
+}
+var NoScribeHtmlParser = class {
+  /** Vérifie qu'un contenu HTML est une sortie noScribe. */
+  static isNoScribeHtml(content) {
+    return content.includes("qrichtext") && content.includes('<a name="ts_');
+  }
+  /** Extrait le chemin absolu du fichier audio depuis la meta tag noScribe. */
+  static extractAudioSource(content) {
+    const m = /meta\s+name="audio_source"\s+content="([^"]+)"/.exec(content);
+    return m ? m[1] : null;
+  }
+  parse(content) {
+    const cues = [];
+    PARA_RE.lastIndex = 0;
+    let paraMatch;
+    while ((paraMatch = PARA_RE.exec(content)) !== null) {
+      const paraHtml = paraMatch[1];
+      if (!paraHtml.includes("ts_"))
+        continue;
+      const grouped = /* @__PURE__ */ new Map();
+      const groupOrder = [];
+      ANCHOR_RE.lastIndex = 0;
+      let anchorMatch;
+      while ((anchorMatch = ANCHOR_RE.exec(paraHtml)) !== null) {
+        const tsName = anchorMatch[1];
+        const innerHtml = anchorMatch[2];
+        const tsMatch = TS_NAME_RE.exec(tsName);
+        if (!tsMatch)
+          continue;
+        const text = stripTags2(innerHtml);
+        if (DISPLAY_TS_RE.test(text.trim()))
+          continue;
+        if (!grouped.has(tsName)) {
+          grouped.set(tsName, {
+            startMs: parseInt(tsMatch[1], 10),
+            endMs: parseInt(tsMatch[2], 10),
+            speakerId: tsMatch[3],
+            texts: []
+          });
+          groupOrder.push(tsName);
+        }
+        if (text)
+          grouped.get(tsName).texts.push(text);
+      }
+      if (groupOrder.length === 0)
+        continue;
+      const rawWords = [];
+      for (const tsName of groupOrder) {
+        const g = grouped.get(tsName);
+        const text = g.texts.join("");
+        if (text.trim())
+          rawWords.push({ text, time: msToTimestamp(g.startMs) });
+      }
+      if (rawWords.length === 0)
+        continue;
+      let speaker;
+      const firstText = rawWords[0].text;
+      const speakerMatch = SPEAKER_RE.exec(firstText);
+      if (speakerMatch) {
+        const candidate = speakerMatch[1].trim();
+        if (candidate && !/^\(\.+\)$/.test(candidate)) {
+          speaker = candidate;
+          rawWords[0] = { ...rawWords[0], text: firstText.slice(speakerMatch[0].length) };
+        }
+      }
+      const words = rawWords.filter((w) => w.text.trim().length > 0);
+      if (words.length === 0)
+        continue;
+      const startMs = grouped.get(groupOrder[0]).startMs;
+      const endMs = grouped.get(groupOrder[groupOrder.length - 1]).endMs;
+      cues.push({
+        startTime: msToTimestamp(startMs),
+        endTime: msToTimestamp(endMs),
+        speaker,
+        text: words.map((w) => w.text).join(""),
+        words,
+        rawLines: []
+      });
+    }
+    return { cues, trailingNewline: false };
+  }
+};
+
+// src/parsers/NoScribeVttParser.ts
+var TIMESTAMP_LINE_RE2 = /^(\d{2}:\d{2}:\d{2}\.\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2}\.\d{3})/;
+var SPEAKER_V_TAG_RE = /^<v\s+\w+>/;
+var SPEAKER_LABEL_RE = /^(S\d+)\s*:\s*/;
+var DISPLAY_TS_RE2 = /^\[\d{2}:\d{2}:\d{2}\]\s*/;
+var HTML_ENTITIES2 = {
+  "&#x27;": "'",
+  "&#39;": "'",
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&nbsp;": " "
+};
+function decodeEntities2(text) {
+  return text.replace(/&#?x?[0-9a-zA-Z]+;/g, (m) => HTML_ENTITIES2[m] ?? m);
+}
+function stripSpeakerVTag(line) {
+  return SPEAKER_V_TAG_RE.test(line) ? line.replace(SPEAKER_V_TAG_RE, "") : line;
+}
+var NoScribeVttParser = class {
+  /** Détecte un VTT produit par noScribe (présence de NOTE noScribe). */
+  static isNoScribeVtt(content) {
+    return content.startsWith("WEBVTT") && content.includes("noScribe");
+  }
+  /** Extrait le chemin audio depuis la ligne NOTE media. */
+  static extractAudioSource(content) {
+    const m = /^NOTE\s+media:\s*(.+)$/m.exec(content);
+    return m ? m[1].trim() : null;
+  }
+  parse(content) {
+    const rawCues = this.parseRawCues(content);
+    const fragments = this.buildFragments(rawCues);
+    const cues = this.mergeIntoCues(fragments);
+    return { cues, trailingNewline: content.endsWith("\n") };
+  }
+  // --- Étape 1 : parser les cues brutes ------------------------------------
+  parseRawCues(content) {
+    const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lines = normalized.split("\n");
+    const cues = [];
+    let i2 = 0;
+    while (i2 < lines.length) {
+      const tsMatch = TIMESTAMP_LINE_RE2.exec(lines[i2]);
+      if (tsMatch) {
+        const startTime = tsMatch[1];
+        const endTime = tsMatch[2];
+        i2++;
+        const textLines = [];
+        while (i2 < lines.length && lines[i2].trim() !== "") {
+          const cleaned = decodeEntities2(stripSpeakerVTag(lines[i2]));
+          textLines.push(cleaned);
+          i2++;
+        }
+        const text = textLines.join(" ").trim();
+        cues.push({ startTime, endTime, text });
+      } else {
+        i2++;
+      }
+    }
+    return cues;
+  }
+  // --- Étape 2 : convertir en fragments (speaker + text + timestamp) --------
+  buildFragments(cues) {
+    const fragments = [];
+    let currentSpeaker;
+    for (const cue of cues) {
+      let text = cue.text;
+      const labelMatch = SPEAKER_LABEL_RE.exec(text);
+      if (labelMatch) {
+        currentSpeaker = labelMatch[1];
+        text = text.slice(labelMatch[0].length);
+      }
+      text = text.replace(DISPLAY_TS_RE2, "").trim();
+      if (!text || /^\[[\d:]+\]$/.test(text))
+        continue;
+      fragments.push({
+        startTime: cue.startTime,
+        endTime: cue.endTime,
+        speaker: currentSpeaker,
+        text
+      });
+    }
+    return fragments;
+  }
+  // --- Étape 3 : fusionner les fragments en VttCues -------------------------
+  //
+  // Un "tour" commence à chaque nouveau label de locuteur dans l'étape 2.
+  // Les fragments sans changement de locuteur sont rattachés au tour courant.
+  // Heuristique de fusion : on regroupe les fragments temporellement proches
+  // (gap < 2 s) appartenant au même locuteur.
+  mergeIntoCues(fragments) {
+    if (fragments.length === 0)
+      return [];
+    const cues = [];
+    let batch = [fragments[0]];
+    const flushBatch = () => {
+      if (batch.length === 0)
+        return;
+      const text = batch.map((f) => f.text).join(" ").replace(/\s+/g, " ").trim();
+      if (text) {
+        cues.push({
+          startTime: batch[0].startTime,
+          endTime: batch[batch.length - 1].endTime,
+          speaker: batch[0].speaker,
+          text,
+          words: [{ text, time: batch[0].startTime }],
+          rawLines: []
+        });
+      }
+      batch = [];
+    };
+    for (let i2 = 1; i2 < fragments.length; i2++) {
+      const prev = batch[batch.length - 1];
+      const curr = fragments[i2];
+      const speakerChanged = curr.speaker !== prev.speaker;
+      const prevEndSec = timeToSeconds(prev.endTime);
+      const currStartSec = timeToSeconds(curr.startTime);
+      const bigGap = !speakerChanged && currStartSec - prevEndSec > 2;
+      if (speakerChanged || bigGap) {
+        flushBatch();
+        batch = [curr];
+      } else {
+        batch.push(curr);
+      }
+    }
+    flushBatch();
+    return cues;
+  }
+};
+function timeToSeconds(ts) {
+  const [h, m, s] = ts.split(":");
+  return parseInt(h) * 3600 + parseInt(m) * 60 + parseFloat(s);
+}
+
 // src/parsers/TranscriptConverter.ts
 function srtToMarkdown(doc, sourceName) {
   const lines = [
@@ -34979,26 +35499,63 @@ function chatToMarkdown(doc, sourceName) {
   lines.push("");
   return lines.join("\n");
 }
-function vttToMarkdown(doc, sourceName) {
-  const lines = [
-    "---",
-    `pseudobs-format: vtt`,
-    `pseudobs-source: "${sourceName}"`,
-    "---",
-    ""
-  ];
+function extractWordData(doc) {
+  return doc.cues.map((cue, index) => ({
+    index,
+    startTime: cue.startTime,
+    endTime: cue.endTime,
+    speaker: cue.speaker,
+    words: cue.words
+  })).filter((c) => c.words.some((w) => w.time !== ""));
+}
+var MD_CUE_RE = /^(?:\*\*([^*]+)\*\*\s+)?\[[\d:]+\]\s*(?::\s*)?(.*)$/;
+function markdownToVtt(mdContent, wordData) {
+  const bodyMatch = /^---\n[\s\S]*?\n---\n+([\s\S]*)$/.exec(mdContent);
+  const body = bodyMatch ? bodyMatch[1] : mdContent;
+  const cueLines = body.split("\n").filter((l) => MD_CUE_RE.test(l.trim()));
+  const mismatch = cueLines.length !== wordData.length;
+  const parts = ["WEBVTT", ""];
+  const count = Math.min(cueLines.length, wordData.length);
+  for (let i2 = 0; i2 < count; i2++) {
+    const m = MD_CUE_RE.exec(cueLines[i2].trim());
+    const speaker = m[1]?.trim() || wordData[i2].speaker;
+    const text = m[2]?.trim() ?? "";
+    if (!text)
+      continue;
+    parts.push(String(i2 + 1));
+    parts.push(`${wordData[i2].startTime} --> ${wordData[i2].endTime}`);
+    parts.push(speaker ? `<v ${speaker}>${text}` : text);
+    parts.push("");
+  }
+  return { vtt: parts.join("\n"), mismatch };
+}
+function displayTime(ts) {
+  return `[${ts.slice(0, 8)}]`;
+}
+function vttDocToMarkdown(doc, sourceName, format, audioFilename) {
+  const lines = ["---", `pseudobs-format: ${format}`, `pseudobs-source: "${sourceName}"`];
+  if (audioFilename)
+    lines.push(`pseudobs-audio: "${audioFilename}"`);
+  lines.push("---", "");
   for (const cue of doc.cues) {
-    const ts = `*${cue.startTime} \u2192 ${cue.endTime}*`;
-    const speaker = cue.speaker ? ` **${cue.speaker}**` : "";
-    const hasWordTs = cue.words.length > 0 && cue.words.some((w) => w.time !== "");
-    const wordTsComment = hasWordTs ? `<!-- vtt-words:${JSON.stringify(cue.words)} -->` : "";
-    lines.push(`${ts}${speaker} ${cue.text}${wordTsComment ? "  " + wordTsComment : ""}`);
+    const ts = displayTime(cue.startTime);
+    if (cue.speaker) {
+      lines.push(`**${cue.speaker}** ${ts} : ${cue.text}`);
+    } else {
+      lines.push(`${ts} ${cue.text}`);
+    }
     lines.push("");
   }
   while (lines[lines.length - 1] === "")
     lines.pop();
   lines.push("");
   return lines.join("\n");
+}
+function vttToMarkdown(doc, sourceName, audioFilename) {
+  return vttDocToMarkdown(doc, sourceName, "vtt", audioFilename);
+}
+function noScribeHtmlToMarkdown(doc, sourceName, audioFilename) {
+  return vttDocToMarkdown(doc, sourceName, "html", audioFilename);
 }
 function lineGroup(line) {
   if (line.type === "meta" || line.type === "dependent")
@@ -35009,7 +35566,7 @@ function lineGroup(line) {
 }
 
 // src/mappings/ScopeResolver.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 var ScopeResolver = class {
   constructor(vault, mappingFolder) {
     this.vault = vault;
@@ -35019,9 +35576,9 @@ var ScopeResolver = class {
   collectMappingFiles(folder) {
     const files = [];
     for (const child of folder.children) {
-      if (child instanceof import_obsidian11.TFile && child.name.endsWith(".mapping.json")) {
+      if (child instanceof import_obsidian12.TFile && child.name.endsWith(".mapping.json")) {
         files.push(child);
-      } else if (child instanceof import_obsidian11.TFolder) {
+      } else if (child instanceof import_obsidian12.TFolder) {
         files.push(...this.collectMappingFiles(child));
       }
     }
@@ -35029,7 +35586,7 @@ var ScopeResolver = class {
   }
   async getRulesFor(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian11.TFolder))
+    if (!(folder instanceof import_obsidian12.TFolder))
       return [];
     const allRules = [];
     for (const child of this.collectMappingFiles(folder)) {
@@ -35054,7 +35611,7 @@ var ScopeResolver = class {
   // Retourne aussi le store et le chemin JSON pour permettre la modification.
   async findRuleByTerm(term) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian11.TFolder))
+    if (!(folder instanceof import_obsidian12.TFolder))
       return null;
     const needle = term.toLowerCase();
     for (const child of this.collectMappingFiles(folder)) {
@@ -35075,7 +35632,7 @@ var ScopeResolver = class {
   // Utilisé par l'onglet Mappings du panneau latéral pour l'édition et la suppression.
   async getRulesWithLocation(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian11.TFolder))
+    if (!(folder instanceof import_obsidian12.TFolder))
       return [];
     const result = [];
     for (const child of this.collectMappingFiles(folder)) {
@@ -35101,7 +35658,7 @@ var ScopeResolver = class {
   // Utilisé par l'onglet Mappings en mode "toutes les règles".
   async getAllRulesWithLocation() {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian11.TFolder))
+    if (!(folder instanceof import_obsidian12.TFolder))
       return [];
     const result = [];
     for (const child of this.collectMappingFiles(folder)) {
@@ -35121,7 +35678,7 @@ var ScopeResolver = class {
   async getRulesFromMappingFile(mappingFilename) {
     const path4 = `${this.mappingFolder}/${mappingFilename}`;
     const file = this.vault.getAbstractFileByPath(path4);
-    if (!(file instanceof import_obsidian11.TFile))
+    if (!(file instanceof import_obsidian12.TFile))
       return [];
     try {
       const data = JSON.parse(await this.vault.read(file));
@@ -35135,7 +35692,7 @@ var ScopeResolver = class {
   async saveStore(store, filePath) {
     const file = this.vault.getAbstractFileByPath(filePath);
     const json = JSON.stringify(store.toJSON(), null, 2);
-    if (file instanceof import_obsidian11.TFile) {
+    if (file instanceof import_obsidian12.TFile) {
       await this.vault.modify(file, json);
     }
   }
@@ -35157,12 +35714,12 @@ var PseudonymizationEngine = class {
 };
 
 // src/main.ts
-var CONVERTIBLE_EXTS = ["srt", "cha", "chat", "vtt"];
-var PseudObsPlugin = class extends import_obsidian12.Plugin {
+var CONVERTIBLE_EXTS = ["srt", "cha", "chat", "vtt", "html"];
+var PseudObsPlugin = class extends import_obsidian13.Plugin {
   constructor() {
     super(...arguments);
     // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
-    this.highlightData = { sources: [], replacements: [], nerCandidates: [] };
+    this.highlightData = { sources: [], replacements: [], nerCandidates: [], ignoredTerms: [] };
     // Candidats NER par fichier (effacés au changement de fichier ou à un nouveau scan)
     this.nerCandidateFile = null;
     this.nerCandidates = [];
@@ -35189,14 +35746,14 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         const v = leaf?.view;
-        if (v instanceof import_obsidian12.MarkdownView)
+        if (v instanceof import_obsidian13.MarkdownView)
           this.lastMarkdownView = v;
         void this.refresh();
       })
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (file instanceof import_obsidian12.TFile && !file.name.endsWith(".mapping.json") && file === this.app.workspace.getActiveFile()) {
+        if (file instanceof import_obsidian13.TFile && !file.name.endsWith(".mapping.json") && file === this.app.workspace.getActiveFile()) {
           void this.refresh();
         }
       })
@@ -35209,7 +35766,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     }
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if (!(file instanceof import_obsidian12.TFile))
+        if (!(file instanceof import_obsidian13.TFile))
           return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase()))
           return;
@@ -35256,6 +35813,11 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       callback: () => void this.scanCurrentFileWithDictionaries()
     });
     this.addCommand({
+      id: "export-as-vtt",
+      name: t("command.exportAsVtt"),
+      callback: () => void this.exportCurrentFileAsVtt()
+    });
+    this.addCommand({
       id: "pseudonymize-selection",
       name: t("command.pseudonymizeSelection"),
       editorCheckCallback: (checking, editor) => {
@@ -35284,7 +35846,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
             (item) => item.setTitle(t("contextMenu.cancelPseudonymization", truncate(bare))).setIcon("undo").onClick(async () => {
               const location = await this.scopeResolver.findRuleByTerm(bare);
               if (!location) {
-                new import_obsidian12.Notice(t("notice.ruleNotFound"));
+                new import_obsidian13.Notice(t("notice.ruleNotFound"));
                 return;
               }
               editor.replaceSelection(location.rule.source);
@@ -35299,7 +35861,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
               if (location) {
                 new EditRuleModal(this.app, this, location).open();
               } else {
-                new import_obsidian12.Notice(t("notice.ruleNotFound"));
+                new import_obsidian13.Notice(t("notice.ruleNotFound"));
               }
             })
           );
@@ -35312,11 +35874,11 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
         );
         menu.addItem(
           (item) => item.setTitle(t("contextMenu.coulmont")).setIcon("book-user").onClick(async () => {
-            const notice = new import_obsidian12.Notice("Recherche sur coulmont.com\u2026", 0);
+            const notice = new import_obsidian13.Notice("Recherche sur coulmont.com\u2026", 0);
             const suggestions = await this.fetchCoulmont(selection);
             notice.hide();
             if (suggestions.length === 0) {
-              new import_obsidian12.Notice(`Aucun r\xE9sultat Coulmont pour "${selection}".`);
+              new import_obsidian13.Notice(`Aucun r\xE9sultat Coulmont pour "${selection}".`);
               return;
             }
             new RuleModal(this.app, this, selection, "", suggestions).open();
@@ -35348,7 +35910,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
   async fetchCoulmont(prenom) {
     try {
       const url2 = `https://coulmont.com/bac/results.php?search=${encodeURIComponent(prenom)}`;
-      const response = await (0, import_obsidian12.requestUrl)({ url: url2, method: "GET" });
+      const response = await (0, import_obsidian13.requestUrl)({ url: url2, method: "GET" });
       const doc = new DOMParser().parseFromString(response.text, "text/html");
       const els = doc.querySelectorAll(
         "#hero > div > div > div > div > p.mb-1.mb-md-1 > a"
@@ -35363,7 +35925,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
   async refreshHighlightData() {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      this.highlightData = { sources: [], replacements: [], nerCandidates: [] };
+      this.highlightData = { sources: [], replacements: [], nerCandidates: [], ignoredTerms: [] };
     } else {
       const nerCandidates = file === this.nerCandidateFile ? this.nerCandidates : [];
       try {
@@ -35382,16 +35944,20 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
         } else {
           rules = await this.scopeResolver.getRulesFor(file.path);
         }
+        const ignoredTerms = rules.flatMap(
+          (r) => (r.ignoredOccurrences ?? []).map((o) => o.text)
+        );
         this.highlightData = {
           sources: rules.map((r) => r.source).filter(Boolean),
           replacements: rules.map((r) => r.replacement).filter(Boolean),
-          nerCandidates
+          nerCandidates,
+          ignoredTerms
         };
       } catch {
-        this.highlightData = { sources: [], replacements: [], nerCandidates };
+        this.highlightData = { sources: [], replacements: [], nerCandidates, ignoredTerms: [] };
       }
     }
-    const view = this.app.workspace.getActiveViewOfType(import_obsidian12.MarkdownView) ?? this.lastMarkdownView;
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian13.MarkdownView) ?? this.lastMarkdownView;
     const cm = view?.editor && view.editor.cm;
     cm?.dispatch({ effects: highlightDataChanged.of(void 0) });
   }
@@ -35431,44 +35997,108 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       const basename = file.basename;
       const folder = file.parent?.path ?? "";
       const mdPath = folder ? `${folder}/${basename}.md` : `${basename}.md`;
+      if (this.app.vault.getAbstractFileByPath(mdPath) instanceof import_obsidian13.TFile) {
+        new import_obsidian13.Notice(t("notice.conversionSkipped", basename, file.name));
+        return;
+      }
+      let audioFilename = this.findAudioInVaultFolder(folder);
       let mdContent;
+      let wordData = null;
       if (ext === "srt") {
         mdContent = srtToMarkdown(new SrtParser().parse(raw), file.name);
       } else if (ext === "vtt") {
-        mdContent = vttToMarkdown(new VttParser().parse(raw), file.name);
+        const doc = NoScribeVttParser.isNoScribeVtt(raw) ? new NoScribeVttParser().parse(raw) : new VttParser().parse(raw);
+        wordData = extractWordData(doc);
+        if (!audioFilename && NoScribeVttParser.isNoScribeVtt(raw)) {
+          const audioSource = NoScribeVttParser.extractAudioSource(raw);
+          if (audioSource)
+            audioFilename = await this.importAudioFromPath(audioSource, folder || this.settings.transcriptionsFolder);
+        }
+        const toMd = NoScribeVttParser.isNoScribeVtt(raw) ? noScribeHtmlToMarkdown : vttToMarkdown;
+        mdContent = toMd(doc, file.name, audioFilename ?? void 0);
+      } else if (ext === "html") {
+        if (!NoScribeHtmlParser.isNoScribeHtml(raw))
+          return;
+        const doc = new NoScribeHtmlParser().parse(raw);
+        wordData = extractWordData(doc);
+        if (!audioFilename) {
+          const audioSource = NoScribeHtmlParser.extractAudioSource(raw);
+          if (audioSource) {
+            audioFilename = await this.importAudioFromPath(audioSource, folder || this.settings.transcriptionsFolder);
+          }
+        }
+        mdContent = noScribeHtmlToMarkdown(doc, file.name, audioFilename ?? void 0);
       } else {
         mdContent = chatToMarkdown(new ChatParser().parse(raw), file.name);
-      }
-      if (this.app.vault.getAbstractFileByPath(mdPath) instanceof import_obsidian12.TFile) {
-        new import_obsidian12.Notice(t("notice.conversionSkipped", basename, file.name));
-        return;
       }
       await this.app.vault.create(mdPath, mdContent);
       const transcRoot = this.settings.transcriptionsFolder;
       const fileFolder = file.parent?.path ?? "";
       const relSubFolder = fileFolder.startsWith(transcRoot) ? fileFolder.slice(transcRoot.length).replace(/^\//, "") : "";
       const mappingDir = relSubFolder ? `${this.settings.mappingFolder}/${relSubFolder}` : this.settings.mappingFolder;
+      await this.ensureFolder(mappingDir);
       const mappingPath = `${mappingDir}/${basename}.mapping.json`;
       if (!this.app.vault.getAbstractFileByPath(mappingPath)) {
-        await this.ensureFolder(mappingDir);
         const store = new MappingStore({ type: "file", path: mdPath });
         await this.app.vault.create(mappingPath, JSON.stringify(store.toJSON(), null, 2));
       }
+      if (wordData && wordData.length > 0) {
+        const wordsPath = `${mappingDir}/${basename}.words.json`;
+        if (!this.app.vault.getAbstractFileByPath(wordsPath)) {
+          await this.app.vault.create(wordsPath, JSON.stringify(wordData, null, 2));
+        }
+      }
       await this.app.fileManager.trashFile(file);
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
-      if (mdFile instanceof import_obsidian12.TFile) {
+      if (mdFile instanceof import_obsidian13.TFile) {
         await this.app.workspace.getLeaf().openFile(mdFile);
       }
-      new import_obsidian12.Notice(t("notice.converted", file.name, `${basename}.md`));
+      new import_obsidian13.Notice(t("notice.converted", file.name, `${basename}.md`));
     } catch (e) {
-      new import_obsidian12.Notice(t("notice.conversionError", file.name, e.message));
+      new import_obsidian13.Notice(t("notice.conversionError", file.name, e.message));
+    }
+  }
+  /** Retourne le nom du premier fichier audio trouvé dans un dossier du vault. */
+  findAudioInVaultFolder(folderPath) {
+    const AUDIO_EXTS = /* @__PURE__ */ new Set(["m4a", "mp3", "wav", "ogg", "flac", "mp4", "aac", "aiff"]);
+    const folder = this.app.vault.getAbstractFileByPath(folderPath || "/");
+    if (!(folder instanceof import_obsidian13.TFolder))
+      return null;
+    const audioFile = folder.children.find(
+      (f) => f instanceof import_obsidian13.TFile && AUDIO_EXTS.has(f.extension.toLowerCase())
+    );
+    return audioFile?.name ?? null;
+  }
+  /**
+   * Copie un fichier audio externe (chemin absolu sur disque) dans le vault.
+   * Utilise l'API Node.js fs — desktop uniquement.
+   * Retourne le nom du fichier importé, ou null en cas d'échec.
+   */
+  async importAudioFromPath(sourcePath, targetFolder) {
+    try {
+      const nodeFs = require("fs");
+      if (!nodeFs.existsSync(sourcePath))
+        return null;
+      const audioFilename = sourcePath.replace(/\\/g, "/").split("/").pop();
+      const destPath = targetFolder ? `${targetFolder}/${audioFilename}` : audioFilename;
+      if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian13.TFile) {
+        return audioFilename;
+      }
+      const buffer = await nodeFs.promises.readFile(sourcePath);
+      await this.ensureFolder(targetFolder);
+      const arrayBuf = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      await this.app.vault.createBinary(destPath, arrayBuf);
+      new import_obsidian13.Notice(`Audio import\xE9 : ${audioFilename}`);
+      return audioFilename;
+    } catch {
+      return null;
     }
   }
   // --- Commande "Ajouter une transcription" ---
   openFilePicker() {
     const input = activeDocument.createElement("input");
     input.type = "file";
-    input.accept = ".srt,.vtt,.cha,.chat,.txt,.md";
+    input.accept = ".srt,.vtt,.cha,.chat,.html,.txt,.md";
     input.multiple = true;
     input.classList.add("pseudobs-hidden-input");
     activeDocument.body.appendChild(input);
@@ -35486,6 +36116,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
   }
   async copyToVault(browserFile) {
     const raw = await browserFile.text();
+    const ext = browserFile.name.split(".").pop()?.toLowerCase() ?? "";
     const classes = getCorpusClasses(this.app, this.settings.transcriptionsFolder);
     let targetFolder = this.settings.transcriptionsFolder;
     if (classes.length > 0) {
@@ -35498,28 +36129,57 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     }
     await this.ensureFolder(targetFolder);
     const destPath = `${targetFolder}/${browserFile.name}`;
-    if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian12.TFile) {
-      new import_obsidian12.Notice(t("notice.fileExists", browserFile.name));
+    if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian13.TFile) {
+      new import_obsidian13.Notice(t("notice.fileExists", browserFile.name));
       return;
     }
     await this.app.vault.create(destPath, raw);
+    if (ext === "vtt") {
+      const sourcePath = browserFile.path;
+      if (sourcePath) {
+        const sourceDir = sourcePath.replace(/\\/g, "/").replace(/\/[^/]+$/, "");
+        const audioPath = await this.findAudioInSourceFolder(sourceDir);
+        if (audioPath)
+          await this.importAudioFromPath(audioPath, targetFolder);
+      }
+    }
+  }
+  /**
+   * Cherche un fichier audio dans un dossier sur le disque (hors vault).
+   * Retourne le chemin absolu du seul fichier audio trouvé, ou null si 0 ou >1.
+   */
+  async findAudioInSourceFolder(folderPath) {
+    try {
+      const nodeFs = require("fs");
+      const AUDIO_EXTS = /* @__PURE__ */ new Set(["m4a", "mp3", "wav", "ogg", "flac", "mp4", "aac", "aiff"]);
+      const entries = await nodeFs.promises.readdir(folderPath);
+      const audioFiles = entries.filter((f) => {
+        const ext = f.split(".").pop()?.toLowerCase() ?? "";
+        return AUDIO_EXTS.has(ext);
+      });
+      if (audioFiles.length === 1)
+        return `${folderPath}/${audioFiles[0]}`;
+      return null;
+    } catch {
+      return null;
+    }
   }
   // --- Pseudonymisation ---
   async pseudonymizeActiveFile() {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian12.Notice(t("notice.noActiveFile"));
+      new import_obsidian13.Notice(t("notice.noActiveFile"));
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian12.Notice(t("notice.formatUnsupported", ext));
+      new import_obsidian13.Notice(t("notice.formatUnsupported", ext));
       return;
     }
     const content = await this.app.vault.read(file);
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new import_obsidian12.Notice(t("notice.noRules"));
+      new import_obsidian13.Notice(t("notice.noRules"));
       return;
     }
     const marker = this.settings.useMarkerInExport ? { open: this.settings.markerOpen, close: this.settings.markerClose } : void 0;
@@ -35550,26 +36210,26 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     await this.ensureFolder(this.settings.exportsFolder);
     const outputPath = `${this.settings.exportsFolder}/${file.basename}.pseudonymized.${ext}`;
     const existing = this.app.vault.getAbstractFileByPath(outputPath);
-    if (existing instanceof import_obsidian12.TFile) {
+    if (existing instanceof import_obsidian13.TFile) {
       await this.app.vault.modify(existing, pseudonymized);
     } else {
       await this.app.vault.create(outputPath, pseudonymized);
     }
-    new import_obsidian12.Notice(t("notice.exportDone", String(rules.length), outputPath));
+    new import_obsidian13.Notice(t("notice.exportDone", String(rules.length), outputPath));
   }
   async scanCurrentFileNer() {
     if (this.settings.nerBackend !== "transformers-js") {
-      new import_obsidian12.Notice("La d\xE9tection NER transformers.js n'est pas activ\xE9e.\nActivez-la dans Param\xE8tres \u2192 Pseudonymizer Tool.");
+      new import_obsidian13.Notice("La d\xE9tection NER transformers.js n'est pas activ\xE9e.\nActivez-la dans Param\xE8tres \u2192 Pseudonymizer Tool.");
       return;
     }
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian12.Notice(t("notice.noActiveFile"));
+      new import_obsidian13.Notice(t("notice.noActiveFile"));
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian12.Notice(t("notice.formatUnsupported", ext));
+      new import_obsidian13.Notice(t("notice.formatUnsupported", ext));
       return;
     }
     try {
@@ -35579,31 +36239,31 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
         functionWords: new Set(this.settings.nerFunctionWords.map((w) => w.toLowerCase()))
       });
       if (occurrences.length === 0) {
-        new import_obsidian12.Notice(t("notice.noNerEntities"));
+        new import_obsidian13.Notice(t("notice.noNerEntities"));
         return;
       }
       const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
       this.nerCandidateFile = file;
       this.nerCandidates = unique;
       void this.refresh();
-      new import_obsidian12.Notice(t("notice.nerEntitiesFound", String(unique.length), unique.length > 1 ? t("notice.nerEntitiesFound.entities") : t("notice.nerEntitiesFound.entity")), 6e3);
+      new import_obsidian13.Notice(t("notice.nerEntitiesFound", String(unique.length), unique.length > 1 ? t("notice.nerEntitiesFound.entities") : t("notice.nerEntitiesFound.entity")), 6e3);
     } catch (e) {
-      new import_obsidian12.Notice(`NER error: ${e.message}`);
+      new import_obsidian13.Notice(`NER error: ${e.message}`);
     }
   }
   async scanCurrentFileWithDictionaries(dictIds) {
     if (!this.dictionaryLoader.hasDetection()) {
-      new import_obsidian12.Notice(t("notice.noDictDetection"));
+      new import_obsidian13.Notice(t("notice.noDictDetection"));
       return;
     }
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian12.Notice(t("notice.noActiveFile"));
+      new import_obsidian13.Notice(t("notice.noActiveFile"));
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian12.Notice(t("notice.formatUnsupported", ext));
+      new import_obsidian13.Notice(t("notice.formatUnsupported", ext));
       return;
     }
     const content = await this.app.vault.read(file);
@@ -35611,7 +36271,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
     const existingSources = new Set(rules.map((r) => r.source.toLowerCase()));
     const occurrences = this.dictionaryLoader.scanText(content, file.path, existingSources, dictIds);
     if (occurrences.length === 0) {
-      new import_obsidian12.Notice(t("notice.noDictEntities"));
+      new import_obsidian13.Notice(t("notice.noDictEntities"));
       return;
     }
     const seenTerms = /* @__PURE__ */ new Map();
@@ -35655,7 +36315,7 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       });
     }
     if (results.length === 0) {
-      new import_obsidian12.Notice("Aucun remplacement disponible pour les entit\xE9s trouv\xE9es.");
+      new import_obsidian13.Notice("Aucun remplacement disponible pour les entit\xE9s trouv\xE9es.");
       return;
     }
     this.nerCandidateFile = file;
@@ -35672,30 +36332,89 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
   async exportMappingForFile(file) {
     const mappingPath = `${this.settings.mappingFolder}/${file.basename}.mapping.json`;
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
-    if (!(mappingFile instanceof import_obsidian12.TFile)) {
-      new import_obsidian12.Notice(t("notice.noMapping", file.name));
+    if (!(mappingFile instanceof import_obsidian13.TFile)) {
+      new import_obsidian13.Notice(t("notice.noMapping", file.name));
       return;
     }
     const content = await this.app.vault.read(mappingFile);
     await this.ensureFolder(this.settings.exportsFolder);
     const destPath = `${this.settings.exportsFolder}/${file.basename}.mapping.json`;
     const existing = this.app.vault.getAbstractFileByPath(destPath);
-    if (existing instanceof import_obsidian12.TFile) {
+    if (existing instanceof import_obsidian13.TFile) {
       await this.app.vault.modify(existing, content);
     } else {
       await this.app.vault.create(destPath, content);
     }
-    new import_obsidian12.Notice(t("notice.mappingExported", destPath));
+    new import_obsidian13.Notice(t("notice.mappingExported", destPath));
+  }
+  /**
+   * Exporte le fichier Markdown noScribe actif en WebVTT pseudonymisé.
+   * Lit le .words.json correspondant pour les timestamps précis.
+   */
+  async exportCurrentFileAsVtt() {
+    const file = this.app.workspace.getActiveFile();
+    if (!file || file.extension !== "md") {
+      new import_obsidian13.Notice(t("notice.noActiveFile"));
+      return;
+    }
+    const content = await this.app.vault.read(file);
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    const format = formatMatch?.[1];
+    if (format !== "vtt" && format !== "html") {
+      new import_obsidian13.Notice(t("notice.notNoScribeFormat"));
+      return;
+    }
+    const rawBasename = file.basename.replace(/\.pseudonymized$/, "");
+    const wordsJson = await this.findWordsJson(rawBasename);
+    if (!wordsJson) {
+      new import_obsidian13.Notice(t("notice.wordsJsonMissing", rawBasename));
+      return;
+    }
+    const wordData = JSON.parse(wordsJson);
+    const { vtt, mismatch } = markdownToVtt(content, wordData);
+    if (mismatch) {
+      new import_obsidian13.Notice(t("notice.vttMismatch"));
+    }
+    await this.ensureFolder(this.settings.exportsFolder);
+    const outputPath = `${this.settings.exportsFolder}/${rawBasename}.pseudonymized.vtt`;
+    const existing = this.app.vault.getAbstractFileByPath(outputPath);
+    if (existing instanceof import_obsidian13.TFile) {
+      await this.app.vault.modify(existing, vtt);
+    } else {
+      await this.app.vault.create(outputPath, vtt);
+    }
+    new import_obsidian13.Notice(t("notice.vttExported", outputPath));
+  }
+  /** Cherche <basename>.words.json dans le dossier mappings et ses sous-dossiers. */
+  async findWordsJson(basename) {
+    const filename = `${basename}.words.json`;
+    const search = (folder) => {
+      for (const child of folder.children) {
+        if (child instanceof import_obsidian13.TFile && child.name === filename)
+          return child;
+        if (child instanceof import_obsidian13.TFolder) {
+          const found = search(child);
+          if (found)
+            return found;
+        }
+      }
+      return null;
+    };
+    const mappingRoot = this.app.vault.getAbstractFileByPath(this.settings.mappingFolder);
+    if (!(mappingRoot instanceof import_obsidian13.TFolder))
+      return null;
+    const wordsFile = search(mappingRoot);
+    return wordsFile ? this.app.vault.read(wordsFile) : null;
   }
   async scanCurrentFile() {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new import_obsidian12.Notice(t("notice.noActiveFile"));
+      new import_obsidian13.Notice(t("notice.noActiveFile"));
       return;
     }
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new import_obsidian12.Notice(t("notice.noRules"));
+      new import_obsidian13.Notice(t("notice.noRules"));
       return;
     }
     const content = await this.app.vault.read(file);
@@ -35704,15 +36423,21 @@ var PseudObsPlugin = class extends import_obsidian12.Plugin {
       wholeWordOnly: this.settings.wholeWordOnly
     });
     if (occurrences.length === 0) {
-      new import_obsidian12.Notice(t("notice.noOccurrences"));
+      new import_obsidian13.Notice(t("notice.noOccurrences"));
       return;
     }
-    const countByRule = /* @__PURE__ */ new Map();
+    const occsByRule = /* @__PURE__ */ new Map();
     for (const occ of occurrences) {
       const id = occ.mappingId ?? "";
-      countByRule.set(id, (countByRule.get(id) ?? 0) + 1);
+      if (!occsByRule.has(id))
+        occsByRule.set(id, []);
+      occsByRule.get(id).push(occ);
     }
-    const ruleResults = rules.filter((r) => countByRule.has(r.id)).map((r) => ({ rule: r, matchCount: countByRule.get(r.id) }));
+    const ruleResults = rules.filter((r) => occsByRule.has(r.id)).map((r) => ({
+      rule: r,
+      matchCount: occsByRule.get(r.id).length,
+      occurrences: occsByRule.get(r.id)
+    }));
     new MappingScanReviewModal(this.app, this, file, content, ruleResults).open();
   }
   // Appelé par OccurrencesModal après application — met à jour les statuts des règles.

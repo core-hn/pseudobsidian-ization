@@ -1,6 +1,6 @@
 # Changelog
 
-## [dev] v0.1.5 — branche `dev`
+## [prod] v0.1.5 — 17 mai 2026
 
 ### Nouvelles fonctionnalités
 
