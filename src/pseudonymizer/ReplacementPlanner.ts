@@ -45,16 +45,22 @@ export function findSpansForRule(
   const haystack = settings.caseSensitive ? text : text.toLowerCase();
   const sourceLen = needle.length;
 
+  // Textes exacts des occurrences explicitement ignorées (sensibles à la casse)
+  const ignoredTexts = new Set((rule.ignoredOccurrences ?? []).map((o) => o.text));
+
   let pos = 0;
   while (pos <= haystack.length - sourceLen) {
     const idx = haystack.indexOf(needle, pos);
     if (idx === -1) break;
 
-    if (!settings.wholeWordOnly || isWholeWord(text, idx, idx + sourceLen)) {
+    const actualText = text.slice(idx, idx + sourceLen);
+
+    if ((!settings.wholeWordOnly || isWholeWord(text, idx, idx + sourceLen))
+        && !ignoredTexts.has(actualText)) {
       spans.push({
         start: idx,
         end: idx + sourceLen,
-        source: text.slice(idx, idx + sourceLen),
+        source: actualText,
         replacement: rule.replacement,
         mappingId: rule.id,
         priority: rule.priority,

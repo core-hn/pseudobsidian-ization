@@ -39,10 +39,14 @@ export class MappingScanReviewModal extends Modal {
     this.ruleResults = ruleResults;
     this.checked = ruleResults.map(() => true);
 
-    // Décisions initiales : toutes les occurrences validées
+    // Décisions initiales : pré-marquer comme ignorées les occurrences
+    // dont le texte exact est déjà dans rule.ignoredOccurrences (persistées)
     for (const { rule, occurrences } of ruleResults) {
+      const alreadyIgnored = new Set((rule.ignoredOccurrences ?? []).map((o) => o.text));
       const map = new Map<string, OccurrenceDecision>();
-      for (const occ of occurrences) map.set(occ.id, 'validated');
+      for (const occ of occurrences) {
+        map.set(occ.id, alreadyIgnored.has(occ.text) ? 'ignored' : 'validated');
+      }
       this.decisionsMap.set(rule.id, map);
     }
   }
@@ -135,7 +139,7 @@ export class MappingScanReviewModal extends Modal {
     const btn = cell.createEl('button', { cls: 'pseudobs-count-btn' });
     // Afficher "N / total" si des occurrences ont été ignorées, "N" sinon
     btn.setText(validated < total ? `${validated} / ${total}` : String(total));
-    btn.title = 'Voir et sélectionner les candidats';
+    btn.title = t('mappingScanModal.countTooltip');
 
     btn.addEventListener('click', () => {
       new OccurrencesContextModal(

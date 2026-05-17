@@ -1,8 +1,10 @@
-import { ItemView, Notice, Setting, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
+import { ItemView, Notice, Setting, TFile, TFolder, WorkspaceLeaf, setIcon } from 'obsidian';
 import { t } from '../i18n';
 import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
 import { scanOccurrences } from '../scanner/OccurrenceScanner';
+import { getCorpusClasses } from './CorpusModal';
+import { FolderSuggest } from './FolderSuggest';
 import { EditRuleModal } from './EditRuleModal';
 import { RuleModal } from './RuleModal';
 import { MappingScanReviewModal } from './MappingScanReviewModal';
@@ -10,7 +12,7 @@ import type { MappingRuleResult } from './MappingScanReviewModal';
 
 export const VIEW_TYPE_PSEUDOBS = 'pseudonymization-view';
 
-type Tab = 'mappings' | 'dictionaries' | 'exports' | 'ner';
+type Tab = 'mappings' | 'dictionaries' | 'exports' | 'ner' | 'corpus';
 
 function categoryLabel(cat: string): string { return t(`category.${cat}`) || cat; }
 function scopeLabel(s: string): string { return t(`scope.${s}`) || s; }
@@ -28,8 +30,8 @@ export class PseudonymizationView extends ItemView {
   private checkedDicts = new Set<string>();
   // Onglet Mappings : filtrer sur le fichier actif (coché par défaut)
   private mappingsFilterActive = true;
-  // Garde contre la réentrance de onFileChange (le panneau lui-même peut devenir feuille active)
   private _renderingTab = false;
+  private filenameWarningEl: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: PseudObsPlugin) {
     super(leaf);
@@ -45,17 +47,24 @@ export class PseudonymizationView extends ItemView {
     root.empty();
     root.addClass('pseudobs-view');
 
+    // Bannière d'avertissement nom de fichier — au-dessus des onglets
+    this.filenameWarningEl = root.createDiv('pseudobs-filename-warning');
+    this.filenameWarningEl.style.display = 'none';
+
     const tabBar = root.createDiv('pseudobs-view-tabs');
     const content = root.createDiv('pseudobs-view-content');
 
     const tabs: [Tab, string][] = [
-      ['mappings',      t('panel.tab.mappings')],
-      ['dictionaries',  t('panel.tab.dictionaries')],
-      ['exports',       t('panel.tab.exports')],
+      ['mappings',     t('panel.tab.mappings')],
+      ['dictionaries', t('panel.tab.dictionaries')],
     ];
     if (this.plugin.settings.nerBackend !== 'none') {
       tabs.push(['ner', t('panel.tab.ner')]);
     }
+    tabs.push(
+      ['corpus',  t('panel.tab.corpus')],
+      ['exports', t('panel.tab.exports')],
+    );
 
     this.panes = {} as Record<Tab, HTMLElement>;
     this.tabBtns = {} as Record<Tab, HTMLElement>;
@@ -77,6 +86,7 @@ export class PseudonymizationView extends ItemView {
     if (f) this.lastFile = f;
 
     await this.switchTab('mappings');
+    void this.refreshFilenameWarning();
   }
 
   private async switchTab(tab: Tab): Promise<void> {
@@ -105,7 +115,8 @@ export class PseudonymizationView extends ItemView {
     if (tab === 'mappings')           await this.renderMappingsTab(pane);
     else if (tab === 'dictionaries')  await this.renderDictionariesTab(pane);
     else if (tab === 'ner')           await this.renderNerTab(pane);
-    else                              this.renderExportsTab(pane);
+    else if (tab === 'corpus')        await this.renderCorpusTab(pane);
+    else                              await this.renderExportsTab(pane);
   }
 
   private async onFileChange(): Promise<void> {
@@ -117,6 +128,8 @@ export class PseudonymizationView extends ItemView {
     const f = this.app.workspace.getActiveFile();
     if (f) this.lastFile = f;
 
+    void this.refreshFilenameWarning();
+
     this._renderingTab = true;
     try {
       await this.renderTab(this.activeTab);
@@ -125,8 +138,283 @@ export class PseudonymizationView extends ItemView {
     }
   }
 
+  private async refreshFilenameWarning(): Promise<void> {
+    const el = this.filenameWarningEl;
+    if (!el) return;
+    el.empty();
+
+    const file = this.getFile();
+    if (!file || file.extension !== 'md') { el.style.display = 'none'; return; }
+
+    const suggested = await this.plugin.suggestCorrectedFilename(file);
+    if (!suggested) { el.style.display = 'none'; return; }
+
+    el.style.display = '';
+
+    // Ligne 1 : icône + message
+    const top = el.createDiv('pseudobs-fw-top');
+    setIcon(top.createSpan('pseudobs-fw-icon'), 'triangle-alert');
+    top.createSpan({ cls: 'pseudobs-fw-msg', text: t('panel.filenameWarning.msg', file.basename) });
+
+    // Ligne 2 : bouton édition manuelle + bouton suggestion automatique
+    const row = el.createDiv('pseudobs-fw-row');
+
+    // Bouton ✏ — saisie libre
+    const editBtn = row.createEl('button', { cls: 'pseudobs-fw-action-btn' });
+    setIcon(editBtn.createSpan(), 'pen-line');
+    editBtn.createSpan({ text: ` ${t('panel.filenameWarning.edit')}` });
+    editBtn.title = t('panel.filenameWarning.editTitle');
+    editBtn.addEventListener('click', async () => {
+      const newName = this.promptText(t('panel.filenameWarning.editPrompt', file.basename)) ?? '';
+      if (!newName.trim() || newName.trim() === file.basename) return;
+      await this.plugin.renameFileAndRelated(file, newName.trim());
+      void this.refreshFilenameWarning();
+    });
+
+    // Bouton ✨ — appliquer la suggestion
+    const wandBtn = row.createEl('button', { cls: 'pseudobs-fw-action-btn pseudobs-fw-wand-btn' });
+    setIcon(wandBtn.createSpan(), 'wand-sparkles');
+    wandBtn.createSpan({ text: ` ${suggested}.${file.extension}` });
+    wandBtn.title = t('panel.filenameWarning.wandTitle', `${suggested}.${file.extension}`);
+    wandBtn.addEventListener('click', async () => {
+      await this.plugin.renameFileAndRelated(file, suggested);
+      void this.refreshFilenameWarning();
+    });
+  }
+
+  /** Affiche un prompt natif et retourne la valeur saisie, ou null si annulé. */
+  private promptText(placeholder: string): string | null {
+    return window.prompt(placeholder) ?? null;
+  }
+
   private getFile(): TFile | null {
     return this.app.workspace.getActiveFile() ?? this.lastFile;
+  }
+
+  // ---- Onglet Corpus ---------------------------------------------
+
+  private async renderCorpusTab(el: HTMLElement): Promise<void> {
+    const s = this.plugin.settings;
+    const transcRoot = s.transcriptionsFolder;
+    const FINAL_EXTS = ['vtt', 'srt', 'cha', 'chat'];
+
+    const transcFolder = this.app.vault.getAbstractFileByPath(transcRoot);
+    if (!(transcFolder instanceof TFolder)) {
+      el.createEl('p', { text: t('panel.corpus.noFolder'), cls: 'pseudobs-view-hint' });
+      return;
+    }
+
+    // ---- Section destination des exports finaux --------------------
+    const exportSection = el.createDiv('pseudobs-corpus-export-section');
+    exportSection.createEl('div', { text: t('panel.corpus.exportSettings'), cls: 'pseudobs-corpus-export-heading' });
+
+    // Sélecteur de type
+    const typeRow = exportSection.createDiv('pseudobs-corpus-export-type-row');
+    for (const [val, labelKey] of [
+      ['vault',          'panel.corpus.exportDest.vault'],
+      ['next-to-source', 'panel.corpus.exportDest.nextToSource'],
+      ['external',       'panel.corpus.exportDest.external'],
+    ] as [string, string][]) {
+      const lbl = typeRow.createEl('label', { cls: 'pseudobs-corpus-export-type-label' });
+      const radio = lbl.createEl('input');
+      radio.type = 'radio';
+      radio.name = 'exportDest';
+      radio.value = val;
+      radio.checked = s.exportDestinationType === val;
+      radio.addEventListener('change', async () => {
+        s.exportDestinationType = val as typeof s.exportDestinationType;
+        await this.plugin.saveSettings();
+        void this.renderTab('corpus');
+      });
+      lbl.createSpan({ text: ` ${t(labelKey)}` });
+    }
+
+    // Champ dossier vault
+    if (s.exportDestinationType === 'vault') {
+      new Setting(exportSection)
+        .setName(t('panel.corpus.exportFolder'))
+        .addSearch((cb) => {
+          new FolderSuggest(this.app, cb.inputEl);
+          cb.setValue(s.exportFinalFolder).onChange(async (v) => {
+            s.exportFinalFolder = v;
+            await this.plugin.saveSettings();
+          });
+        });
+    }
+
+    // Champ chemin externe
+    if (s.exportDestinationType === 'external') {
+      new Setting(exportSection)
+        .setName(t('panel.corpus.exportExternalPath'))
+        .addText((txt) => {
+          txt.setPlaceholder(t('panel.corpus.exportExternalPathPlaceholder'));
+          txt.setValue(s.exportExternalPath).onChange(async (v) => {
+            s.exportExternalPath = v;
+            await this.plugin.saveSettings();
+          });
+        });
+    }
+
+    // Toggle miroir de classes
+    new Setting(exportSection)
+      .setName(t('panel.corpus.exportMirrorClasses'))
+      .addToggle((tog) =>
+        tog.setValue(s.exportMirrorClasses).onChange(async (v) => {
+          s.exportMirrorClasses = v;
+          await this.plugin.saveSettings();
+        })
+      );
+
+    // ---- Bouton "Nouvelle classe" -----------------------------------
+    const addClassBtn = exportSection.createEl('button', {
+      text: `+ ${t('panel.corpus.addClass')}`,
+      cls: 'pseudobs-corpus-add-class-btn',
+    });
+    addClassBtn.addEventListener('click', async () => {
+      const name = this.promptText(t('corpus.modal.classNamePlaceholder'));
+      if (!name) return;
+      await this.plugin.ensureFolder(`${transcRoot}/${name}`);
+      await this.plugin.ensureFolder(`${s.mappingFolder}/${name}`);
+      void this.renderTab('corpus');
+    });
+
+    // ---- Liste des fichiers par classe ----------------------------
+    type FileEntry = { file: TFile; ruleCount: number; hasPseudo: boolean; finalExt: string | null };
+
+    const classes = getCorpusClasses(this.app, transcRoot);
+    const allClasses = [null, ...classes]; // null = racine
+
+    const detectFinalExport = (base: string): string | null => {
+      for (const ext of FINAL_EXTS) {
+        // Chercher dans toutes les destinations possibles
+        const candidates = [
+          `${s.exportFinalFolder}/${base}.pseudonymized.${ext}`,
+          `${s.exportsFolder}/${base}.pseudonymized.${ext}`,
+        ];
+        for (const c of candidates) {
+          if (this.app.vault.getAbstractFileByPath(c) instanceof TFile) return ext;
+        }
+      }
+      return null;
+    };
+
+    const collectFiles = async (folder: TFolder): Promise<FileEntry[]> => {
+      const entries: FileEntry[] = [];
+      for (const child of folder.children) {
+        if (!(child instanceof TFile)) continue;
+        if (!['md', 'srt', 'cha', 'chat', 'txt'].includes(child.extension.toLowerCase())) continue;
+        if (child.basename.endsWith('.pseudonymized')) continue;
+
+        const base = child.basename;
+        let ruleCount = 0;
+        const mappingFile = this.plugin['findInMappings']?.(`${base}.mapping.json`)
+          ?? this.app.vault.getAbstractFileByPath(`${s.mappingFolder}/${base}.mapping.json`);
+        if (mappingFile instanceof TFile) {
+          try {
+            const data = JSON.parse(await this.app.vault.read(mappingFile as TFile));
+            ruleCount = (data.mappings ?? []).length;
+          } catch { /* ignore */ }
+        }
+
+        const pseudoMd = this.app.vault.getAbstractFileByPath(`${s.exportsFolder}/${base}.pseudonymized.md`);
+        entries.push({ file: child, ruleCount, hasPseudo: pseudoMd instanceof TFile, finalExt: detectFinalExport(base) });
+      }
+      return entries;
+    };
+
+    for (const cls of allClasses) {
+      const folderPath = cls ? `${transcRoot}/${cls}` : transcRoot;
+      const folder = this.app.vault.getAbstractFileByPath(folderPath);
+      if (!(folder instanceof TFolder)) continue;
+
+      // N'afficher les fichiers de la racine que s'ils existent
+      const entries = await collectFiles(folder);
+
+      // En-tête de classe
+      const header = el.createDiv('pseudobs-corpus-class-header');
+      const heading = header.createEl('span', {
+        text: cls ?? t('panel.corpus.noClass'),
+        cls: 'pseudobs-corpus-class-heading',
+      });
+      heading.style.flex = '1';
+
+      if (cls) {
+        // Bouton supprimer la classe
+        const delBtn = header.createEl('button', { cls: 'pseudobs-corpus-class-del' });
+        setIcon(delBtn, 'trash-2');
+        delBtn.title = t('panel.corpus.deleteClass');
+        delBtn.addEventListener('click', async () => {
+          if (!confirm(t('panel.corpus.deleteClassConfirm', cls))) return;
+          // Déplacer les fichiers à la racine
+          for (const { file } of entries) {
+            await this.plugin.moveFileToClass(file, '');
+          }
+          // Supprimer les dossiers de classe si vides
+          for (const root of [transcRoot, s.mappingFolder]) {
+            const clsFolder = this.app.vault.getAbstractFileByPath(`${root}/${cls}`);
+            if (clsFolder instanceof TFolder && clsFolder.children.length === 0) {
+              await this.app.fileManager.trashFile(clsFolder);
+            }
+          }
+          void this.renderTab('corpus');
+        });
+      }
+
+      if (entries.length === 0) continue;
+
+      const list = el.createDiv('pseudobs-corpus-file-list');
+
+      for (const { file, ruleCount, hasPseudo, finalExt } of entries) {
+        const row = list.createDiv('pseudobs-corpus-file-row');
+
+        // Vérifier si le nom contient un terme pseudonymisable (badge dans le corpus)
+        const suggestedName = await this.plugin.suggestCorrectedFilename(file);
+
+        // Nom — cliquable
+        const nameEl = row.createEl('span', {
+          text: file.name,
+          cls: `pseudobs-corpus-file-name${suggestedName ? ' pseudobs-corpus-filename-warn' : ''}`,
+        });
+        if (suggestedName) nameEl.title = `⚠ → ${suggestedName}.${file.extension}`;
+        nameEl.addEventListener('click', () => void this.app.workspace.getLeaf().openFile(file));
+
+        const badges = row.createDiv('pseudobs-corpus-badges');
+
+        // Règles
+        const rb = badges.createEl('span', { text: `${ruleCount}R`, cls: 'pseudobs-corpus-badge pseudobs-corpus-badge-rules' });
+        rb.title = t('panel.corpus.rules', String(ruleCount));
+
+        // Version pseudo
+        const pb = badges.createEl('span', { cls: `pseudobs-corpus-badge ${hasPseudo ? 'pseudobs-corpus-badge-pseudo' : 'pseudobs-corpus-badge-none'}` });
+        setIcon(pb, hasPseudo ? 'file-check' : 'file-x');
+        pb.title = hasPseudo ? t('panel.corpus.hasPseudo') : t('panel.corpus.noPseudo');
+
+        // Export final
+        const fb = badges.createEl('span', {
+          cls: `pseudobs-corpus-badge ${finalExt ? 'pseudobs-corpus-badge-final' : 'pseudobs-corpus-badge-none'}`,
+          text: finalExt ? finalExt.toUpperCase() : '—',
+        });
+        fb.title = finalExt ? t('panel.corpus.hasFinal', finalExt.toUpperCase()) : t('panel.corpus.noFinal');
+
+        // Bouton "Déplacer vers…"
+        const moveBtn = row.createEl('select', { cls: 'pseudobs-corpus-move-select' });
+        const defaultOpt = moveBtn.createEl('option', { text: t('panel.corpus.moveTo'), value: '__none__' });
+        defaultOpt.selected = true;
+        defaultOpt.disabled = true;
+        // Option racine
+        if (cls !== null) moveBtn.createEl('option', { text: t('panel.corpus.moveToRoot'), value: '' });
+        // Options classes
+        for (const target of classes) {
+          if (target !== cls) moveBtn.createEl('option', { text: target, value: target });
+        }
+        moveBtn.addEventListener('change', async () => {
+          const target = moveBtn.value;
+          if (target === '__none__') return;
+          await this.plugin.moveFileToClass(file, target);
+          void this.renderTab('corpus');
+        });
+      }
+    }
   }
 
   // ---- Onglet Mappings -------------------------------------------
@@ -280,7 +568,7 @@ export class PseudonymizationView extends ItemView {
         // Bouton supprimer
         const delBtn = card.createEl('button', { cls: 'pseudobs-exception-card-del' });
         setIcon(delBtn, 'x');
-        delBtn.title = 'Supprimer cette exception';
+        delBtn.title = t('panel.mappings.exceptions.delete');
         delBtn.addEventListener('click', async () => {
           const updated = (rule.ignoredOccurrences ?? []).filter((o) => o.text !== occ.text);
           store.update(rule.id, { ignoredOccurrences: updated });
@@ -403,7 +691,7 @@ export class PseudonymizationView extends ItemView {
 
   // ---- Onglet Exports --------------------------------------------
 
-  private renderExportsTab(el: HTMLElement): void {
+  private async renderExportsTab(el: HTMLElement): Promise<void> {
     const file = this.getFile();
 
     if (!file) {
@@ -413,13 +701,61 @@ export class PseudonymizationView extends ItemView {
 
     el.createEl('p', { text: `${file.name}`, cls: 'pseudobs-view-filename' });
 
-    new Setting(el)
-      .setName(t('panel.exports.pseudonymize'))
-      .addButton((btn) =>
-        btn.setButtonText(t('panel.exports.pseudonymize')).setCta().onClick(() => {
-          void this.plugin.pseudonymizeActiveFile();
-        })
-      );
+    // Détecter si le fichier est dans le dossier exports (déjà pseudonymisé — quel que soit le format)
+    const exportsFolder = this.plugin.settings.exportsFolder;
+    const isInExports = file.path.startsWith(exportsFolder + '/')
+      || file.parent?.path === exportsFolder;
+
+    if (isInExports) {
+      // Fichier déjà pseudonymisé.
+      // Pour les .md noScribe (vtt/html), proposer le re-export VTT en CTA.
+      if (file.extension === 'md') {
+        try {
+          const content = await this.app.vault.read(file);
+          const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+          const format = formatMatch?.[1];
+          if (format === 'vtt' || format === 'html') {
+            new Setting(el)
+              .setName(t('panel.exports.exportVtt'))
+              .setDesc(t('panel.exports.exportVtt.desc'))
+              .addButton((btn) =>
+                btn.setButtonText(t('command.exportAsVtt')).setCta().onClick(() => {
+                  void this.plugin.exportCurrentFileAsVtt();
+                })
+              );
+          } else if (format === 'srt') {
+            new Setting(el)
+              .setName(t('panel.exports.exportSrt'))
+              .setDesc(t('panel.exports.exportSrt.desc'))
+              .addButton((btn) =>
+                btn.setButtonText(t('command.exportAsSrt')).setCta().onClick(() => {
+                  void this.plugin.exportCurrentFileAsFormat('srt');
+                })
+              );
+          } else if (format === 'chat') {
+            new Setting(el)
+              .setName(t('panel.exports.exportCha'))
+              .setDesc(t('panel.exports.exportCha.desc'))
+              .addButton((btn) =>
+                btn.setButtonText(t('command.exportAsCha')).setCta().onClick(() => {
+                  void this.plugin.exportCurrentFileAsFormat('cha');
+                })
+              );
+          }
+        } catch { /* lecture impossible */ }
+      }
+      // Pour les autres formats (.srt, .cha, etc.) déjà dans le dossier exports :
+      // le fichier est déjà au format natif — aucun bouton de pseudonymisation.
+    } else {
+      // Fichier source — proposer la pseudonymisation
+      new Setting(el)
+        .setName(t('panel.exports.pseudonymize'))
+        .addButton((btn) =>
+          btn.setButtonText(t('panel.exports.pseudonymize')).setCta().onClick(() => {
+            void this.plugin.pseudonymizeActiveFile();
+          })
+        );
+    }
 
     new Setting(el)
       .setName(t('panel.exports.exportMapping'))

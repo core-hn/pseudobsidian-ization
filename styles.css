@@ -1116,6 +1116,207 @@
   margin-right: auto;
 }
 
+/* ---- Bannière avertissement nom de fichier ---- */
+.pseudobs-filename-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 10px;
+  background: rgba(255, 160, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 160, 0, 0.35);
+  font-size: 0.82em;
+}
+.pseudobs-fw-top { display: flex; align-items: center; gap: 6px; }
+.pseudobs-fw-icon { color: var(--text-warning); flex-shrink: 0; }
+.pseudobs-fw-icon svg { width: 13px; height: 13px; }
+.pseudobs-fw-msg { color: var(--text-warning); line-height: 1.4; }
+.pseudobs-fw-row { display: flex; align-items: center; gap: 6px; }
+
+.pseudobs-fw-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid rgba(255, 160, 0, 0.4);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.82em;
+  cursor: pointer;
+  color: var(--text-warning);
+  white-space: nowrap;
+}
+.pseudobs-fw-action-btn svg { width: 12px; height: 12px; }
+.pseudobs-fw-action-btn:hover { background: rgba(255, 160, 0, 0.15); }
+.pseudobs-fw-wand-btn { font-style: italic; }
+
+/* ---- Onglet Corpus ---- */
+.pseudobs-corpus-add-class-btn {
+  margin-top: 6px;
+  font-size: 0.82em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  background: var(--background-secondary);
+}
+.pseudobs-corpus-add-class-btn:hover { background: var(--background-modifier-hover); }
+
+.pseudobs-corpus-export-section {
+  background: var(--background-secondary);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.pseudobs-corpus-export-heading {
+  font-size: 0.78em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.pseudobs-corpus-export-type-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.pseudobs-corpus-export-type-label {
+  font-size: 0.85em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.pseudobs-corpus-export-section .setting-item {
+  border: none;
+  padding: 4px 0;
+}
+
+.pseudobs-corpus-class-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0 3px;
+}
+.pseudobs-corpus-class-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  padding: 2px;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pseudobs-corpus-class-header:hover .pseudobs-corpus-class-del { opacity: 1; }
+.pseudobs-corpus-class-del:hover { color: var(--text-error); }
+
+.pseudobs-corpus-move-select {
+  font-size: 0.75em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pseudobs-corpus-class-heading {
+  font-size: 0.82em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 12px 0 4px;
+  padding: 0 2px;
+}
+
+.pseudobs-corpus-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.pseudobs-corpus-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.pseudobs-corpus-file-row:hover {
+  background: var(--background-secondary);
+}
+
+.pseudobs-corpus-file-name {
+  flex: 1;
+  font-size: 0.88em;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pseudobs-corpus-file-name:hover {
+  text-decoration: underline;
+  color: var(--text-accent);
+}
+.pseudobs-corpus-filename-warn {
+  color: var(--text-warning);
+}
+.pseudobs-corpus-fix-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-warning);
+  padding: 2px 3px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.pseudobs-corpus-fix-btn:hover { opacity: 1; background: var(--background-modifier-error-hover); }
+
+.pseudobs-corpus-badges {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.pseudobs-corpus-badge {
+  font-size: 0.72em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.pseudobs-corpus-badge svg { width: 11px; height: 11px; }
+
+.pseudobs-corpus-badge-rules {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+.pseudobs-corpus-badge-pseudo {
+  background: rgba(60, 200, 100, 0.15);
+  color: rgb(40, 160, 80);
+  outline: 1px solid rgba(60, 200, 100, 0.35);
+}
+.pseudobs-corpus-badge-final {
+  background: rgba(80, 160, 255, 0.15);
+  color: rgb(60, 130, 230);
+  outline: 1px solid rgba(80, 160, 255, 0.35);
+}
+.pseudobs-corpus-badge-none {
+  color: var(--text-faint);
+  background: transparent;
+}
+
 /* Ligne checkbox caviardage (QuickPseudonymizeModal, RuleModal) */
 .pseudobs-redact-row {
   display: flex;

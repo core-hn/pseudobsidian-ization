@@ -75,6 +75,89 @@ export function chatToMarkdown(doc: ChatDocument, sourceName: string): string {
 
 // ---- VTT / noScribe HTML ---------------------------------------------------
 
+// ---- Re-exports format d'origine -------------------------------------------
+
+/** Extrait le corps d'un Markdown (après le frontmatter ---...---). */
+function extractBody(mdContent: string): string {
+  const m = /^---\n[\s\S]*?\n---\n+([\s\S]*)$/.exec(mdContent);
+  return m ? m[1] : mdContent;
+}
+
+/**
+ * Reconstruit un fichier SRT pseudonymisé depuis le Markdown (pseudobs-format: srt).
+ * Format attendu : **[N]** *HH:MM:SS,mmm → HH:MM:SS,mmm* suivi des lignes de texte.
+ */
+export function markdownToSrt(mdContent: string): string {
+  const body = extractBody(mdContent);
+  const lines = body.split('\n');
+
+  // Regex d'en-tête de bloc SRT dans le Markdown
+  const HEADER_RE = /^\*\*\[(\d+)\]\*\* \*(.+?) → (.+?)\*$/;
+
+  const parts: string[] = [];
+  let currentBlock: { index: string; start: string; end: string; lines: string[] } | null = null;
+
+  const flush = () => {
+    if (!currentBlock) return;
+    parts.push(currentBlock.index);
+    parts.push(`${currentBlock.start} --> ${currentBlock.end}`);
+    parts.push(...currentBlock.lines);
+    parts.push('');
+  };
+
+  for (const line of lines) {
+    const m = HEADER_RE.exec(line);
+    if (m) {
+      flush();
+      currentBlock = { index: m[1], start: m[2], end: m[3], lines: [] };
+    } else if (currentBlock) {
+      currentBlock.lines.push(line);
+    }
+  }
+  flush();
+
+  // Retirer les lignes vides de fin de chaque bloc sauf la dernière
+  return parts.join('\n');
+}
+
+/**
+ * Reconstruit un fichier CHAT (.cha) pseudonymisé depuis le Markdown (pseudobs-format: chat).
+ * Format attendu :
+ *   > @ligne-meta   →  @ligne-meta
+ *   **SPEAKER** : texte  →  *SPEAKER:\ttexte
+ */
+export function markdownToCha(mdContent: string): string {
+  const body = extractBody(mdContent);
+  const lines = body.split('\n');
+
+  const BLOCKQUOTE_RE = /^> (.*)$/;
+  const TURN_RE = /^\*\*([^*]+)\*\* : (.*)$/;
+
+  const out: string[] = [];
+
+  for (const line of lines) {
+    const bq = BLOCKQUOTE_RE.exec(line);
+    if (bq) {
+      out.push(bq[1]);
+      continue;
+    }
+    const turn = TURN_RE.exec(line);
+    if (turn) {
+      out.push(`*${turn[1]}:\t${turn[2]}`);
+      continue;
+    }
+    // Lignes vides : préserver pour séparer les blocs
+    if (line.trim() === '') continue;
+    // Texte de continuation (rare)
+    out.push(line);
+  }
+
+  // Assurer @End en dernière ligne si présent
+  while (out.length > 0 && out[out.length - 1] === '') out.pop();
+  out.push('');
+  return out.join('\n');
+}
+
 /** Données word-level d'une cue — stockées dans <basename>.words.json. */
 export interface VttCueData {
   index: number;

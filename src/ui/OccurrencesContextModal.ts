@@ -7,6 +7,7 @@
  */
 
 import { App, Modal, Setting } from 'obsidian';
+import { t } from '../i18n';
 import type { MappingRule, Occurrence } from '../types';
 
 export type OccurrenceDecision = 'validated' | 'ignored' | 'false_positive';
@@ -48,21 +49,22 @@ export class OccurrencesContextModal extends Modal {
       text: `${this.rule.source}  →  ${this.rule.replacement}`,
       cls: 'pseudobs-ctx-modal-title',
     });
+    const n = this.occurrences.length;
     contentEl.createEl('p', {
-      text: `${this.occurrences.length} occurrence${this.occurrences.length > 1 ? 's' : ''} — sélectionnez celles à remplacer.`,
+      text: t('occurrencesCtx.hint', String(n), n > 1 ? t('occurrencesCtx.hint.s') : t('occurrencesCtx.hint.empty')),
       cls: 'pseudobs-view-hint',
     });
 
     // Boutons globaux
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText('Tout valider').onClick(() => {
+        b.setButtonText(t('occurrencesCtx.validateAll')).onClick(() => {
           for (const occ of this.occurrences) this.decisions.set(occ.id, 'validated');
           this.updateAllCards();
         })
       )
       .addButton((b) =>
-        b.setButtonText('Tout ignorer').onClick(() => {
+        b.setButtonText(t('occurrencesCtx.ignoreAll')).onClick(() => {
           for (const occ of this.occurrences) this.decisions.set(occ.id, 'ignored');
           this.updateAllCards();
         })
@@ -78,10 +80,10 @@ export class OccurrencesContextModal extends Modal {
 
     new Setting(contentEl)
       .addButton((b) =>
-        b.setButtonText('Annuler').onClick(() => this.close())
+        b.setButtonText(t('occurrencesCtx.cancel')).onClick(() => this.close())
       )
       .addButton((b) =>
-        b.setButtonText('Confirmer la sélection').setCta().onClick(() => {
+        b.setButtonText(t('occurrencesCtx.confirm')).setCta().onClick(() => {
           this.onConfirm(new Map(this.decisions));
           this.close();
         })
@@ -114,9 +116,9 @@ export class OccurrencesContextModal extends Modal {
     const btnRefs = new Map<OccurrenceDecision, HTMLElement>();
 
     for (const [label, value, title] of [
-      ['✓', 'validated',     'Valider'],
-      ['✗', 'ignored',       'Ignorer'],
-      ['⚠', 'false_positive', 'Faux positif'],
+      ['✓', 'validated',      t('occurrencesCtx.btn.validate')],
+      ['✗', 'ignored',        t('occurrencesCtx.btn.ignore')],
+      ['⚠', 'false_positive', t('occurrencesCtx.btn.fp')],
     ] as [string, OccurrenceDecision, string][]) {
       const btn = actions.createEl('button', { text: label });
       btn.title = title;
@@ -149,7 +151,7 @@ export class OccurrencesContextModal extends Modal {
     ref.resLine.toggle(show);
     ref.statusLabel.toggle(!show);
     ref.statusLabel.setText(
-      decision === 'ignored' ? 'Conservé tel quel' : decision === 'false_positive' ? 'Faux positif — exclu' : ''
+      decision === 'ignored' ? t('occurrencesCtx.status.ignored') : decision === 'false_positive' ? t('occurrencesCtx.status.fp') : ''
     );
   }
 
