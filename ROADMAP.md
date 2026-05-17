@@ -16,7 +16,7 @@ Architectural decision (May 2026): **identifying entity detection** is handled b
 ✅ Phases 0–8   Parsers · Engine · UI · Scopes · Highlighting · Validation · Coulmont · Panel · NER · Wizard
 ✅ Phase 9      Structured dictionaries · DictionaryLoader · Review modals · French communes
 🔄 Phase 10     Refinement & noScribe integration (v0.1.x → v0.2.0)
-               ✅ i18n · Corpus org · noScribe HTML/VTT/audio · Scan candidates · Exceptions · VTT re-export
+               ✅ i18n · Corpus UI · noScribe import · scan candidats · exceptions · rename cascade · exports
                ⏳ Test coverage · Jefferson/ICOR checker · Audio redaction · Timestamp UI
 ⏳ Phase 11     Interactional analysis functions (v1.0.0)
 ```
@@ -223,7 +223,11 @@ Goal: consolidate all existing features and add the EMCA-specific functions that
 - [x] **Mappings tab grouped by scope** — File / Folder / Vault sections with active-file filter
 - [x] **Status labels clarified** — "Active / Partial / Ignored / Suggested" instead of ✓/◑/✗/?; `getValidatedFor()` includes `partial`
 - [x] **Scan modal — per-occurrence candidates** — `MappingScanReviewModal` count column opens `OccurrencesContextModal` (✓/✗/⚠ per occurrence, "Save exceptions" button)
-- [x] **Exceptions** — `IgnoredOccurrence` on `MappingRule`, persisted in mapping.json, red highlighting (`pseudobs-exception`, case-sensitive, priority 0), Exceptions section in Mappings tab
+- [x] **Exceptions** — `IgnoredOccurrence` on `MappingRule`, persisted in mapping.json, red highlighting (`pseudobs-exception`, context-aware position, priority 0), Exceptions section in Mappings tab
+- [x] **Corpus tab** — file list by class, class management, move files (cascade: .md + mapping + audio + source), final export destination (vault/next-to-source/external, optional class mirroring), `FolderSuggest` autocomplete
+- [x] **Rename cascade** — `vault.on('rename')` listener, `cascadeRelatedRename()` updates frontmatter (processFrontMatter), mapping scopes, words.json, exports, audio (same basename + pseudobs-audio ref), source files
+- [x] **Filename warning** — banner above tabs when name contains pseudonymizable term; ✏ manual rename · ✨ neutral suggestion (transcript_N)
+- [x] **Exports in original format** — `markdownToSrt()`, `markdownToCha()`, `resolveExportPath()` with class mirroring, Exports tab adapts based on file type
 - [ ] Unit test coverage ≥ 80% for parsers, engine, NER scanner, DictionaryLoader
 - [ ] Jefferson / ICOR convention checker: hover suggestions, editor highlighting
 - [ ] EMCA publication exports (PNG)

@@ -470,12 +470,16 @@ export default class PseudObsPlugin extends Plugin {
       if (found) {
         const newPath = `${mappingTargetDir}/${base}${suffix}`;
         if (found.path !== newPath) {
-          // Mettre à jour le scope.path des règles fichier après déplacement
+          // Mettre à jour le scope.path après déplacement (store + règles individuelles)
           if (suffix === '.mapping.json') {
             try {
               const raw = await this.app.vault.read(found);
               const data = JSON.parse(raw);
               let changed = false;
+              if (data.scope?.type === 'file' && data.scope.path === file.path) {
+                data.scope.path = newMdPath;
+                changed = true;
+              }
               for (const rule of data.mappings ?? []) {
                 if (rule.scope?.type === 'file' && rule.scope.path === file.path) {
                   rule.scope.path = newMdPath;
@@ -567,6 +571,7 @@ export default class PseudObsPlugin extends Plugin {
    */
   async renameFileAndRelated(file: TFile, newBasename: string): Promise<void> {
     const oldBase = file.basename;
+    const oldFilePath = file.path; // capturer AVANT le rename (file.path change après)
     const folder = file.parent?.path ?? '';
     const newPath = folder ? `${folder}/${newBasename}.${file.extension}` : `${newBasename}.${file.extension}`;
 
@@ -575,7 +580,7 @@ export default class PseudObsPlugin extends Plugin {
       await this.app.vault.rename(file, newPath);
       const newFile = this.app.vault.getAbstractFileByPath(newPath);
       if (newFile instanceof TFile) {
-        await this.cascadeRelatedRename(oldBase, newBasename, newFile, file.path);
+        await this.cascadeRelatedRename(oldBase, newBasename, newFile, oldFilePath);
       }
     } finally {
       this._renamingRelated = false;
@@ -623,15 +628,14 @@ export default class PseudObsPlugin extends Plugin {
     const s = this.settings;
     const fileFolder = file.parent?.path ?? '';
 
-    // 1. Mettre à jour le frontmatter pseudobs-source dans le fichier renommé
+    // 1. Mettre à jour pseudobs-source dans le frontmatter via l'API Obsidian
     if (file.extension === 'md') {
       try {
-        const content = await this.app.vault.read(file);
-        const updated = content.replace(
-          /^pseudobs-source:\s*"[^"]*"/m,
-          `pseudobs-source: "${newBase}.${file.extension}"`
-        );
-        if (updated !== content) await this.app.vault.modify(file, updated);
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          if (fm['pseudobs-source'] !== undefined) {
+            fm['pseudobs-source'] = `${newBase}.${file.extension}`;
+          }
+        });
       } catch { /* ignore */ }
     }
 
@@ -644,6 +648,11 @@ export default class PseudObsPlugin extends Plugin {
         try {
           const raw = await this.app.vault.read(found);
           const data = JSON.parse(raw);
+          // Scope de niveau store (chemin du fichier de transcription)
+          if (data.scope?.type === 'file' && data.scope.path === oldFilePath) {
+            data.scope.path = file.path;
+          }
+          // Scopes individuels des règles
           for (const rule of data.mappings ?? []) {
             if (rule.scope?.type === 'file' && rule.scope.path === oldFilePath) {
               rule.scope.path = file.path;
@@ -667,32 +676,68 @@ export default class PseudObsPlugin extends Plugin {
           const ef = this.app.vault.getAbstractFileByPath(newExportPath);
           if (ef instanceof TFile) {
             try {
-              const c = await this.app.vault.read(ef);
-              const u = c.replace(/^pseudobs-source:\s*"[^"]*"/m, `pseudobs-source: "${newBase}.${file.extension}"`);
-              if (u !== c) await this.app.vault.modify(ef, u);
+              await this.app.fileManager.processFrontMatter(ef, (fm) => {
+                if (fm['pseudobs-source'] !== undefined) {
+                  fm['pseudobs-source'] = `${newBase}.${file.extension}`;
+                }
+              });
             } catch { /* ignore */ }
           }
         }
       }
     }
 
-    // 4. Fichiers audio avec le même basename dans le même dossier
+    // 4. Fichiers audio — deux stratégies :
+    //    a) Même basename (entretien_01.m4a avec entretien_01.md)
+    //    b) Référencé dans pseudobs-audio du frontmatter (audio noScribe à nom différent)
     const AUDIO_EXTS = ['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff'];
+    const audioRenamed = new Map<string, string>(); // oldName → newName
+
+    // Stratégie a : même basename
     for (const ext of AUDIO_EXTS) {
       const audioPath = fileFolder ? `${fileFolder}/${oldBase}.${ext}` : `${oldBase}.${ext}`;
       const audioFile = this.app.vault.getAbstractFileByPath(audioPath);
       if (!(audioFile instanceof TFile)) continue;
+      const oldAudioName = audioFile.name; // capturer AVANT le rename (TFile muté in-place)
       const newAudioName = `${newBase}.${ext}`;
       const newAudioPath = fileFolder ? `${fileFolder}/${newAudioName}` : newAudioName;
       await this.app.vault.rename(audioFile, newAudioPath);
-      // Mettre à jour pseudobs-audio dans le frontmatter du .md
-      if (file.extension === 'md') {
-        try {
-          const c = await this.app.vault.read(file);
-          const u = c.replace(/^pseudobs-audio:\s*"[^"]*"/m, `pseudobs-audio: "${newAudioName}"`);
-          if (u !== c) await this.app.vault.modify(file, u);
-        } catch { /* ignore */ }
-      }
+      audioRenamed.set(oldAudioName, newAudioName);
+    }
+
+    // Stratégie b : pseudobs-audio dans le frontmatter (basename différent)
+    if (file.extension === 'md') {
+      try {
+        const mdContent = await this.app.vault.read(file);
+        const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(mdContent);
+        if (audioMatch) {
+          const oldAudioName = audioMatch[1];
+          if (!audioRenamed.has(oldAudioName)) {
+            // Fichier audio à renommer avec le même basename que la nouvelle transcription
+            const oldAudioPath = fileFolder ? `${fileFolder}/${oldAudioName}` : oldAudioName;
+            const audioFile = this.app.vault.getAbstractFileByPath(oldAudioPath);
+            if (audioFile instanceof TFile) {
+              const ext = oldAudioName.split('.').pop() ?? '';
+              const newAudioName = ext ? `${newBase}.${ext}` : newBase;
+              const newAudioPath = fileFolder ? `${fileFolder}/${newAudioName}` : newAudioName;
+              await this.app.vault.rename(audioFile, newAudioPath);
+              audioRenamed.set(oldAudioName, newAudioName);
+            }
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Mettre à jour pseudobs-audio dans le frontmatter via l'API Obsidian
+    if (file.extension === 'md' && audioRenamed.size > 0) {
+      try {
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          const current = fm['pseudobs-audio'];
+          if (current && audioRenamed.has(current)) {
+            fm['pseudobs-audio'] = audioRenamed.get(current);
+          }
+        });
+      } catch { /* ignore */ }
     }
 
     // 5. Fichier source originale (même basename, extension différente — .srt, .vtt, .cha, .html, .yml…)
