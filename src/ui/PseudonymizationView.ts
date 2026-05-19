@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
 import { scanOccurrences } from '../scanner/OccurrenceScanner';
-import { getCorpusClasses } from './CorpusModal';
+import { getCorpusClasses, CorpusModal } from './CorpusModal';
 import { FolderSuggest } from './FolderSuggest';
 import { EditRuleModal } from './EditRuleModal';
 import { RuleModal } from './RuleModal';
@@ -211,9 +211,8 @@ export class PseudonymizationView extends ItemView {
     // Sélecteur de type
     const typeRow = exportSection.createDiv('pseudobs-corpus-export-type-row');
     for (const [val, labelKey] of [
-      ['vault',          'panel.corpus.exportDest.vault'],
-      ['next-to-source', 'panel.corpus.exportDest.nextToSource'],
-      ['external',       'panel.corpus.exportDest.external'],
+      ['vault',    'panel.corpus.exportDest.vault'],
+      ['external', 'panel.corpus.exportDest.external'],
     ] as [string, string][]) {
       const lbl = typeRow.createEl('label', { cls: 'pseudobs-corpus-export-type-label' });
       const radio = lbl.createEl('input');
@@ -270,12 +269,8 @@ export class PseudonymizationView extends ItemView {
       text: `+ ${t('panel.corpus.addClass')}`,
       cls: 'pseudobs-corpus-add-class-btn',
     });
-    addClassBtn.addEventListener('click', async () => {
-      const name = this.promptText(t('corpus.modal.classNamePlaceholder'));
-      if (!name) return;
-      await this.plugin.ensureFolder(`${transcRoot}/${name}`);
-      await this.plugin.ensureFolder(`${s.mappingFolder}/${name}`);
-      void this.renderTab('corpus');
+    addClassBtn.addEventListener('click', () => {
+      new CorpusModal(this.app, this.plugin, () => void this.renderTab('corpus')).open();
     });
 
     // ---- Liste des fichiers par classe ----------------------------
@@ -723,6 +718,16 @@ export class PseudonymizationView extends ItemView {
                   void this.plugin.exportCurrentFileAsVtt();
                 })
               );
+            if (format === 'html') {
+              new Setting(el)
+                .setName(t('panel.exports.exportHtml'))
+                .setDesc(t('panel.exports.exportHtml.desc'))
+                .addButton((btn) =>
+                  btn.setButtonText(t('command.exportAsHtml')).onClick(() => {
+                    void this.plugin.exportCurrentFileAsHtml();
+                  })
+                );
+            }
           } else if (format === 'srt') {
             new Setting(el)
               .setName(t('panel.exports.exportSrt'))

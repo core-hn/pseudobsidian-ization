@@ -236,7 +236,6 @@ var init_en = __esm({
       "panel.corpus.deleteClassConfirm": 'Delete class "{0}"? Files inside will be moved to root.',
       "panel.corpus.exportSettings": "Final export destination",
       "panel.corpus.exportDest.vault": "In the vault",
-      "panel.corpus.exportDest.nextToSource": "Next to source file",
       "panel.corpus.exportDest.external": "External folder",
       "panel.corpus.exportFolder": "Export folder (vault)",
       "panel.corpus.exportExternalPath": "Absolute path",
@@ -255,8 +254,12 @@ var init_en = __esm({
       "panel.exports.exportSrt.desc": "Rebuilds the pseudonymized SRT file from the Markdown.",
       "panel.exports.exportCha": "Re-export as CHAT (.cha)",
       "panel.exports.exportCha.desc": "Rebuilds the pseudonymized CHAT file from the Markdown.",
+      "panel.exports.exportHtml": "Re-export as HTML",
+      "panel.exports.exportHtml.desc": "Rebuilds the pseudonymized noScribe HTML file from the Markdown and word timestamps (.words.json).",
+      "notice.htmlExported": "HTML exported: {0}",
       "command.exportAsSrt": "Export as SRT",
       "command.exportAsCha": "Export as CHAT",
+      "command.exportAsHtml": "Export as HTML",
       "panel.ner.scanBtn": "Identify candidates",
       "panel.ner.hint": "Settings for the automatic named entity detection scanner.",
       "panel.ner.threshold": "Confidence threshold",
@@ -397,6 +400,371 @@ var init_en = __esm({
       "settings.caseSensitiveDesc": 'If enabled, "Jean" and "jean" are treated as distinct.',
       "settings.wholeWordOnly": "Whole words only",
       "settings.wholeWordOnlyDesc": "If enabled, only complete word occurrences are replaced."
+    };
+  }
+});
+
+// src/i18n/locales/es.json
+var es_default;
+var init_es = __esm({
+  "src/i18n/locales/es.json"() {
+    es_default = {
+      "corpus.modal.title": "Organizar corpus",
+      "corpus.modal.hint": "Cada clase crea carpetas espejo para las transcripciones, las tablas de correspondencia y los exportes.",
+      "corpus.modal.noClasses": "No hay clases definidas. A\xF1ada una para organizar sus documentos por carpeta.",
+      "corpus.modal.addClass": "A\xF1adir una clase",
+      "corpus.modal.classNamePlaceholder": "Nombre de la clase (p. ej. Sesi\xF3n_A, Informante_1\u2026)",
+      "corpus.modal.classNameEmpty": "El nombre de la clase no puede estar vac\xEDo.",
+      "corpus.modal.classExists": "Ya existe una clase con este nombre.",
+      "corpus.modal.deleteConfirm": "\xBFEliminar la clase \xAB{0}\xBB? Las carpetas ser\xE1n retiradas del vault (los archivos dentro ir\xE1n a la papelera).",
+      "corpus.modal.files": "{0} archivo(s)",
+      "corpus.modal.close": "Cerrar",
+      "corpus.select.title": "\xBFEn qu\xE9 clase a\xF1adir?",
+      "corpus.select.hint": "Elija la clase (carpeta) para esta transcripci\xF3n.",
+      "corpus.select.none": "Sin clase (ra\xEDz)",
+      "corpus.select.confirm": "A\xF1adir",
+      "quickModal.title": "Pseudonimizar",
+      "quickModal.source": "Expresi\xF3n seleccionada",
+      "quickModal.sourceDesc": "T\xE9rmino a reemplazar \u2014 no modificable",
+      "quickModal.replaceBy": "Reemplazar por",
+      "quickModal.replacementPlaceholder": "Pseud\xF3nimo o categor\xEDa anal\xEDtica",
+      "quickModal.scope": "\xC1mbito del reemplazo",
+      "quickModal.scopeFile": "Todas las ocurrencias en este archivo",
+      "quickModal.scopeOccurrence": "Solo esta ocurrencia",
+      "quickModal.submit": "Pseudonimizar",
+      "notice.appliedOccurrence": "\u2713 \xAB{0}\xBB \u2192 \xAB{1}\xBB (esta ocurrencia)",
+      "notice.appliedFile": "\u2713 \xAB{0}\xBB \u2192 \xAB{1}\xBB ({2} ocurrencia{3})",
+      "onboarding.dict.importOk": "{0} diccionario importado",
+      "onboarding.dict.importOkMany": "{0} diccionarios importados",
+      "onboarding.dict.importErr": "{0} archivo rechazado",
+      "onboarding.dict.importErrMany": "{0} archivos rechazados",
+      "onboarding.dict.importError": "Error al importar {0} \u2014 verifique el formato .dict.json",
+      "notice.noActiveFile": "No hay archivo activo.",
+      "notice.formatUnsupported": "Formato no compatible: .{0}",
+      "notice.noRules": "No hay reglas para este archivo.\nCree reglas con Ctrl+P \u2192 \xABCrear una regla\xBB.",
+      "notice.noOccurrences": "No se encontraron ocurrencias para las reglas activas.",
+      "notice.noNerEntities": "El NER no detect\xF3 ninguna entidad.",
+      "notice.nerEntitiesFound": "\u2713 {0} {1} detectada(s) \u2014 resaltada(s) en azul.\nClic derecho para crear una regla.",
+      "notice.nerEntitiesFound.entity": "entidad",
+      "notice.nerEntitiesFound.entities": "entidades",
+      "notice.nerNotEnabled": "La detecci\xF3n NER de transformers.js no est\xE1 activada.\nAct\xEDvela en Configuraci\xF3n \u2192 Pseudonymizer Tool.",
+      "notice.noDictDetection": "No hay diccionario de detecci\xF3n cargado.\nInstale uno desde el panel Diccionarios.",
+      "notice.noDictEntities": "No se encontraron entidades en los diccionarios de detecci\xF3n.",
+      "notice.noDictReplacements": "No hay reemplazos disponibles para las entidades encontradas.",
+      "notice.ruleDeleted": "\u2713 Regla eliminada \u2014 \xAB{0}\xBB restaurado en el archivo activo",
+      "notice.ruleCreated": "\u2713 Regla creada: \xAB{0}\xBB \u2192 \xAB{1}\xBB",
+      "notice.rulesCreated": "\u2713 {0} {1} creada(s)",
+      "notice.rulesCreated.rule": "regla",
+      "notice.rulesCreated.rules": "reglas",
+      "notice.occurrencesPseudonymized": "\u2713 {0} {1} pseudonimizada(s) en \xAB{2}\xBB",
+      "notice.occurrencesPseudonymized.occurrence": "ocurrencia",
+      "notice.occurrencesPseudonymized.occurrences": "ocurrencias",
+      "notice.converted": "\u2713 {0} \u2192 {1}",
+      "notice.conversionError": "Error de conversi\xF3n de {0}: {1}",
+      "notice.fileExists": "El archivo ya existe en el vault: {0}",
+      "notice.conversionSkipped": "\u26A0 {0}.md ya existe \u2014 conversi\xF3n omitida para {1}",
+      "notice.exportDone": "\u2713 {0} regla(s) aplicada(s)\n\u2192 {1}",
+      "notice.mappingExported": "\u2713 Tabla de correspondencia exportada \u2192 {0}",
+      "notice.noMapping": "No se encontr\xF3 tabla de correspondencia para {0}",
+      "notice.invalidFormat": "Formato no v\xE1lido: {0}",
+      "notice.dictImported": "\u2713 {0} {1} importado(s)",
+      "notice.dictImported.one": "diccionario",
+      "notice.dictImported.many": "diccionarios",
+      "notice.dictRejected": "{0} {1} rechazado(s)",
+      "notice.dictRejected.one": "archivo",
+      "notice.dictRejected.many": "archivos",
+      "notice.nerModelLoaded": "\u2713 Modelo NER cargado",
+      "notice.nerModelLoading": "Cargando modelo NER (primer uso \u2014 ~66 MB)\u2026",
+      "notice.ruleNotFound": "Regla no encontrada en las tablas de correspondencia.",
+      "notice.noCheckedDicts": "Ning\xFAn diccionario marcado.",
+      "notice.audioImported": "Audio importado: {0}",
+      "occurrencesCtx.hint": "{0} ocurrencia{1} \u2014 seleccione las que desea reemplazar.",
+      "occurrencesCtx.hint.s": "s",
+      "occurrencesCtx.hint.empty": "",
+      "occurrencesCtx.validateAll": "Validar todas",
+      "occurrencesCtx.ignoreAll": "Ignorar todas",
+      "occurrencesCtx.cancel": "Cancelar",
+      "occurrencesCtx.confirm": "Confirmar selecci\xF3n",
+      "occurrencesCtx.btn.validate": "Validar",
+      "occurrencesCtx.btn.ignore": "Ignorar",
+      "occurrencesCtx.btn.fp": "Falso positivo",
+      "occurrencesCtx.status.ignored": "Conservado tal cual",
+      "occurrencesCtx.status.fp": "Falso positivo \u2014 excluido",
+      "notice.notNoScribeFormat": "Este archivo no es una transcripci\xF3n de noScribe (se espera pseudobs-format: vtt o html).",
+      "notice.wordsJsonMissing": "Archivo de marcas de tiempo no encontrado: {0}.words.json",
+      "notice.vttMismatch": "Aviso: el n\xFAmero de cues del Markdown y del words.json difiere \u2014 el VTT exportado puede estar incompleto.",
+      "notice.vttExported": "VTT exportado: {0}",
+      "command.organizeCorpus": "Organizar corpus",
+      "command.addTranscription": "A\xF1adir una transcripci\xF3n",
+      "command.pseudonymizeFile": "Pseudonimizar el archivo actual",
+      "command.createRule": "Crear una regla de reemplazo",
+      "command.scanFile": "Escanear el archivo actual",
+      "command.scanNer": "Escanear el archivo con detecci\xF3n NER",
+      "command.scanDictionaries": "Escanear el archivo con diccionarios",
+      "command.pseudonymizeSelection": "Pseudonimizar la selecci\xF3n",
+      "command.exportAsVtt": "Exportar como VTT",
+      "command.exportAsSrt": "Exportar como SRT",
+      "command.exportAsCha": "Exportar como CHAT",
+      "command.exportAsHtml": "Exportar como HTML",
+      "command.openPanel": "Pseudonimizaci\xF3n: abrir panel",
+      "contextMenu.declareException": "Declarar \xAB{0}\xBB como excepci\xF3n aqu\xED",
+      "contextMenu.cancelPseudonymization": "Cancelar pseudonimizaci\xF3n de \xAB{0}\xBB",
+      "contextMenu.editRule": "Editar regla para \xAB{0}\xBB",
+      "contextMenu.pseudonymize": "Pseudonimizar \xAB{0}\xBB",
+      "contextMenu.redact": "Redactar \xAB{0}\xBB",
+      "contextMenu.coulmont": "Pseudonimizar con el prof. Baptiste Coulmont",
+      "contextMenu.createRule": "Crear una regla de reemplazo\u2026",
+      "redaction.checkbox": "Redactar (\u{1F02B})",
+      "redaction.checkboxDesc": "Reemplazar con s\xEDmbolos \u{1F02B} (uno por s\xEDlaba) \u2014 para contenido identificador no esencial",
+      "ruleModal.delete": "Eliminar regla",
+      "ruleModal.scopeWarnTitle": "\xC1mbito longitudinal",
+      "ruleModal.scopeOkTitle": "\xC1mbito de archivo",
+      "ruleModal.scopeOk": "Buena pr\xE1ctica. Este pseud\xF3nimo solo se aplicar\xE1 a esta transcripci\xF3n \u2014 cada archivo permanece independiente.",
+      "ruleModal.title": "Crear una regla de reemplazo",
+      "ruleModal.source": "Fuente",
+      "ruleModal.sourceDesc": "T\xE9rmino original a reemplazar",
+      "ruleModal.replacement": "Reemplazo",
+      "ruleModal.replacementDesc": "Pseud\xF3nimo o categor\xEDa anal\xEDtica",
+      "ruleModal.replacementDescClass": "El \xEDndice exacto se calcular\xE1 al crearlo seg\xFAn las reglas existentes en el \xE1mbito.",
+      "ruleModal.category": "Categor\xEDa",
+      "ruleModal.scope": "\xC1mbito",
+      "ruleModal.scopeFile": "Solo este archivo",
+      "ruleModal.scopeFolder": "Esta carpeta",
+      "ruleModal.scopeVault": "Todo el vault",
+      "ruleModal.priority": "Prioridad",
+      "ruleModal.priorityDesc": "Entero libre, como un z-index CSS \u2014 por defecto 0, mayor = aplicado primero",
+      "ruleModal.submit": "Crear regla",
+      "ruleModal.errorMissing": "La fuente y el reemplazo son obligatorios.",
+      "ruleModal.errorNoFile": "No hay archivo activo.",
+      "ruleModal.coulomontLabel": "Sugerencias de nombres equivalentes \u2014 elija:",
+      "ruleModal.dictLabel": "Diccionario: \xAB{0}\xBB \u2192 clase {1}",
+      "ruleModal.dictUseClass": "Usar \xAB{0}\xBB (\xE1mbito: {1})",
+      "category.first_name": "Nombre",
+      "category.last_name": "Apellido",
+      "category.full_name": "Nombre completo",
+      "category.place": "Lugar",
+      "category.institution": "Instituci\xF3n",
+      "category.date": "Fecha",
+      "category.age": "Edad",
+      "category.profession": "Profesi\xF3n",
+      "category.custom": "Otro",
+      "scope.file": "Archivo",
+      "scope.folder": "Carpeta",
+      "scope.vault": "Vault",
+      "status.validated": "Activo",
+      "status.ignored": "Ignorado",
+      "status.partial": "Parcial",
+      "status.suggested": "Sugerido",
+      "status.conflict": "Conflicto",
+      "status.disabled": "Inactivo",
+      "status.needs_review": "Revisi\xF3n",
+      "panel.tab.mappings": "Correspondencias",
+      "panel.tab.dictionaries": "Diccionarios",
+      "panel.tab.exports": "Exportes",
+      "panel.tab.ner": "NER",
+      "panel.tab.corpus": "Corpus",
+      "panel.mappings.filterActive": "Solo archivo activo",
+      "panel.mappings.warnBroadName": "\u26A0 Ampliar el \xE1mbito de un nombre o apellido m\xE1s all\xE1 del archivo solo debe hacerse como elecci\xF3n anal\xEDtica deliberada \u2014 por ejemplo, para seguir de forma coherente al mismo participante en un estudio longitudinal. Incluso cuando el mismo individuo aparece en varios archivos, la pseudonimizaci\xF3n a nivel de archivo suele ser preferible: mantiene cada transcripci\xF3n independiente y reduce el riesgo de identificaci\xF3n cruzada.",
+      "panel.mappings.addRule": "A\xF1adir una regla",
+      "panel.mappings.scanFile": "Escanear archivo",
+      "panel.mappings.scanning": "Escaneando\u2026",
+      "panel.mappings.noFile": "No hay archivo activo.",
+      "panel.mappings.noRules": "No hay reglas para {0}.",
+      "panel.mappings.noRulesHint": "No hay reglas activas para este archivo. Cree reglas desde el men\xFA contextual o el comando \xABCrear una regla\xBB.",
+      "panel.mappings.col.source": "Fuente",
+      "panel.mappings.col.replacement": "Reemplazo",
+      "panel.mappings.col.category": "Categor\xEDa",
+      "panel.mappings.col.scope": "\xC1mbito",
+      "panel.mappings.col.priority": "P.",
+      "panel.mappings.col.status": "Estado",
+      "panel.mappings.exceptions": "Excepciones",
+      "panel.mappings.exceptions.hint": "Ocurrencias expl\xEDcitamente ignoradas para esta regla.",
+      "panel.mappings.exceptions.delete": "Eliminar esta excepci\xF3n",
+      "panel.dict.noneInstalled": "No hay diccionarios instalados. Instale uno desde el asistente (Configuraci\xF3n \u2192 Reconfigurar) o importe un archivo local.",
+      "panel.dict.checkbox": "Incluir en el escaneo agrupado",
+      "panel.dict.scanAll": "Escanear diccionarios marcados",
+      "panel.dict.importLocal": "Importar un archivo local (.dict.json)",
+      "panel.dict.scanWith": "Escanear el archivo activo con \xAB{0}\xBB",
+      "panel.dict.remove": "Eliminar este diccionario",
+      "panel.corpus.noFolder": "Carpeta de transcripciones no encontrada. Config\xFArela en los ajustes.",
+      "panel.corpus.empty": "No se encontraron transcripciones en esta carpeta.",
+      "panel.corpus.rules": "{0} regla(s)",
+      "panel.corpus.hasPseudo": "Versi\xF3n pseudonimizada creada",
+      "panel.corpus.noPseudo": "A\xFAn no pseudonimizado",
+      "panel.corpus.hasFinal": "Exporte final {0} presente",
+      "panel.corpus.noFinal": "Sin exporte final",
+      "panel.corpus.addClass": "Nueva clase",
+      "panel.corpus.noClass": "Sin clase",
+      "panel.corpus.moveTo": "Mover a\u2026",
+      "panel.corpus.moveToRoot": "Sin clase (ra\xEDz)",
+      "panel.corpus.deleteClass": "Eliminar clase",
+      "panel.corpus.deleteClassConfirm": "\xBFEliminar la clase \xAB{0}\xBB? Los archivos dentro se mover\xE1n a la ra\xEDz.",
+      "panel.corpus.exportSettings": "Destino del exporte final",
+      "panel.corpus.exportDest.vault": "En el vault",
+      "panel.corpus.exportDest.external": "Carpeta externa",
+      "panel.corpus.exportFolder": "Carpeta de exporte (vault)",
+      "panel.corpus.exportExternalPath": "Ruta absoluta",
+      "panel.corpus.exportExternalPathPlaceholder": "/Volumes/Archives/Exports",
+      "panel.corpus.exportMirrorClasses": "Replicar estructura de clases",
+      "panel.filenameWarning.msg": "El nombre de archivo \xAB{0}\xBB contiene un t\xE9rmino pseudonimizable.",
+      "panel.filenameWarning.edit": "Renombrar\u2026",
+      "panel.filenameWarning.editTitle": "Introduzca un nombre manualmente",
+      "panel.filenameWarning.editPrompt": "Nuevo nombre para \xAB{0}\xBB",
+      "panel.filenameWarning.wandTitle": "Renombrar a \xAB{0}\xBB",
+      "panel.exports.pseudonymize": "Crear versi\xF3n pseudonimizada",
+      "panel.exports.exportMapping": "Exportar tabla de correspondencia",
+      "panel.exports.exportVtt": "Reexportar como VTT",
+      "panel.exports.exportVtt.desc": "Reconstruye un archivo WebVTT pseudonimizado desde el Markdown y las marcas de tiempo (.words.json).",
+      "panel.exports.exportSrt": "Reexportar como SRT",
+      "panel.exports.exportSrt.desc": "Reconstruye el archivo SRT pseudonimizado desde el Markdown.",
+      "panel.exports.exportCha": "Reexportar como CHAT (.cha)",
+      "panel.exports.exportCha.desc": "Reconstruye el archivo CHAT pseudonimizado desde el Markdown.",
+      "panel.exports.exportHtml": "Reexportar como HTML",
+      "panel.exports.exportHtml.desc": "Reconstruye el archivo HTML noScribe pseudonimizado desde el Markdown y las marcas de tiempo (.words.json).",
+      "notice.htmlExported": "HTML exportado: {0}",
+      "panel.ner.scanBtn": "Identificar candidatos",
+      "panel.ner.hint": "Ajustes del esc\xE1ner de detecci\xF3n autom\xE1tica de entidades nombradas.",
+      "panel.ner.threshold": "Umbral de confianza",
+      "panel.ner.thresholdDesc": "Las entidades con una puntuaci\xF3n inferior a este valor se ignoran. Mayor = menos falsos positivos pero menos detecciones.",
+      "panel.ner.functionWords": "Palabras funcionales excluidas",
+      "panel.ner.functionWordsDesc": "Una palabra por l\xEDnea. Estos tokens nunca se conservar\xE1n como entidades nombradas, aunque el modelo los detecte.",
+      "panel.ner.save": "Guardar",
+      "panel.ner.saved": "Guardado",
+      "panel.ner.reset": "Restablecer valores predeterminados",
+      "dictScanModal.title": "Revisi\xF3n del escaneo \u2014 diccionarios",
+      "dictScanModal.summary": "{0} {1} detectada(s) \xB7 {2}",
+      "dictScanModal.summary.entity": "entidad",
+      "dictScanModal.summary.entities": "entidades",
+      "dictScanModal.hint": "Desmarque los falsos positivos. El prefijo es editable; el \xEDndice se calcula autom\xE1ticamente.",
+      "dictScanModal.apply": "Crear {0} {1}",
+      "dictScanModal.apply.rule": "regla",
+      "dictScanModal.apply.rules": "reglas",
+      "dictScanModal.noRules": "No hay reglas que aplicar",
+      "dictScanModal.cancel": "Cancelar",
+      "mappingScanModal.title": "Revisi\xF3n del escaneo \u2014 correspondencias",
+      "mappingScanModal.summary": "{0} {1} con ocurrencias en \xAB{2}\xBB",
+      "mappingScanModal.summary.rule": "regla activa",
+      "mappingScanModal.summary.rules": "reglas activas",
+      "mappingScanModal.hint": "Desmarque las reglas que no desea aplicar. Los reemplazos se escribir\xE1n en el archivo fuente.",
+      "mappingScanModal.col.source": "",
+      "mappingScanModal.col.replacement": "Reemplazo",
+      "mappingScanModal.col.occurrences": "Ocur.",
+      "mappingScanModal.apply": "Pseudonimizar ({0} {1}, {2} {3})",
+      "mappingScanModal.apply.rule": "regla",
+      "mappingScanModal.apply.rules": "reglas",
+      "mappingScanModal.apply.occurrence": "ocurrencia",
+      "mappingScanModal.apply.occurrences": "ocurrencias",
+      "mappingScanModal.noRules": "No hay reglas que aplicar",
+      "mappingScanModal.cancel": "Cancelar",
+      "mappingScanModal.saveExceptions": "Guardar excepciones",
+      "mappingScanModal.exceptionsSaved": "Excepciones guardadas en la tabla de correspondencia.",
+      "mappingScanModal.countTooltip": "Ver y seleccionar candidatos",
+      "onboarding.step.storage": "Almacenamiento",
+      "onboarding.step.language": "Idioma",
+      "onboarding.step.welcome": "Bienvenida",
+      "onboarding.step.ner": "Detecci\xF3n NER",
+      "onboarding.step.dictionaries": "Diccionarios",
+      "onboarding.step.summary": "Resumen",
+      "onboarding.welcome.title": "Pseudonymizer Tool",
+      "onboarding.welcome.desc": "Este plugin le ayuda a corregir y pseudonimizar transcripciones de entrevistas y corpus interaccionales (convenciones Jefferson, ICOR, formatos .srt, .cha).",
+      "onboarding.welcome.steps": "El asistente le guiar\xE1 en unos pocos pasos r\xE1pidos:",
+      "onboarding.welcome.step1": "Elija el idioma de la interfaz.",
+      "onboarding.welcome.step2": "Elija un motor de detecci\xF3n autom\xE1tica de entidades nombradas (opcional).",
+      "onboarding.welcome.step3": "Instale diccionarios de candidatos de reemplazo si los necesita.",
+      "onboarding.welcome.hint": "Puede reconfigurar estas opciones en cualquier momento desde los ajustes del plugin.",
+      "onboarding.storage.title": "Almacenamiento",
+      "onboarding.storage.vaultPerCorpus": "Un vault por corpus",
+      "onboarding.storage.vaultPerCorpusDesc": "Recomendamos usar un vault de Obsidian dedicado por corpus. Esto garantiza que los archivos de correspondencia, los diccionarios y los exportes permanezcan junto a las transcripciones, facilitando compartir o archivar un corpus.",
+      "onboarding.storage.transcriptionsFolder": "Transcripciones",
+      "onboarding.storage.mappingFolder": "Tablas de correspondencia",
+      "onboarding.storage.dictionariesFolder": "Diccionarios",
+      "onboarding.storage.exportsFolder": "Exportes",
+      "onboarding.storage.hint": "Estas rutas son relativas a la ra\xEDz del vault. Puede modificarlas m\xE1s tarde en Configuraci\xF3n.",
+      "onboarding.language.title": "Idioma de la interfaz",
+      "onboarding.language.hint": "El idioma de la interfaz no afecta al an\xE1lisis de las transcripciones. Las convenciones (Jefferson, ICOR) son independientes del idioma.",
+      "onboarding.ner.desc": "Un modelo NER (reconocimiento de entidades nombradas) puede detectar autom\xE1ticamente nombres propios, apellidos, lugares e instituciones en las transcripciones \u2014 sin una lista exhaustiva, ejecut\xE1ndose localmente en Obsidian.",
+      "onboarding.ner.tfjsTitle": "transformers.js \u2014 modelo ONNX integrado",
+      "onboarding.ner.tfjsBadge": "Python no requerido",
+      "onboarding.ner.tfjsDesc": "Modelo NER multiling\xFCe ejecutado localmente en el vault. Los archivos WASM (~19 MB) se descargan una vez. El modelo (~66 MB) se descarga en el primer escaneo.",
+      "onboarding.ner.wasmReady": "Archivos WASM ya instalados",
+      "onboarding.ner.installBtn": "Instalar y usar transformers.js",
+      "onboarding.ner.selectedBtn": "Seleccionado",
+      "onboarding.ner.noneActive": "Desactivado (solo reglas manuales)",
+      "onboarding.ner.noneSkip": "Omitir \u2014 trabajar\xE9 manualmente",
+      "onboarding.dict.title": "Diccionarios de candidatos de reemplazo",
+      "onboarding.dict.desc": "Los diccionarios proporcionan candidatos de reemplazo (ciudades, nombres\u2026) y alimentan la detecci\xF3n autom\xE1tica. Est\xE1n alojados en un repositorio dedicado y se descargan al vault \u2014 ning\xFAn dato de transcripci\xF3n sale de Obsidian.",
+      "onboarding.dict.catalogueLoading": "Cargando cat\xE1logo\u2026",
+      "onboarding.dict.catalogueError": "No se puede acceder al cat\xE1logo en l\xEDnea. Compruebe su conexi\xF3n o importe un archivo local a continuaci\xF3n.",
+      "onboarding.dict.recommended": "Recomendado",
+      "onboarding.dict.col.dict": "Diccionario",
+      "onboarding.dict.col.lang": "Idioma",
+      "onboarding.dict.col.roles": "Roles",
+      "onboarding.dict.col.size": "Tama\xF1o",
+      "onboarding.dict.role.detection": "detecci\xF3n",
+      "onboarding.dict.role.replacement": "reemplazo",
+      "onboarding.dict.role.classes": "clases",
+      "onboarding.dict.install": "Instalar",
+      "onboarding.dict.reinstall": "Reinstalar",
+      "onboarding.dict.installed": "Instalado",
+      "onboarding.dict.manualHint": "\xBFYa tiene un archivo .dict.json? Imp\xF3rtelo manualmente:",
+      "onboarding.dict.importBtn": "Importar un archivo local (.dict.json)",
+      "onboarding.dict.listTitle": "Diccionarios instalados en este vault ({0}):",
+      "onboarding.dict.remove": "Eliminar este diccionario",
+      "onboarding.summary.ner.none": "Desactivado \u2014 solo reglas manuales",
+      "onboarding.summary.ner.tfjs": "transformers.js \u2014 modelo ONNX (descarga en el primer escaneo)",
+      "onboarding.nav.cancel": "Cancelar",
+      "onboarding.nav.back": "Atr\xE1s",
+      "onboarding.nav.skip": "Omitir este paso",
+      "onboarding.nav.next": "Siguiente",
+      "onboarding.nav.start": "Comenzar",
+      "onboarding.nav.finish": "Empezar a trabajar",
+      "onboarding.summary.title": "Configuraci\xF3n completa",
+      "onboarding.summary.intro": "Esto es lo que se ha configurado:",
+      "onboarding.summary.ner": "Detecci\xF3n NER",
+      "onboarding.summary.dicts": "Diccionarios",
+      "onboarding.summary.dicts.count": "{0} archivo(s) en el vault",
+      "onboarding.summary.hint": "Estos ajustes pueden cambiarse en cualquier momento desde la configuraci\xF3n del plugin: Reconfigurar.",
+      "settings.heading.general": "General",
+      "settings.heading.textDetection": "Detecci\xF3n de texto",
+      "settings.heading.pseudonymization": "Pseudonimizaci\xF3n",
+      "settings.heading.ner": "Detecci\xF3n autom\xE1tica (NER)",
+      "settings.heading.storage": "Almacenamiento",
+      "settings.heading.security": "Seguridad",
+      "settings.language": "Idioma de la interfaz",
+      "settings.languageDesc": "No afecta al an\xE1lisis de transcripciones. Las convenciones (Jefferson, ICOR) son independientes del idioma.",
+      "settings.vaultPerCorpus": "Un vault por corpus",
+      "settings.vaultPerCorpusDesc": "Recomendamos usar un vault de Obsidian dedicado por corpus. Esto garantiza que los archivos de correspondencia, los diccionarios y los exportes permanezcan junto a las transcripciones.",
+      "settings.transcriptionsFolder": "Transcripciones importadas",
+      "settings.transcriptionsFolderDesc": "Carpeta de destino para las transcripciones importadas.",
+      "settings.mappingFolder": "Tablas de correspondencia",
+      "settings.mappingFolderDesc": "Ruta relativa en el vault.",
+      "settings.dictionariesFolder": "Diccionarios",
+      "settings.dictionariesFolderDesc": "Ruta relativa en el vault.",
+      "settings.exportsFolder": "Exportes",
+      "settings.accentSensitive": "Sensible a los acentos",
+      "settings.preserveCase": "Preservar may\xFAsculas",
+      "settings.preserveCaseDesc": "Adaptar las may\xFAsculas del reemplazo para que coincidan con la fuente (p. ej. JUAN \u2192 PEDRO, juan \u2192 pedro, Juan \u2192 Pedro).",
+      "settings.preserveAnalyticNotation": "Preservar notaci\xF3n anal\xEDtica",
+      "settings.preserveAnalyticNotationDesc": "No reemplazar nunca los s\xEDmbolos de convenci\xF3n anal\xEDtica de tipo Jefferson o ICOR.",
+      "settings.useMarkerInExport": "A\xF1adir marcador alrededor de los pseud\xF3nimos en el exporte",
+      "settings.useMarkerInExportDesc": "Permite identificar visualmente los t\xE9rminos pseudonimizados en el archivo exportado.",
+      "settings.markerOpen": "Marcador de apertura",
+      "settings.markerOpenDesc": "Ejemplo: {{  \u27E6  [  \xAB",
+      "settings.markerClose": "Marcador de cierre",
+      "settings.markerCloseDesc": "Ejemplo: }}  \u27E7  ]  \xBB",
+      "settings.nerBackend": "Motor de detecci\xF3n",
+      "settings.nerBackendDesc": "Backend usado para la detecci\xF3n autom\xE1tica de entidades nombradas identificadoras.",
+      "settings.nerBackend.none": "Desactivado \u2014 solo reglas manuales",
+      "settings.nerBackend.tfjs": "transformers.js (modelo ONNX integrado)",
+      "settings.reconfigure": "Asistente de configuraci\xF3n",
+      "settings.reconfigureDesc2": "Relanzar el asistente para reconfigurar la detecci\xF3n NER y los diccionarios.",
+      "settings.reconfigureBtn2": "Reconfigurar\u2026",
+      "settings.warnIfSyncedFolder": "Avisar si la carpeta est\xE1 sincronizada",
+      "settings.warnIfSyncedFolderDesc": "Alertar si las tablas de correspondencia est\xE1n en una carpeta Git, iCloud o Synology Drive.",
+      "settings.caseSensitive": "Sensible a may\xFAsculas",
+      "settings.caseSensitiveDesc": "Si est\xE1 activado, \xABJuan\xBB y \xABjuan\xBB se tratan como distintos.",
+      "settings.wholeWordOnly": "Solo palabras completas",
+      "settings.wholeWordOnlyDesc": "Si est\xE1 activado, solo se reemplazan las ocurrencias de palabras completas."
     };
   }
 });
@@ -598,7 +966,6 @@ var init_fr = __esm({
       "panel.corpus.deleteClassConfirm": "Supprimer la classe \xAB {0} \xBB ? Les fichiers \xE0 l'int\xE9rieur seront d\xE9plac\xE9s \xE0 la racine.",
       "panel.corpus.exportSettings": "Destination des exports finaux",
       "panel.corpus.exportDest.vault": "Dans le vault",
-      "panel.corpus.exportDest.nextToSource": "\xC0 c\xF4t\xE9 du fichier source",
       "panel.corpus.exportDest.external": "Dossier externe",
       "panel.corpus.exportFolder": "Dossier d'export (vault)",
       "panel.corpus.exportExternalPath": "Chemin absolu",
@@ -617,8 +984,12 @@ var init_fr = __esm({
       "panel.exports.exportSrt.desc": "Reconstruit le fichier SRT pseudonymis\xE9 \xE0 partir du Markdown.",
       "panel.exports.exportCha": "Re-exporter en CHAT (.cha)",
       "panel.exports.exportCha.desc": "Reconstruit le fichier CHAT pseudonymis\xE9 \xE0 partir du Markdown.",
+      "panel.exports.exportHtml": "Re-exporter en HTML",
+      "panel.exports.exportHtml.desc": "Reconstruit le fichier HTML noScribe pseudonymis\xE9 \xE0 partir du Markdown et des timestamps (.words.json).",
+      "notice.htmlExported": "HTML export\xE9 : {0}",
       "command.exportAsSrt": "Exporter en SRT",
       "command.exportAsCha": "Exporter en CHAT",
+      "command.exportAsHtml": "Exporter en HTML",
       "panel.ner.scanBtn": "Identifier des candidats",
       "panel.ner.hint": "Param\xE8tres du scanner de d\xE9tection automatique des entit\xE9s nomm\xE9es.",
       "panel.ner.threshold": "Seuil de confiance",
@@ -763,6 +1134,371 @@ var init_fr = __esm({
   }
 });
 
+// src/i18n/locales/ru.json
+var ru_default;
+var init_ru = __esm({
+  "src/i18n/locales/ru.json"() {
+    ru_default = {
+      "corpus.modal.title": "\u041E\u0440\u0433\u0430\u043D\u0438\u0437\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0440\u043F\u0443\u0441",
+      "corpus.modal.hint": "\u041A\u0430\u0436\u0434\u044B\u0439 \u043A\u043B\u0430\u0441\u0441 \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u0437\u0435\u0440\u043A\u0430\u043B\u044C\u043D\u044B\u0435 \u043F\u0430\u043F\u043A\u0438 \u0434\u043B\u044F \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439, \u0442\u0430\u0431\u043B\u0438\u0446 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432.",
+      "corpus.modal.noClasses": "\u041A\u043B\u0430\u0441\u0441\u044B \u043D\u0435 \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u0435\u043D\u044B. \u0414\u043E\u0431\u0430\u0432\u044C\u0442\u0435 \u043E\u0434\u0438\u043D, \u0447\u0442\u043E\u0431\u044B \u043E\u0440\u0433\u0430\u043D\u0438\u0437\u043E\u0432\u0430\u0442\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u043F\u043E \u043F\u0430\u043F\u043A\u0430\u043C.",
+      "corpus.modal.addClass": "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u043B\u0430\u0441\u0441",
+      "corpus.modal.classNamePlaceholder": "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043A\u043B\u0430\u0441\u0441\u0430 (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u0421\u0435\u0441\u0441\u0438\u044F_\u0410, \u0418\u043D\u0444\u043E\u0440\u043C\u0430\u043D\u0442_1\u2026)",
+      "corpus.modal.classNameEmpty": "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043A\u043B\u0430\u0441\u0441\u0430 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043F\u0443\u0441\u0442\u044B\u043C.",
+      "corpus.modal.classExists": "\u041A\u043B\u0430\u0441\u0441 \u0441 \u0442\u0430\u043A\u0438\u043C \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435\u043C \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442.",
+      "corpus.modal.deleteConfirm": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043A\u043B\u0430\u0441\u0441 \xAB{0}\xBB? \u041F\u0430\u043F\u043A\u0438 \u0431\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043B\u0435\u043D\u044B \u0438\u0437 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430 (\u0444\u0430\u0439\u043B\u044B \u0432\u043D\u0443\u0442\u0440\u0438 \u0431\u0443\u0434\u0443\u0442 \u043F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D\u044B \u0432 \u043A\u043E\u0440\u0437\u0438\u043D\u0443).",
+      "corpus.modal.files": "{0} \u0444\u0430\u0439\u043B(\u043E\u0432)",
+      "corpus.modal.close": "\u0417\u0430\u043A\u0440\u044B\u0442\u044C",
+      "corpus.select.title": "\u0412 \u043A\u0430\u043A\u043E\u0439 \u043A\u043B\u0430\u0441\u0441 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C?",
+      "corpus.select.hint": "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043A\u043B\u0430\u0441\u0441 (\u043F\u0430\u043F\u043A\u0443) \u0434\u043B\u044F \u044D\u0442\u043E\u0439 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0438.",
+      "corpus.select.none": "\u0411\u0435\u0437 \u043A\u043B\u0430\u0441\u0441\u0430 (\u043A\u043E\u0440\u0435\u043D\u044C)",
+      "corpus.select.confirm": "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C",
+      "quickModal.title": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+      "quickModal.source": "\u0412\u044B\u0431\u0440\u0430\u043D\u043D\u043E\u0435 \u0432\u044B\u0440\u0430\u0436\u0435\u043D\u0438\u0435",
+      "quickModal.sourceDesc": "\u0417\u0430\u043C\u0435\u043D\u044F\u0435\u043C\u044B\u0439 \u0442\u0435\u0440\u043C\u0438\u043D \u2014 \u043D\u0435\u043B\u044C\u0437\u044F \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C",
+      "quickModal.replaceBy": "\u0417\u0430\u043C\u0435\u043D\u0438\u0442\u044C \u043D\u0430",
+      "quickModal.replacementPlaceholder": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C \u0438\u043B\u0438 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F",
+      "quickModal.scope": "\u041E\u0431\u043B\u0430\u0441\u0442\u044C \u0437\u0430\u043C\u0435\u043D\u044B",
+      "quickModal.scopeFile": "\u0412\u0441\u0435 \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u044F \u0432 \u0444\u0430\u0439\u043B\u0435",
+      "quickModal.scopeOccurrence": "\u0422\u043E\u043B\u044C\u043A\u043E \u044D\u0442\u043E \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0435",
+      "quickModal.submit": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+      "notice.appliedOccurrence": "\u2713 \xAB{0}\xBB \u2192 \xAB{1}\xBB (\u044D\u0442\u043E \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0435)",
+      "notice.appliedFile": "\u2713 \xAB{0}\xBB \u2192 \xAB{1}\xBB ({2} \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0439)",
+      "onboarding.dict.importOk": "{0} \u0441\u043B\u043E\u0432\u0430\u0440\u044C \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D",
+      "onboarding.dict.importOkMany": "{0} \u0441\u043B\u043E\u0432\u0430\u0440\u0435\u0439 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043E",
+      "onboarding.dict.importErr": "{0} \u0444\u0430\u0439\u043B \u043E\u0442\u043A\u043B\u043E\u043D\u0451\u043D",
+      "onboarding.dict.importErrMany": "{0} \u0444\u0430\u0439\u043B\u043E\u0432 \u043E\u0442\u043A\u043B\u043E\u043D\u0435\u043D\u043E",
+      "onboarding.dict.importError": "\u041E\u0448\u0438\u0431\u043A\u0430 \u0438\u043C\u043F\u043E\u0440\u0442\u0430 {0} \u2014 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0444\u043E\u0440\u043C\u0430\u0442 .dict.json",
+      "notice.noActiveFile": "\u041D\u0435\u0442 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0433\u043E \u0444\u0430\u0439\u043B\u0430.",
+      "notice.formatUnsupported": "\u041D\u0435\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0439 \u0444\u043E\u0440\u043C\u0430\u0442: .{0}",
+      "notice.noRules": "\u041D\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0444\u0430\u0439\u043B\u0430.\n\u0421\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u0430 \u0447\u0435\u0440\u0435\u0437 Ctrl+P \u2192 \xAB\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E\xBB.",
+      "notice.noOccurrences": "\u0412\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0439 \u0434\u043B\u044F \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u043F\u0440\u0430\u0432\u0438\u043B \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E.",
+      "notice.noNerEntities": "NER \u043D\u0435 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0438\u043B \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439.",
+      "notice.nerEntitiesFound": "\u2713 \u041E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u043E {0} {1} \u2014 \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u043E \u0441\u0438\u043D\u0438\u043C.\n\u041F\u0440\u0430\u0432\u043E\u0439 \u043A\u043D\u043E\u043F\u043A\u043E\u0439 \u043C\u044B\u0448\u0438 \u2014 \u0441\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E.",
+      "notice.nerEntitiesFound.entity": "\u0441\u0443\u0449\u043D\u043E\u0441\u0442\u044C",
+      "notice.nerEntitiesFound.entities": "\u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439",
+      "notice.nerNotEnabled": "\u0414\u0435\u0442\u0435\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 transformers.js \u043D\u0435 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u043E.\n\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0432 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u2192 Pseudonymizer Tool.",
+      "notice.noDictDetection": "\u0421\u043B\u043E\u0432\u0430\u0440\u044C \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u044F \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D.\n\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0435 \u0441\u043B\u043E\u0432\u0430\u0440\u044C \u0432 \u043F\u0430\u043D\u0435\u043B\u0438 \xAB\u0421\u043B\u043E\u0432\u0430\u0440\u0438\xBB.",
+      "notice.noDictEntities": "\u0421\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439 \u0432 \u0441\u043B\u043E\u0432\u0430\u0440\u044F\u0445 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u044F \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E.",
+      "notice.noDictReplacements": "\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0437\u0430\u043C\u0435\u043D \u0434\u043B\u044F \u043D\u0430\u0439\u0434\u0435\u043D\u043D\u044B\u0445 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439.",
+      "notice.ruleDeleted": "\u2713 \u041F\u0440\u0430\u0432\u0438\u043B\u043E \u0443\u0434\u0430\u043B\u0435\u043D\u043E \u2014 \xAB{0}\xBB \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E \u0432 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u043C \u0444\u0430\u0439\u043B\u0435",
+      "notice.ruleCreated": "\u2713 \u041F\u0440\u0430\u0432\u0438\u043B\u043E \u0441\u043E\u0437\u0434\u0430\u043D\u043E: \xAB{0}\xBB \u2192 \xAB{1}\xBB",
+      "notice.rulesCreated": "\u2713 {0} {1} \u0441\u043E\u0437\u0434\u0430\u043D\u043E",
+      "notice.rulesCreated.rule": "\u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "notice.rulesCreated.rules": "\u043F\u0440\u0430\u0432\u0438\u043B",
+      "notice.occurrencesPseudonymized": "\u2713 {0} {1} \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u0432 \xAB{2}\xBB",
+      "notice.occurrencesPseudonymized.occurrence": "\u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0435",
+      "notice.occurrencesPseudonymized.occurrences": "\u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0439",
+      "notice.converted": "\u2713 {0} \u2192 {1}",
+      "notice.conversionError": "\u041E\u0448\u0438\u0431\u043A\u0430 \u043A\u043E\u043D\u0432\u0435\u0440\u0442\u0430\u0446\u0438\u0438 {0}: {1}",
+      "notice.fileExists": "\u0424\u0430\u0439\u043B \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435: {0}",
+      "notice.conversionSkipped": "\u26A0 {0}.md \u0443\u0436\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442 \u2014 \u043A\u043E\u043D\u0432\u0435\u0440\u0442\u0430\u0446\u0438\u044F \u043F\u0440\u043E\u043F\u0443\u0449\u0435\u043D\u0430 \u0434\u043B\u044F {1}",
+      "notice.exportDone": "\u2713 {0} \u043F\u0440\u0430\u0432\u0438\u043B(\u043E) \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u043E\n\u2192 {1}",
+      "notice.mappingExported": "\u2713 \u0422\u0430\u0431\u043B\u0438\u0446\u0430 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0430 \u2192 {0}",
+      "notice.noMapping": "\u0422\u0430\u0431\u043B\u0438\u0446\u0430 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u0434\u043B\u044F {0} \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u0430",
+      "notice.invalidFormat": "\u041D\u0435\u0432\u0435\u0440\u043D\u044B\u0439 \u0444\u043E\u0440\u043C\u0430\u0442: {0}",
+      "notice.dictImported": "\u2713 {0} {1} \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043E",
+      "notice.dictImported.one": "\u0441\u043B\u043E\u0432\u0430\u0440\u044C",
+      "notice.dictImported.many": "\u0441\u043B\u043E\u0432\u0430\u0440\u0435\u0439",
+      "notice.dictRejected": "{0} {1} \u043E\u0442\u043A\u043B\u043E\u043D\u0435\u043D\u043E",
+      "notice.dictRejected.one": "\u0444\u0430\u0439\u043B",
+      "notice.dictRejected.many": "\u0444\u0430\u0439\u043B\u043E\u0432",
+      "notice.nerModelLoaded": "\u2713 \u041C\u043E\u0434\u0435\u043B\u044C NER \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D\u0430",
+      "notice.nerModelLoading": "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u043C\u043E\u0434\u0435\u043B\u0438 NER (\u043F\u0435\u0440\u0432\u044B\u0439 \u0437\u0430\u043F\u0443\u0441\u043A \u2014 ~66 \u041C\u0411)\u2026",
+      "notice.ruleNotFound": "\u041F\u0440\u0430\u0432\u0438\u043B\u043E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E \u0432 \u0442\u0430\u0431\u043B\u0438\u0446\u0430\u0445 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F.",
+      "notice.noCheckedDicts": "\u041D\u0438 \u043E\u0434\u0438\u043D \u0441\u043B\u043E\u0432\u0430\u0440\u044C \u043D\u0435 \u0432\u044B\u0431\u0440\u0430\u043D.",
+      "notice.audioImported": "\u0410\u0443\u0434\u0438\u043E \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043E: {0}",
+      "occurrencesCtx.hint": "{0} \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438{1} \u2014 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043D\u0443\u0436\u043D\u044B\u0435 \u0434\u043B\u044F \u0437\u0430\u043C\u0435\u043D\u044B.",
+      "occurrencesCtx.hint.s": "\u0439",
+      "occurrencesCtx.hint.empty": "\u0435",
+      "occurrencesCtx.validateAll": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0432\u0441\u0435",
+      "occurrencesCtx.ignoreAll": "\u041F\u0440\u043E\u043F\u0443\u0441\u0442\u0438\u0442\u044C \u0432\u0441\u0435",
+      "occurrencesCtx.cancel": "\u041E\u0442\u043C\u0435\u043D\u0430",
+      "occurrencesCtx.confirm": "\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C \u0432\u044B\u0431\u043E\u0440",
+      "occurrencesCtx.btn.validate": "\u0412\u044B\u0431\u0440\u0430\u0442\u044C",
+      "occurrencesCtx.btn.ignore": "\u041F\u0440\u043E\u043F\u0443\u0441\u0442\u0438\u0442\u044C",
+      "occurrencesCtx.btn.fp": "\u041B\u043E\u0436\u043D\u043E\u0435 \u0441\u0440\u0430\u0431\u0430\u0442\u044B\u0432\u0430\u043D\u0438\u0435",
+      "occurrencesCtx.status.ignored": "\u041E\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u043E \u043A\u0430\u043A \u0435\u0441\u0442\u044C",
+      "occurrencesCtx.status.fp": "\u041B\u043E\u0436\u043D\u043E\u0435 \u0441\u0440\u0430\u0431\u0430\u0442\u044B\u0432\u0430\u043D\u0438\u0435 \u2014 \u0438\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u043E",
+      "notice.notNoScribeFormat": "\u042D\u0442\u043E\u0442 \u0444\u0430\u0439\u043B \u043D\u0435 \u044F\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0435\u0439 noScribe (\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F pseudobs-format: vtt \u0438\u043B\u0438 html).",
+      "notice.wordsJsonMissing": "\u0424\u0430\u0439\u043B \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445 \u043C\u0435\u0442\u043E\u043A \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D: {0}.words.json",
+      "notice.vttMismatch": "\u041F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435: \u043A\u043E\u043B\u0438\u0447\u0435\u0441\u0442\u0432\u043E \u0440\u0435\u043F\u043B\u0438\u043A \u0432 Markdown \u0438 words.json \u0440\u0430\u0437\u043B\u0438\u0447\u0430\u0435\u0442\u0441\u044F \u2014 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 VTT \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u043F\u043E\u043B\u043D\u044B\u043C.",
+      "notice.vttExported": "VTT \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D: {0}",
+      "command.organizeCorpus": "\u041E\u0440\u0433\u0430\u043D\u0438\u0437\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0440\u043F\u0443\u0441",
+      "command.addTranscription": "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u044E",
+      "command.pseudonymizeFile": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0442\u0435\u043A\u0443\u0449\u0438\u0439 \u0444\u0430\u0439\u043B",
+      "command.createRule": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E \u0437\u0430\u043C\u0435\u043D\u044B",
+      "command.scanFile": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0442\u0435\u043A\u0443\u0449\u0438\u0439 \u0444\u0430\u0439\u043B",
+      "command.scanNer": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0444\u0430\u0439\u043B \u0441 NER-\u0434\u0435\u0442\u0435\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435\u043C",
+      "command.scanDictionaries": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0444\u0430\u0439\u043B \u043F\u043E \u0441\u043B\u043E\u0432\u0430\u0440\u044F\u043C",
+      "command.pseudonymizeSelection": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u0438\u0435",
+      "command.exportAsVtt": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A VTT",
+      "command.exportAsSrt": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A SRT",
+      "command.exportAsCha": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A CHAT",
+      "command.exportAsHtml": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A HTML",
+      "command.openPanel": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0430\u0446\u0438\u044F: \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0430\u043D\u0435\u043B\u044C",
+      "contextMenu.declareException": "\u041E\u0431\u044A\u044F\u0432\u0438\u0442\u044C \xAB{0}\xBB \u0438\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\u043C \u0437\u0434\u0435\u0441\u044C",
+      "contextMenu.cancelPseudonymization": "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0430\u0446\u0438\u044E \xAB{0}\xBB",
+      "contextMenu.editRule": "\u0418\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E \u0434\u043B\u044F \xAB{0}\xBB",
+      "contextMenu.pseudonymize": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \xAB{0}\xBB",
+      "contextMenu.redact": "\u0421\u043A\u0440\u044B\u0442\u044C \xAB{0}\xBB",
+      "contextMenu.coulmont": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441 \u043F\u0440\u043E\u0444. \u0411\u0430\u0442\u0438\u0441\u0442\u043E\u043C \u041A\u0443\u043B\u044C\u043C\u043E\u043D\u043E\u043C",
+      "contextMenu.createRule": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E \u0437\u0430\u043C\u0435\u043D\u044B\u2026",
+      "redaction.checkbox": "\u0421\u043A\u0440\u044B\u0442\u044C (\u{1F02B})",
+      "redaction.checkboxDesc": "\u0417\u0430\u043C\u0435\u043D\u0438\u0442\u044C \u0441\u0438\u043C\u0432\u043E\u043B\u0430\u043C\u0438 \u{1F02B} (\u043F\u043E \u043E\u0434\u043D\u043E\u043C\u0443 \u043D\u0430 \u0441\u043B\u043E\u0433) \u2014 \u0434\u043B\u044F \u043D\u0435\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0435\u043D\u043D\u043E\u0433\u043E \u0438\u0434\u0435\u043D\u0442\u0438\u0444\u0438\u0446\u0438\u0440\u0443\u044E\u0449\u0435\u0433\u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043D\u0438\u044F",
+      "ruleModal.delete": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "ruleModal.scopeWarnTitle": "\u041B\u043E\u043D\u0433\u0438\u0442\u044E\u0434\u043D\u0430\u044F \u043E\u0431\u043B\u0430\u0441\u0442\u044C",
+      "ruleModal.scopeOkTitle": "\u041E\u0431\u043B\u0430\u0441\u0442\u044C \u0444\u0430\u0439\u043B\u0430",
+      "ruleModal.scopeOk": "\u0425\u043E\u0440\u043E\u0448\u0430\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0430. \u042D\u0442\u043E\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C \u0431\u0443\u0434\u0435\u0442 \u043F\u0440\u0438\u043C\u0435\u043D\u044F\u0442\u044C\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043A \u044D\u0442\u043E\u0439 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0438 \u2014 \u043A\u0430\u0436\u0434\u044B\u0439 \u0444\u0430\u0439\u043B \u043E\u0441\u0442\u0430\u0451\u0442\u0441\u044F \u043D\u0435\u0437\u0430\u0432\u0438\u0441\u0438\u043C\u044B\u043C.",
+      "ruleModal.title": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E \u0437\u0430\u043C\u0435\u043D\u044B",
+      "ruleModal.source": "\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A",
+      "ruleModal.sourceDesc": "\u0418\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u0442\u0435\u0440\u043C\u0438\u043D \u0434\u043B\u044F \u0437\u0430\u043C\u0435\u043D\u044B",
+      "ruleModal.replacement": "\u0417\u0430\u043C\u0435\u043D\u0430",
+      "ruleModal.replacementDesc": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C \u0438\u043B\u0438 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F",
+      "ruleModal.replacementDescClass": "\u0422\u043E\u0447\u043D\u044B\u0439 \u0438\u043D\u0434\u0435\u043A\u0441 \u0431\u0443\u0434\u0435\u0442 \u0440\u0430\u0441\u0441\u0447\u0438\u0442\u0430\u043D \u043F\u0440\u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0438 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0445 \u043F\u0440\u0430\u0432\u0438\u043B \u0432 \u043E\u0431\u043B\u0430\u0441\u0442\u0438.",
+      "ruleModal.category": "\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F",
+      "ruleModal.scope": "\u041E\u0431\u043B\u0430\u0441\u0442\u044C",
+      "ruleModal.scopeFile": "\u0422\u043E\u043B\u044C\u043A\u043E \u044D\u0442\u043E\u0442 \u0444\u0430\u0439\u043B",
+      "ruleModal.scopeFolder": "\u042D\u0442\u0430 \u043F\u0430\u043F\u043A\u0430",
+      "ruleModal.scopeVault": "\u0412\u0441\u0451 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "ruleModal.priority": "\u041F\u0440\u0438\u043E\u0440\u0438\u0442\u0435\u0442",
+      "ruleModal.priorityDesc": "\u0426\u0435\u043B\u043E\u0435 \u0447\u0438\u0441\u043B\u043E, \u043A\u0430\u043A CSS z-index \u2014 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E 0, \u0447\u0435\u043C \u0432\u044B\u0448\u0435 \u2014 \u0442\u0435\u043C \u0440\u0430\u043D\u044C\u0448\u0435 \u043F\u0440\u0438\u043C\u0435\u043D\u044F\u0435\u0442\u0441\u044F",
+      "ruleModal.submit": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "ruleModal.errorMissing": "\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A \u0438 \u0437\u0430\u043C\u0435\u043D\u0430 \u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u044B.",
+      "ruleModal.errorNoFile": "\u041D\u0435\u0442 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0433\u043E \u0444\u0430\u0439\u043B\u0430.",
+      "ruleModal.coulomontLabel": "\u041F\u0440\u0435\u0434\u043B\u043E\u0436\u0435\u043D\u0438\u044F \u044D\u043A\u0432\u0438\u0432\u0430\u043B\u0435\u043D\u0442\u043D\u044B\u0445 \u0438\u043C\u0451\u043D \u2014 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435:",
+      "ruleModal.dictLabel": "\u0421\u043B\u043E\u0432\u0430\u0440\u044C: \xAB{0}\xBB \u2192 \u043A\u043B\u0430\u0441\u0441 {1}",
+      "ruleModal.dictUseClass": "\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \xAB{0}\xBB (\u043E\u0431\u043B\u0430\u0441\u0442\u044C: {1})",
+      "category.first_name": "\u0418\u043C\u044F",
+      "category.last_name": "\u0424\u0430\u043C\u0438\u043B\u0438\u044F",
+      "category.full_name": "\u041F\u043E\u043B\u043D\u043E\u0435 \u0438\u043C\u044F",
+      "category.place": "\u041C\u0435\u0441\u0442\u043E",
+      "category.institution": "\u0423\u0447\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435",
+      "category.date": "\u0414\u0430\u0442\u0430",
+      "category.age": "\u0412\u043E\u0437\u0440\u0430\u0441\u0442",
+      "category.profession": "\u041F\u0440\u043E\u0444\u0435\u0441\u0441\u0438\u044F",
+      "category.custom": "\u0414\u0440\u0443\u0433\u043E\u0435",
+      "scope.file": "\u0424\u0430\u0439\u043B",
+      "scope.folder": "\u041F\u0430\u043F\u043A\u0430",
+      "scope.vault": "\u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "status.validated": "\u0410\u043A\u0442\u0438\u0432\u043D\u043E",
+      "status.ignored": "\u0418\u0433\u043D\u043E\u0440\u0438\u0440\u0443\u0435\u0442\u0441\u044F",
+      "status.partial": "\u0427\u0430\u0441\u0442\u0438\u0447\u043D\u043E",
+      "status.suggested": "\u041F\u0440\u0435\u0434\u043B\u043E\u0436\u0435\u043D\u043E",
+      "status.conflict": "\u041A\u043E\u043D\u0444\u043B\u0438\u043A\u0442",
+      "status.disabled": "\u041D\u0435\u0430\u043A\u0442\u0438\u0432\u043D\u043E",
+      "status.needs_review": "\u041D\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0435",
+      "panel.tab.mappings": "\u0421\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F",
+      "panel.tab.dictionaries": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438",
+      "panel.tab.exports": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u044B",
+      "panel.tab.ner": "NER",
+      "panel.tab.corpus": "\u041A\u043E\u0440\u043F\u0443\u0441",
+      "panel.mappings.filterActive": "\u0422\u043E\u043B\u044C\u043A\u043E \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0439 \u0444\u0430\u0439\u043B",
+      "panel.mappings.warnBroadName": "\u26A0 \u0420\u0430\u0441\u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0435\u043D\u0438\u0435 \u0438\u043C\u0435\u043D\u0438 \u0438\u043B\u0438 \u0444\u0430\u043C\u0438\u043B\u0438\u0438 \u0437\u0430 \u043F\u0440\u0435\u0434\u0435\u043B\u044B \u0444\u0430\u0439\u043B\u0430 \u0441\u043B\u0435\u0434\u0443\u0435\u0442 \u0434\u0435\u043B\u0430\u0442\u044C \u0442\u043E\u043B\u044C\u043A\u043E \u043A\u0430\u043A \u043E\u0431\u0434\u0443\u043C\u0430\u043D\u043D\u044B\u0439 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u0432\u044B\u0431\u043E\u0440 \u2014 \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u0434\u043B\u044F \u043F\u043E\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u043E\u0433\u043E \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u043D\u0438\u044F \u043E\u0434\u043D\u043E\u0433\u043E \u0443\u0447\u0430\u0441\u0442\u043D\u0438\u043A\u0430 \u0432 \u043B\u043E\u043D\u0433\u0438\u0442\u044E\u0434\u043D\u043E\u043C \u0438\u0441\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u043D\u0438\u0438. \u0414\u0430\u0436\u0435 \u0435\u0441\u043B\u0438 \u043E\u0434\u0438\u043D \u0438 \u0442\u043E\u0442 \u0436\u0435 \u0447\u0435\u043B\u043E\u0432\u0435\u043A \u0444\u0438\u0433\u0443\u0440\u0438\u0440\u0443\u0435\u0442 \u0432 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u0438\u0445 \u0444\u0430\u0439\u043B\u0430\u0445, \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0430\u0446\u0438\u044F \u043D\u0430 \u0443\u0440\u043E\u0432\u043D\u0435 \u0444\u0430\u0439\u043B\u0430 \u043F\u0440\u0435\u0434\u043F\u043E\u0447\u0442\u0438\u0442\u0435\u043B\u044C\u043D\u0435\u0435: \u043E\u043D\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u043D\u0435\u0437\u0430\u0432\u0438\u0441\u0438\u043C\u043E\u0441\u0442\u044C \u043A\u0430\u0436\u0434\u043E\u0439 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0438 \u0438 \u0441\u043D\u0438\u0436\u0430\u0435\u0442 \u0440\u0438\u0441\u043A \u0438\u0434\u0435\u043D\u0442\u0438\u0444\u0438\u043A\u0430\u0446\u0438\u0438 \u0447\u0435\u0440\u0435\u0437 \u043F\u0435\u0440\u0435\u043A\u0440\u0451\u0441\u0442\u043D\u044B\u0439 \u0430\u043D\u0430\u043B\u0438\u0437.",
+      "panel.mappings.addRule": "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "panel.mappings.scanFile": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0444\u0430\u0439\u043B",
+      "panel.mappings.scanning": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435\u2026",
+      "panel.mappings.noFile": "\u041D\u0435\u0442 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0433\u043E \u0444\u0430\u0439\u043B\u0430.",
+      "panel.mappings.noRules": "\u041D\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B \u0434\u043B\u044F {0}.",
+      "panel.mappings.noRulesHint": "\u041D\u0435\u0442 \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u043F\u0440\u0430\u0432\u0438\u043B \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0444\u0430\u0439\u043B\u0430. \u0421\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u0430 \u0447\u0435\u0440\u0435\u0437 \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u043D\u043E\u0435 \u043C\u0435\u043D\u044E \u0438\u043B\u0438 \u043A\u043E\u043C\u0430\u043D\u0434\u0443 \xAB\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0440\u0430\u0432\u0438\u043B\u043E\xBB.",
+      "panel.mappings.col.source": "\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A",
+      "panel.mappings.col.replacement": "\u0417\u0430\u043C\u0435\u043D\u0430",
+      "panel.mappings.col.category": "\u041A\u0430\u0442\u0435\u0433\u043E\u0440\u0438\u044F",
+      "panel.mappings.col.scope": "\u041E\u0431\u043B\u0430\u0441\u0442\u044C",
+      "panel.mappings.col.priority": "\u041F.",
+      "panel.mappings.col.status": "\u0421\u0442\u0430\u0442\u0443\u0441",
+      "panel.mappings.exceptions": "\u0418\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F",
+      "panel.mappings.exceptions.hint": "\u0412\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u044F, \u044F\u0432\u043D\u043E \u043F\u0440\u043E\u0438\u0433\u043D\u043E\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u043F\u0440\u0430\u0432\u0438\u043B\u0430.",
+      "panel.mappings.exceptions.delete": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E \u0438\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435",
+      "panel.dict.noneInstalled": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438 \u043D\u0435 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u044B. \u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 \u043C\u0430\u0441\u0442\u0435\u0440 (\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u2192 \u041F\u0435\u0440\u0435\u043D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C) \u0438\u043B\u0438 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u0443\u0439\u0442\u0435 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u0444\u0430\u0439\u043B.",
+      "panel.dict.checkbox": "\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u0432 \u0433\u0440\u0443\u043F\u043F\u043E\u0432\u043E\u0435 \u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435",
+      "panel.dict.scanAll": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043E\u0442\u043C\u0435\u0447\u0435\u043D\u043D\u044B\u0435 \u0441\u043B\u043E\u0432\u0430\u0440\u0438",
+      "panel.dict.importLocal": "\u0418\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u0444\u0430\u0439\u043B (.dict.json)",
+      "panel.dict.scanWith": "\u0421\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0439 \u0444\u0430\u0439\u043B \u043F\u043E \xAB{0}\xBB",
+      "panel.dict.remove": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0441\u043B\u043E\u0432\u0430\u0440\u044C",
+      "panel.corpus.noFolder": "\u041F\u0430\u043F\u043A\u0430 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u0430. \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u0442\u0435 \u0435\u0451 \u0432 \u043F\u0430\u0440\u0430\u043C\u0435\u0442\u0440\u0430\u0445.",
+      "panel.corpus.empty": "\u0412 \u044D\u0442\u043E\u0439 \u043F\u0430\u043F\u043A\u0435 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E.",
+      "panel.corpus.rules": "{0} \u043F\u0440\u0430\u0432\u0438\u043B(\u043E)",
+      "panel.corpus.hasPseudo": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u0430\u044F \u0432\u0435\u0440\u0441\u0438\u044F \u0441\u043E\u0437\u0434\u0430\u043D\u0430",
+      "panel.corpus.noPseudo": "\u0415\u0449\u0451 \u043D\u0435 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043E",
+      "panel.corpus.hasFinal": "\u0424\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0439 \u044D\u043A\u0441\u043F\u043E\u0440\u0442 {0} \u043F\u0440\u0438\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442",
+      "panel.corpus.noFinal": "\u041D\u0435\u0442 \u0444\u0438\u043D\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+      "panel.corpus.addClass": "\u041D\u043E\u0432\u044B\u0439 \u043A\u043B\u0430\u0441\u0441",
+      "panel.corpus.noClass": "\u0411\u0435\u0437 \u043A\u043B\u0430\u0441\u0441\u0430",
+      "panel.corpus.moveTo": "\u041F\u0435\u0440\u0435\u043C\u0435\u0441\u0442\u0438\u0442\u044C \u0432\u2026",
+      "panel.corpus.moveToRoot": "\u0411\u0435\u0437 \u043A\u043B\u0430\u0441\u0441\u0430 (\u043A\u043E\u0440\u0435\u043D\u044C)",
+      "panel.corpus.deleteClass": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043A\u043B\u0430\u0441\u0441",
+      "panel.corpus.deleteClassConfirm": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043A\u043B\u0430\u0441\u0441 \xAB{0}\xBB? \u0424\u0430\u0439\u043B\u044B \u0432\u043D\u0443\u0442\u0440\u0438 \u0431\u0443\u0434\u0443\u0442 \u043F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D\u044B \u0432 \u043A\u043E\u0440\u0435\u043D\u044C.",
+      "panel.corpus.exportSettings": "\u041D\u0430\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u0444\u0438\u043D\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430",
+      "panel.corpus.exportDest.vault": "\u0412 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "panel.corpus.exportDest.external": "\u0412\u043D\u0435\u0448\u043D\u044F\u044F \u043F\u0430\u043F\u043A\u0430",
+      "panel.corpus.exportFolder": "\u041F\u0430\u043F\u043A\u0430 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430 (\u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435)",
+      "panel.corpus.exportExternalPath": "\u0410\u0431\u0441\u043E\u043B\u044E\u0442\u043D\u044B\u0439 \u043F\u0443\u0442\u044C",
+      "panel.corpus.exportExternalPathPlaceholder": "/Volumes/Archives/Exports",
+      "panel.corpus.exportMirrorClasses": "\u0417\u0435\u0440\u043A\u0430\u043B\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0443 \u043A\u043B\u0430\u0441\u0441\u043E\u0432",
+      "panel.filenameWarning.msg": "\u0418\u043C\u044F \u0444\u0430\u0439\u043B\u0430 \xAB{0}\xBB \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u0443\u0435\u043C\u044B\u0439 \u0442\u0435\u0440\u043C\u0438\u043D.",
+      "panel.filenameWarning.edit": "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C\u2026",
+      "panel.filenameWarning.editTitle": "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0438\u043C\u044F \u0432\u0440\u0443\u0447\u043D\u0443\u044E",
+      "panel.filenameWarning.editPrompt": "\u041D\u043E\u0432\u043E\u0435 \u0438\u043C\u044F \u0434\u043B\u044F \xAB{0}\xBB",
+      "panel.filenameWarning.wandTitle": "\u041F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u0442\u044C \u0432 \xAB{0}\xBB",
+      "panel.exports.pseudonymize": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E",
+      "panel.exports.exportMapping": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0442\u0430\u0431\u043B\u0438\u0446\u0443 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F",
+      "panel.exports.exportVtt": "\u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A VTT",
+      "panel.exports.exportVtt.desc": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 WebVTT \u0438\u0437 Markdown \u0438 \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445 \u043C\u0435\u0442\u043E\u043A (.words.json).",
+      "panel.exports.exportSrt": "\u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A SRT",
+      "panel.exports.exportSrt.desc": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 SRT \u0438\u0437 Markdown.",
+      "panel.exports.exportCha": "\u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A CHAT (.cha)",
+      "panel.exports.exportCha.desc": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 CHAT \u0438\u0437 Markdown.",
+      "panel.exports.exportHtml": "\u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A HTML",
+      "panel.exports.exportHtml.desc": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 HTML noScribe \u0438\u0437 Markdown \u0438 \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445 \u043C\u0435\u0442\u043E\u043A (.words.json).",
+      "notice.htmlExported": "HTML \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D: {0}",
+      "panel.ner.scanBtn": "\u041E\u043F\u0440\u0435\u0434\u0435\u043B\u0438\u0442\u044C \u043A\u0430\u043D\u0434\u0438\u0434\u0430\u0442\u043E\u0432",
+      "panel.ner.hint": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u0441\u043A\u0430\u043D\u0435\u0440\u0430 \u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u044F \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439.",
+      "panel.ner.threshold": "\u041F\u043E\u0440\u043E\u0433 \u0443\u0432\u0435\u0440\u0435\u043D\u043D\u043E\u0441\u0442\u0438",
+      "panel.ner.thresholdDesc": "\u0421\u0443\u0449\u043D\u043E\u0441\u0442\u0438 \u0441 \u043E\u0446\u0435\u043D\u043A\u043E\u0439 \u043D\u0438\u0436\u0435 \u044D\u0442\u043E\u0433\u043E \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F \u0438\u0433\u043D\u043E\u0440\u0438\u0440\u0443\u044E\u0442\u0441\u044F. \u0412\u044B\u0448\u0435 = \u043C\u0435\u043D\u044C\u0448\u0435 \u043B\u043E\u0436\u043D\u044B\u0445 \u0441\u0440\u0430\u0431\u0430\u0442\u044B\u0432\u0430\u043D\u0438\u0439, \u043D\u043E \u043C\u0435\u043D\u044C\u0448\u0435 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0439.",
+      "panel.ner.functionWords": "\u0418\u0441\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0435 \u0441\u043B\u0443\u0436\u0435\u0431\u043D\u044B\u0435 \u0441\u043B\u043E\u0432\u0430",
+      "panel.ner.functionWordsDesc": "\u041F\u043E \u043E\u0434\u043D\u043E\u043C\u0443 \u0441\u043B\u043E\u0432\u0443 \u043D\u0430 \u0441\u0442\u0440\u043E\u043A\u0443. \u042D\u0442\u0438 \u0442\u043E\u043A\u0435\u043D\u044B \u043D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u0431\u0443\u0434\u0443\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u044B \u043A\u0430\u043A \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0438, \u0434\u0430\u0436\u0435 \u0435\u0441\u043B\u0438 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u044B \u043C\u043E\u0434\u0435\u043B\u044C\u044E.",
+      "panel.ner.save": "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C",
+      "panel.ner.saved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E",
+      "panel.ner.reset": "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0434\u043E \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0439 \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E",
+      "dictScanModal.title": "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F \u043F\u043E \u0441\u043B\u043E\u0432\u0430\u0440\u044E",
+      "dictScanModal.summary": "{0} {1} \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u043E \xB7 {2}",
+      "dictScanModal.summary.entity": "\u0441\u0443\u0449\u043D\u043E\u0441\u0442\u044C",
+      "dictScanModal.summary.entities": "\u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439",
+      "dictScanModal.hint": "\u0421\u043D\u0438\u043C\u0438\u0442\u0435 \u0433\u0430\u043B\u043E\u0447\u043A\u0438 \u0441 \u043B\u043E\u0436\u043D\u044B\u0445 \u0441\u0440\u0430\u0431\u0430\u0442\u044B\u0432\u0430\u043D\u0438\u0439. \u041F\u0440\u0435\u0444\u0438\u043A\u0441 \u0440\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u0443\u0435\u0442\u0441\u044F; \u0438\u043D\u0434\u0435\u043A\u0441 \u0440\u0430\u0441\u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438.",
+      "dictScanModal.apply": "\u0421\u043E\u0437\u0434\u0430\u0442\u044C {0} {1}",
+      "dictScanModal.apply.rule": "\u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "dictScanModal.apply.rules": "\u043F\u0440\u0430\u0432\u0438\u043B",
+      "dictScanModal.noRules": "\u041D\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B \u0434\u043B\u044F \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u0438\u044F",
+      "dictScanModal.cancel": "\u041E\u0442\u043C\u0435\u043D\u0430",
+      "mappingScanModal.title": "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0439",
+      "mappingScanModal.summary": "{0} {1} \u0441 \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u044F\u043C\u0438 \u0432 \xAB{2}\xBB",
+      "mappingScanModal.summary.rule": "\u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "mappingScanModal.summary.rules": "\u0430\u043A\u0442\u0438\u0432\u043D\u044B\u0445 \u043F\u0440\u0430\u0432\u0438\u043B",
+      "mappingScanModal.hint": "\u0421\u043D\u0438\u043C\u0438\u0442\u0435 \u0433\u0430\u043B\u043E\u0447\u043A\u0438 \u0441 \u043F\u0440\u0430\u0432\u0438\u043B, \u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u043D\u0435 \u043D\u0443\u0436\u043D\u043E \u043F\u0440\u0438\u043C\u0435\u043D\u044F\u0442\u044C. \u0417\u0430\u043C\u0435\u043D\u044B \u0431\u0443\u0434\u0443\u0442 \u0437\u0430\u043F\u0438\u0441\u0430\u043D\u044B \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u0444\u0430\u0439\u043B.",
+      "mappingScanModal.col.source": "",
+      "mappingScanModal.col.replacement": "\u0417\u0430\u043C\u0435\u043D\u0430",
+      "mappingScanModal.col.occurrences": "\u0412\u0445\u043E\u0436\u0434.",
+      "mappingScanModal.apply": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C ({0} {1}, {2} {3})",
+      "mappingScanModal.apply.rule": "\u043F\u0440\u0430\u0432\u0438\u043B\u043E",
+      "mappingScanModal.apply.rules": "\u043F\u0440\u0430\u0432\u0438\u043B",
+      "mappingScanModal.apply.occurrence": "\u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0435",
+      "mappingScanModal.apply.occurrences": "\u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0439",
+      "mappingScanModal.noRules": "\u041D\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B \u0434\u043B\u044F \u043F\u0440\u0438\u043C\u0435\u043D\u0435\u043D\u0438\u044F",
+      "mappingScanModal.cancel": "\u041E\u0442\u043C\u0435\u043D\u0430",
+      "mappingScanModal.saveExceptions": "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0438\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F",
+      "mappingScanModal.exceptionsSaved": "\u0418\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u044B \u0432 \u0442\u0430\u0431\u043B\u0438\u0446\u0443 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F.",
+      "mappingScanModal.countTooltip": "\u041F\u0440\u043E\u0441\u043C\u043E\u0442\u0440 \u0438 \u0432\u044B\u0431\u043E\u0440 \u043A\u0430\u043D\u0434\u0438\u0434\u0430\u0442\u043E\u0432",
+      "onboarding.step.storage": "\u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "onboarding.step.language": "\u042F\u0437\u044B\u043A",
+      "onboarding.step.welcome": "\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C",
+      "onboarding.step.ner": "\u0414\u0435\u0442\u0435\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 NER",
+      "onboarding.step.dictionaries": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438",
+      "onboarding.step.summary": "\u0418\u0442\u043E\u0433\u0438",
+      "onboarding.welcome.title": "Pseudonymizer Tool",
+      "onboarding.welcome.desc": "\u042D\u0442\u043E\u0442 \u043F\u043B\u0430\u0433\u0438\u043D \u043F\u043E\u043C\u043E\u0433\u0430\u0435\u0442 \u043A\u043E\u0440\u0440\u0435\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0438 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0438 \u0438\u043D\u0442\u0435\u0440\u0432\u044C\u044E \u0438 \u0438\u043D\u0442\u0435\u0440\u0430\u043A\u0446\u0438\u043E\u043D\u0430\u043B\u044C\u043D\u044B\u0445 \u043A\u043E\u0440\u043F\u0443\u0441\u043E\u0432 (\u043A\u043E\u043D\u0432\u0435\u043D\u0446\u0438\u0438 Jefferson, ICOR, \u0444\u043E\u0440\u043C\u0430\u0442\u044B .srt, .cha).",
+      "onboarding.welcome.steps": "\u041C\u0430\u0441\u0442\u0435\u0440 \u043F\u0440\u043E\u0432\u0435\u0434\u0451\u0442 \u0432\u0430\u0441 \u0447\u0435\u0440\u0435\u0437 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0431\u044B\u0441\u0442\u0440\u044B\u0445 \u0448\u0430\u0433\u043E\u0432:",
+      "onboarding.welcome.step1": "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u044F\u0437\u044B\u043A \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0430.",
+      "onboarding.welcome.step2": "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0434\u0432\u0438\u0436\u043E\u043A \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u044F \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439 (\u043D\u0435\u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u043E).",
+      "onboarding.welcome.step3": "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0435 \u0441\u043B\u043E\u0432\u0430\u0440\u0438 \u043A\u0430\u043D\u0434\u0438\u0434\u0430\u0442\u043E\u0432 \u0434\u043B\u044F \u0437\u0430\u043C\u0435\u043D\u044B, \u0435\u0441\u043B\u0438 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E.",
+      "onboarding.welcome.hint": "\u042D\u0442\u0438 \u043F\u0430\u0440\u0430\u043C\u0435\u0442\u0440\u044B \u043C\u043E\u0436\u043D\u043E \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0435 \u0432\u0440\u0435\u043C\u044F \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u043F\u043B\u0430\u0433\u0438\u043D\u0430.",
+      "onboarding.storage.title": "\u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "onboarding.storage.vaultPerCorpus": "\u041E\u0434\u043D\u043E \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u043D\u0430 \u043A\u043E\u0440\u043F\u0443\u0441",
+      "onboarding.storage.vaultPerCorpusDesc": "\u0420\u0435\u043A\u043E\u043C\u0435\u043D\u0434\u0443\u0435\u043C \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0435 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 Obsidian \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043A\u043E\u0440\u043F\u0443\u0441\u0430. \u042D\u0442\u043E \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F, \u0441\u043B\u043E\u0432\u0430\u0440\u0438 \u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u044B \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u044F\u043C\u0438, \u0443\u043F\u0440\u043E\u0449\u0430\u044F \u043E\u0431\u043C\u0435\u043D \u0438 \u0430\u0440\u0445\u0438\u0432\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u043A\u043E\u0440\u043F\u0443\u0441\u0430.",
+      "onboarding.storage.transcriptionsFolder": "\u041F\u0430\u043F\u043A\u0430 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439",
+      "onboarding.storage.mappingFolder": "\u0422\u0430\u0431\u043B\u0438\u0446\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F",
+      "onboarding.storage.dictionariesFolder": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438",
+      "onboarding.storage.exportsFolder": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u044B",
+      "onboarding.storage.hint": "\u042D\u0442\u0438 \u043F\u0443\u0442\u0438 \u0443\u043A\u0430\u0437\u0430\u043D\u044B \u043E\u0442\u043D\u043E\u0441\u0438\u0442\u0435\u043B\u044C\u043D\u043E \u043A\u043E\u0440\u043D\u044F \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0430. \u0418\u0445 \u043C\u043E\u0436\u043D\u043E \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u043E\u0437\u0436\u0435 \u0432 \u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445.",
+      "onboarding.language.title": "\u042F\u0437\u044B\u043A \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0430",
+      "onboarding.language.hint": "\u042F\u0437\u044B\u043A \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0430 \u043D\u0435 \u0432\u043B\u0438\u044F\u0435\u0442 \u043D\u0430 \u0430\u043D\u0430\u043B\u0438\u0437 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439. \u041A\u043E\u043D\u0432\u0435\u043D\u0446\u0438\u0438 (Jefferson, ICOR) \u043D\u0435 \u0437\u0430\u0432\u0438\u0441\u044F\u0442 \u043E\u0442 \u044F\u0437\u044B\u043A\u0430.",
+      "onboarding.ner.desc": "\u041C\u043E\u0434\u0435\u043B\u044C NER (\u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u0435 \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439) \u043C\u043E\u0436\u0435\u0442 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0438\u0432\u0430\u0442\u044C \u0438\u043C\u0435\u043D\u0430, \u0444\u0430\u043C\u0438\u043B\u0438\u0438, \u043C\u0435\u0441\u0442\u0430 \u0438 \u0443\u0447\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u044F \u0432 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u044F\u0445 \u2014 \u0431\u0435\u0437 \u0438\u0441\u0447\u0435\u0440\u043F\u044B\u0432\u0430\u044E\u0449\u0435\u0433\u043E \u0441\u043F\u0438\u0441\u043A\u0430, \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E \u0432 Obsidian.",
+      "onboarding.ner.tfjsTitle": "transformers.js \u2014 \u0432\u0441\u0442\u0440\u043E\u0435\u043D\u043D\u0430\u044F \u043C\u043E\u0434\u0435\u043B\u044C ONNX",
+      "onboarding.ner.tfjsBadge": "Python \u043D\u0435 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F",
+      "onboarding.ner.tfjsDesc": "\u041C\u043D\u043E\u0433\u043E\u044F\u0437\u044B\u0447\u043D\u0430\u044F \u043C\u043E\u0434\u0435\u043B\u044C NER, \u0440\u0430\u0431\u043E\u0442\u0430\u044E\u0449\u0430\u044F \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435. WASM-\u0444\u0430\u0439\u043B\u044B (~19 \u041C\u0411) \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044E\u0442\u0441\u044F \u043E\u0434\u0438\u043D \u0440\u0430\u0437. \u041C\u043E\u0434\u0435\u043B\u044C (~66 \u041C\u0411) \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u0442\u0441\u044F \u043F\u0440\u0438 \u043F\u0435\u0440\u0432\u043E\u043C \u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0438.",
+      "onboarding.ner.wasmReady": "WASM-\u0444\u0430\u0439\u043B\u044B \u0443\u0436\u0435 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u044B",
+      "onboarding.ner.installBtn": "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C transformers.js",
+      "onboarding.ner.selectedBtn": "\u0412\u044B\u0431\u0440\u0430\u043D\u043E",
+      "onboarding.ner.noneActive": "\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u043E (\u0442\u043E\u043B\u044C\u043A\u043E \u0440\u0443\u0447\u043D\u044B\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u0430)",
+      "onboarding.ner.noneSkip": "\u041F\u0440\u043E\u043F\u0443\u0441\u0442\u0438\u0442\u044C \u2014 \u0431\u0443\u0434\u0443 \u0440\u0430\u0431\u043E\u0442\u0430\u0442\u044C \u0432\u0440\u0443\u0447\u043D\u0443\u044E",
+      "onboarding.dict.title": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438 \u043A\u0430\u043D\u0434\u0438\u0434\u0430\u0442\u043E\u0432 \u0434\u043B\u044F \u0437\u0430\u043C\u0435\u043D\u044B",
+      "onboarding.dict.desc": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438 \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u044E\u0442 \u043A\u0430\u043D\u0434\u0438\u0434\u0430\u0442\u043E\u0432 \u0434\u043B\u044F \u0437\u0430\u043C\u0435\u043D\u044B (\u0433\u043E\u0440\u043E\u0434\u0430, \u0438\u043C\u0435\u043D\u0430\u2026) \u0438 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u044E\u0442 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0435. \u041E\u043D\u0438 \u0440\u0430\u0437\u043C\u0435\u0449\u0435\u043D\u044B \u0432 \u0441\u043F\u0435\u0446\u0438\u0430\u043B\u044C\u043D\u043E\u043C \u0440\u0435\u043F\u043E\u0437\u0438\u0442\u043E\u0440\u0438\u0438 \u0438 \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044E\u0442\u0441\u044F \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u2014 \u0434\u0430\u043D\u043D\u044B\u0435 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439 \u043D\u0435 \u043F\u043E\u043A\u0438\u0434\u0430\u044E\u0442 Obsidian.",
+      "onboarding.dict.catalogueLoading": "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u043A\u0430\u0442\u0430\u043B\u043E\u0433\u0430\u2026",
+      "onboarding.dict.catalogueError": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u044C\u0441\u044F \u043A \u043E\u043D\u043B\u0430\u0439\u043D-\u043A\u0430\u0442\u0430\u043B\u043E\u0433\u0443. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u0438\u043B\u0438 \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u0443\u0439\u0442\u0435 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u0444\u0430\u0439\u043B \u043D\u0438\u0436\u0435.",
+      "onboarding.dict.recommended": "\u0420\u0435\u043A\u043E\u043C\u0435\u043D\u0434\u0443\u0435\u0442\u0441\u044F",
+      "onboarding.dict.col.dict": "\u0421\u043B\u043E\u0432\u0430\u0440\u044C",
+      "onboarding.dict.col.lang": "\u042F\u0437\u044B\u043A",
+      "onboarding.dict.col.roles": "\u0420\u043E\u043B\u0438",
+      "onboarding.dict.col.size": "\u0420\u0430\u0437\u043C\u0435\u0440",
+      "onboarding.dict.role.detection": "\u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0435",
+      "onboarding.dict.role.replacement": "\u0437\u0430\u043C\u0435\u043D\u0430",
+      "onboarding.dict.role.classes": "\u043A\u043B\u0430\u0441\u0441\u044B",
+      "onboarding.dict.install": "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C",
+      "onboarding.dict.reinstall": "\u041F\u0435\u0440\u0435\u0443\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C",
+      "onboarding.dict.installed": "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E",
+      "onboarding.dict.manualHint": "\u0423\u0436\u0435 \u0435\u0441\u0442\u044C \u0444\u0430\u0439\u043B .dict.json? \u0418\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u0443\u0439\u0442\u0435 \u0432\u0440\u0443\u0447\u043D\u0443\u044E:",
+      "onboarding.dict.importBtn": "\u0418\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u0444\u0430\u0439\u043B (.dict.json)",
+      "onboarding.dict.listTitle": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438, \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044B\u0435 \u0432 \u044D\u0442\u043E\u043C \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 ({0}):",
+      "onboarding.dict.remove": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0441\u043B\u043E\u0432\u0430\u0440\u044C",
+      "onboarding.summary.ner.none": "\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u2014 \u0442\u043E\u043B\u044C\u043A\u043E \u0440\u0443\u0447\u043D\u044B\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u0430",
+      "onboarding.summary.ner.tfjs": "transformers.js \u2014 \u043C\u043E\u0434\u0435\u043B\u044C ONNX (\u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u043F\u0440\u0438 \u043F\u0435\u0440\u0432\u043E\u043C \u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0438)",
+      "onboarding.nav.cancel": "\u041E\u0442\u043C\u0435\u043D\u0430",
+      "onboarding.nav.back": "\u041D\u0430\u0437\u0430\u0434",
+      "onboarding.nav.skip": "\u041F\u0440\u043E\u043F\u0443\u0441\u0442\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0448\u0430\u0433",
+      "onboarding.nav.next": "\u0414\u0430\u043B\u0435\u0435",
+      "onboarding.nav.start": "\u041D\u0430\u0447\u0430\u0442\u044C",
+      "onboarding.nav.finish": "\u041F\u0440\u0438\u0441\u0442\u0443\u043F\u0438\u0442\u044C \u043A \u0440\u0430\u0431\u043E\u0442\u0435",
+      "onboarding.summary.title": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0430",
+      "onboarding.summary.intro": "\u0412\u043E\u0442 \u0447\u0442\u043E \u0431\u044B\u043B\u043E \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E:",
+      "onboarding.summary.ner": "\u0414\u0435\u0442\u0435\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 NER",
+      "onboarding.summary.dicts": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438",
+      "onboarding.summary.dicts.count": "{0} \u0444\u0430\u0439\u043B(\u043E\u0432) \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "onboarding.summary.hint": "\u042D\u0442\u0438 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u043C\u043E\u0436\u043D\u043E \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u0432 \u043B\u044E\u0431\u043E\u0435 \u0432\u0440\u0435\u043C\u044F \u0432 \u043F\u0430\u0440\u0430\u043C\u0435\u0442\u0440\u0430\u0445 \u043F\u043B\u0430\u0433\u0438\u043D\u0430: \u041F\u0435\u0440\u0435\u043D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C.",
+      "settings.heading.general": "\u041E\u0431\u0449\u0438\u0435",
+      "settings.heading.textDetection": "\u041E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0435 \u0442\u0435\u043A\u0441\u0442\u0430",
+      "settings.heading.pseudonymization": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0430\u0446\u0438\u044F",
+      "settings.heading.ner": "\u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0435 (NER)",
+      "settings.heading.storage": "\u0425\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435",
+      "settings.heading.security": "\u0411\u0435\u0437\u043E\u043F\u0430\u0441\u043D\u043E\u0441\u0442\u044C",
+      "settings.language": "\u042F\u0437\u044B\u043A \u0438\u043D\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0430",
+      "settings.languageDesc": "\u041D\u0435 \u0432\u043B\u0438\u044F\u0435\u0442 \u043D\u0430 \u0430\u043D\u0430\u043B\u0438\u0437 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439. \u041A\u043E\u043D\u0432\u0435\u043D\u0446\u0438\u0438 (Jefferson, ICOR) \u043D\u0435 \u0437\u0430\u0432\u0438\u0441\u044F\u0442 \u043E\u0442 \u044F\u0437\u044B\u043A\u0430.",
+      "settings.vaultPerCorpus": "\u041E\u0434\u043D\u043E \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 \u043D\u0430 \u043A\u043E\u0440\u043F\u0443\u0441",
+      "settings.vaultPerCorpusDesc": "\u0420\u0435\u043A\u043E\u043C\u0435\u043D\u0434\u0443\u0435\u043C \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0435 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435 Obsidian \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043A\u043E\u0440\u043F\u0443\u0441\u0430. \u042D\u0442\u043E \u0433\u0430\u0440\u0430\u043D\u0442\u0438\u0440\u0443\u0435\u0442, \u0447\u0442\u043E \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F, \u0441\u043B\u043E\u0432\u0430\u0440\u0438 \u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u044B \u0445\u0440\u0430\u043D\u044F\u0442\u0441\u044F \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u044F\u043C\u0438.",
+      "settings.transcriptionsFolder": "\u0418\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0438",
+      "settings.transcriptionsFolderDesc": "\u041F\u0430\u043F\u043A\u0430 \u043D\u0430\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F \u0434\u043B\u044F \u0438\u043C\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439.",
+      "settings.mappingFolder": "\u0422\u0430\u0431\u043B\u0438\u0446\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F",
+      "settings.mappingFolderDesc": "\u041E\u0442\u043D\u043E\u0441\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043F\u0443\u0442\u044C \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435.",
+      "settings.dictionariesFolder": "\u0421\u043B\u043E\u0432\u0430\u0440\u0438",
+      "settings.dictionariesFolderDesc": "\u041E\u0442\u043D\u043E\u0441\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043F\u0443\u0442\u044C \u0432 \u0445\u0440\u0430\u043D\u0438\u043B\u0438\u0449\u0435.",
+      "settings.exportsFolder": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u044B",
+      "settings.accentSensitive": "\u0423\u0447\u0438\u0442\u044B\u0432\u0430\u0442\u044C \u0430\u043A\u0446\u0435\u043D\u0442\u044B",
+      "settings.preserveCase": "\u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0442\u044C \u0440\u0435\u0433\u0438\u0441\u0442\u0440",
+      "settings.preserveCaseDesc": "\u0410\u0434\u0430\u043F\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0440\u0435\u0433\u0438\u0441\u0442\u0440 \u0437\u0430\u043C\u0435\u043D\u044B \u043F\u043E\u0434 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, \u0418\u0412\u0410\u041D \u2192 \u041F\u0401\u0422\u0420, \u0438\u0432\u0430\u043D \u2192 \u043F\u0451\u0442\u0440, \u0418\u0432\u0430\u043D \u2192 \u041F\u0451\u0442\u0440).",
+      "settings.preserveAnalyticNotation": "\u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0442\u044C \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0443\u044E \u043D\u043E\u0442\u0430\u0446\u0438\u044E",
+      "settings.preserveAnalyticNotationDesc": "\u041D\u0438\u043A\u043E\u0433\u0434\u0430 \u043D\u0435 \u0437\u0430\u043C\u0435\u043D\u044F\u0442\u044C \u0441\u0438\u043C\u0432\u043E\u043B\u044B \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u043A\u043E\u043D\u0432\u0435\u043D\u0446\u0438\u0439 Jefferson \u0438\u043B\u0438 ICOR.",
+      "settings.useMarkerInExport": "\u0414\u043E\u0431\u0430\u0432\u043B\u044F\u0442\u044C \u043C\u0430\u0440\u043A\u0435\u0440 \u0432\u043E\u043A\u0440\u0443\u0433 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u043E\u0432 \u0432 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0435",
+      "settings.useMarkerInExportDesc": "\u041F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u0432\u0438\u0437\u0443\u0430\u043B\u044C\u043D\u043E \u0438\u0434\u0435\u043D\u0442\u0438\u0444\u0438\u0446\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0435 \u0442\u0435\u0440\u043C\u0438\u043D\u044B \u0432 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u043C \u0444\u0430\u0439\u043B\u0435.",
+      "settings.markerOpen": "\u041E\u0442\u043A\u0440\u044B\u0432\u0430\u044E\u0449\u0438\u0439 \u043C\u0430\u0440\u043A\u0435\u0440",
+      "settings.markerOpenDesc": "\u041F\u0440\u0438\u043C\u0435\u0440: {{  \u27E6  [  \xAB",
+      "settings.markerClose": "\u0417\u0430\u043A\u0440\u044B\u0432\u0430\u044E\u0449\u0438\u0439 \u043C\u0430\u0440\u043A\u0435\u0440",
+      "settings.markerCloseDesc": "\u041F\u0440\u0438\u043C\u0435\u0440: }}  \u27E7  ]  \xBB",
+      "settings.nerBackend": "\u0414\u0432\u0438\u0436\u043E\u043A \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u044F",
+      "settings.nerBackendDesc": "\u0411\u044D\u043A\u0435\u043D\u0434 \u0434\u043B\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u044F \u0438\u0434\u0435\u043D\u0442\u0438\u0444\u0438\u0446\u0438\u0440\u0443\u044E\u0449\u0438\u0445 \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439.",
+      "settings.nerBackend.none": "\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u2014 \u0442\u043E\u043B\u044C\u043A\u043E \u0440\u0443\u0447\u043D\u044B\u0435 \u043F\u0440\u0430\u0432\u0438\u043B\u0430",
+      "settings.nerBackend.tfjs": "transformers.js (\u0432\u0441\u0442\u0440\u043E\u0435\u043D\u043D\u0430\u044F \u043C\u043E\u0434\u0435\u043B\u044C ONNX)",
+      "settings.reconfigure": "\u041C\u0430\u0441\u0442\u0435\u0440 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+      "settings.reconfigureDesc2": "\u041F\u0435\u0440\u0435\u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u044C \u043C\u0430\u0441\u0442\u0435\u0440 \u0434\u043B\u044F \u043F\u0435\u0440\u0435\u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 NER-\u0434\u0435\u0442\u0435\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F \u0438 \u0441\u043B\u043E\u0432\u0430\u0440\u0435\u0439.",
+      "settings.reconfigureBtn2": "\u041F\u0435\u0440\u0435\u043D\u0430\u0441\u0442\u0440\u043E\u0438\u0442\u044C\u2026",
+      "settings.warnIfSyncedFolder": "\u041F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0430\u0442\u044C \u043E \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0439 \u043F\u0430\u043F\u043A\u0435",
+      "settings.warnIfSyncedFolderDesc": "\u041F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0430\u0442\u044C, \u0435\u0441\u043B\u0438 \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u043D\u0430\u0445\u043E\u0434\u044F\u0442\u0441\u044F \u0432 \u043F\u0430\u043F\u043A\u0435 Git, iCloud \u0438\u043B\u0438 Synology Drive.",
+      "settings.caseSensitive": "\u0423\u0447\u0438\u0442\u044B\u0432\u0430\u0442\u044C \u0440\u0435\u0433\u0438\u0441\u0442\u0440",
+      "settings.caseSensitiveDesc": "\u0415\u0441\u043B\u0438 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u043E, \xAB\u0418\u0432\u0430\u043D\xBB \u0438 \xAB\u0438\u0432\u0430\u043D\xBB \u0441\u0447\u0438\u0442\u0430\u044E\u0442\u0441\u044F \u0440\u0430\u0437\u043D\u044B\u043C\u0438.",
+      "settings.wholeWordOnly": "\u0422\u043E\u043B\u044C\u043A\u043E \u0446\u0435\u043B\u044B\u0435 \u0441\u043B\u043E\u0432\u0430",
+      "settings.wholeWordOnlyDesc": "\u0415\u0441\u043B\u0438 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u043E, \u0437\u0430\u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0432\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u044F \u043F\u043E\u043B\u043D\u044B\u0445 \u0441\u043B\u043E\u0432."
+    };
+  }
+});
+
 // src/i18n/index.ts
 function setLocale(lang) {
   _locale = LOCALES[lang] ? lang : FALLBACK;
@@ -780,13 +1516,17 @@ var init_i18n = __esm({
   "src/i18n/index.ts"() {
     "use strict";
     init_en();
+    init_es();
     init_fr();
-    LOCALES = { en: en_default, fr: fr_default };
+    init_ru();
+    LOCALES = { en: en_default, es: es_default, fr: fr_default, ru: ru_default };
     FALLBACK = "en";
     _locale = FALLBACK;
     AVAILABLE_LANGUAGES = {
       en: "English",
-      fr: "Fran\xE7ais"
+      es: "Espa\xF1ol",
+      fr: "Fran\xE7ais",
+      ru: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439"
     };
   }
 });
@@ -33476,9 +34216,10 @@ function getCorpusClasses(app, transcriptionsFolder) {
   return folder.children.filter((c) => c instanceof import_obsidian7.TFolder).map((c) => c.name).sort();
 }
 var CorpusModal = class extends import_obsidian7.Modal {
-  constructor(app, plugin) {
+  constructor(app, plugin, onCloseCb) {
     super(app);
     this.plugin = plugin;
+    this.onCloseCb = onCloseCb;
   }
   onOpen() {
     this.render();
@@ -33571,6 +34312,7 @@ var CorpusModal = class extends import_obsidian7.Modal {
   }
   onClose() {
     this.contentEl.empty();
+    this.onCloseCb?.();
   }
 };
 var ClassSelectModal = class extends import_obsidian7.Modal {
@@ -34160,7 +34902,6 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     const typeRow = exportSection.createDiv("pseudobs-corpus-export-type-row");
     for (const [val, labelKey] of [
       ["vault", "panel.corpus.exportDest.vault"],
-      ["next-to-source", "panel.corpus.exportDest.nextToSource"],
       ["external", "panel.corpus.exportDest.external"]
     ]) {
       const lbl = typeRow.createEl("label", { cls: "pseudobs-corpus-export-type-label" });
@@ -34204,13 +34945,8 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
       text: `+ ${t("panel.corpus.addClass")}`,
       cls: "pseudobs-corpus-add-class-btn"
     });
-    addClassBtn.addEventListener("click", async () => {
-      const name2 = this.promptText(t("corpus.modal.classNamePlaceholder"));
-      if (!name2)
-        return;
-      await this.plugin.ensureFolder(`${transcRoot}/${name2}`);
-      await this.plugin.ensureFolder(`${s.mappingFolder}/${name2}`);
-      void this.renderTab("corpus");
+    addClassBtn.addEventListener("click", () => {
+      new CorpusModal(this.app, this.plugin, () => void this.renderTab("corpus")).open();
     });
     const classes = getCorpusClasses(this.app, transcRoot);
     const allClasses = [null, ...classes];
@@ -34602,6 +35338,13 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
                 void this.plugin.exportCurrentFileAsVtt();
               })
             );
+            if (format === "html") {
+              new import_obsidian10.Setting(el).setName(t("panel.exports.exportHtml")).setDesc(t("panel.exports.exportHtml.desc")).addButton(
+                (btn) => btn.setButtonText(t("command.exportAsHtml")).onClick(() => {
+                  void this.plugin.exportCurrentFileAsHtml();
+                })
+              );
+            }
           } else if (format === "srt") {
             new import_obsidian10.Setting(el).setName(t("panel.exports.exportSrt")).setDesc(t("panel.exports.exportSrt.desc")).addButton(
               (btn) => btn.setButtonText(t("command.exportAsSrt")).setCta().onClick(() => {
@@ -36036,6 +36779,86 @@ function vttToMarkdown(doc, sourceName, audioFilename) {
 function noScribeHtmlToMarkdown(doc, sourceName, audioFilename) {
   return vttDocToMarkdown(doc, sourceName, "html", audioFilename);
 }
+function tsToMs(ts) {
+  const [h, m, s] = ts.split(":");
+  return Math.round((parseInt(h, 10) * 3600 + parseInt(m, 10) * 60 + parseFloat(s)) * 1e3);
+}
+function escapeHtml(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function sanitizeSpeakerId(speaker) {
+  return speaker.replace(/\W/g, "");
+}
+function markdownToNoScribeHtml(mdContent, wordData, audioSource) {
+  const bodyMatch = /^---\n[\s\S]*?\n---\n+([\s\S]*)$/.exec(mdContent);
+  const body = bodyMatch ? bodyMatch[1] : mdContent;
+  const cueLines = body.split("\n").filter((l) => MD_CUE_RE.test(l.trim()));
+  const mismatch = cueLines.length !== wordData.length;
+  const count = Math.min(cueLines.length, wordData.length);
+  const P_STYLE = " margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;";
+  const paragraphs = [];
+  for (let i2 = 0; i2 < count; i2++) {
+    const m = MD_CUE_RE.exec(cueLines[i2].trim());
+    const speaker = m[1]?.trim() || wordData[i2].speaker || "";
+    const text = m[2]?.trim() ?? "";
+    if (!text)
+      continue;
+    const cueData = wordData[i2];
+    const cueStartMs = tsToMs(cueData.startTime);
+    const cueEndMs = tsToMs(cueData.endTime);
+    const speakerId = speaker ? sanitizeSpeakerId(speaker) : "";
+    const cueAnchor = `ts_${cueStartMs}_${cueEndMs}_${speakerId}`;
+    const displayTs = `[${cueData.startTime.slice(0, 8)}]`;
+    const origWords = cueData.words.filter((w) => w.time !== "");
+    const pseudoTokens = text.split(/\s+/).filter(Boolean);
+    let contentHtml;
+    if (origWords.length === 0 || pseudoTokens.length === 0) {
+      const prefix = speaker ? `${escapeHtml(speaker)} : ` : "";
+      contentHtml = `<a name="${cueAnchor}">${prefix}${escapeHtml(text)}</a>`;
+    } else {
+      const wordStartMs = origWords.map((w) => tsToMs(w.time));
+      const wordEndMs = origWords.map(
+        (_, j) => j + 1 < origWords.length ? wordStartMs[j + 1] : cueEndMs
+      );
+      const mapToOrig = (j) => Math.min(Math.floor(j * origWords.length / pseudoTokens.length), origWords.length - 1);
+      const groups = [];
+      for (let j = 0; j < pseudoTokens.length; j++) {
+        const origIdx = mapToOrig(j);
+        if (groups.length === 0 || groups[groups.length - 1].origIdx !== origIdx) {
+          groups.push({ origIdx, tokens: [] });
+        }
+        groups[groups.length - 1].tokens.push(pseudoTokens[j]);
+      }
+      const parts = [];
+      for (let g = 0; g < groups.length; g++) {
+        const { origIdx, tokens } = groups[g];
+        const anchorName = `ts_${wordStartMs[origIdx]}_${wordEndMs[origIdx]}_${speakerId}`;
+        let groupText = tokens.join(" ");
+        if (g < groups.length - 1)
+          groupText += " ";
+        const content = g === 0 && speaker ? `${escapeHtml(speaker)} : ${escapeHtml(groupText)}` : escapeHtml(groupText);
+        parts.push(`<a name="${anchorName}">${content}</a>`);
+      }
+      contentHtml = parts.join("");
+    }
+    paragraphs.push(
+      `<p style="${P_STYLE}"><a name="${cueAnchor}" href="${cueAnchor}"><span style=" color:#78909c;">${displayTs}</span></a>` + contentHtml + `</p>`
+    );
+  }
+  const audioMeta = audioSource ? `<meta name="audio_source" content="${escapeHtml(audioSource)}" />
+` : "";
+  const html = [
+    '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">',
+    `<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" />
+${audioMeta}<style type="text/css">`,
+    "p, li { white-space: pre-wrap; }",
+    `</style></head><body style=" font-family:'Arial'; font-size:12pt; font-weight:400; font-style:normal;">`,
+    ...paragraphs,
+    "</body></html>",
+    ""
+  ].join("\n");
+  return { html, mismatch };
+}
 function lineGroup(line) {
   if (line.type === "meta" || line.type === "dependent")
     return "structural";
@@ -36318,6 +37141,11 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       callback: () => void this.exportCurrentFileAsFormat("cha")
     });
     this.addCommand({
+      id: "export-as-html",
+      name: t("command.exportAsHtml"),
+      callback: () => void this.exportCurrentFileAsHtml()
+    });
+    this.addCommand({
       id: "pseudonymize-selection",
       name: t("command.pseudonymizeSelection"),
       editorCheckCallback: (checking, editor) => {
@@ -36482,32 +37310,32 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
    * Calcule le chemin de l'export final selon les paramètres de destination.
    * Retourne { vaultPath } si dans le vault, { externalPath } si hors vault.
    */
+  /** Retourne le sous-dossier de classe (vide si pas de mirroring ou pas de classe). */
+  getClassSub(file) {
+    const s = this.settings;
+    if (!s.exportMirrorClasses)
+      return "";
+    const transcRoot = s.transcriptionsFolder;
+    const fileFolder = file.parent?.path ?? "";
+    const rawBase = file.basename.replace(/\.pseudonymized$/, "");
+    if (fileFolder.startsWith(transcRoot)) {
+      return fileFolder.slice(transcRoot.length).replace(/^\//, "");
+    }
+    const mappingFile = this.findInMappings(`${rawBase}.mapping.json`);
+    if (mappingFile) {
+      const mFolder = mappingFile.parent?.path ?? "";
+      if (mFolder.startsWith(s.mappingFolder)) {
+        return mFolder.slice(s.mappingFolder.length).replace(/^\//, "");
+      }
+    }
+    return "";
+  }
   resolveExportPath(file, ext) {
     const s = this.settings;
     const rawBase = file.basename.replace(/\.pseudonymized$/, "");
     const outputName = `${rawBase}.pseudonymized.${ext}`;
-    const fileFolder = file.parent?.path ?? "";
-    let classSub = "";
-    if (s.exportMirrorClasses) {
-      const transcRoot = s.transcriptionsFolder;
-      const fileFolder2 = file.parent?.path ?? "";
-      if (fileFolder2.startsWith(transcRoot)) {
-        classSub = fileFolder2.slice(transcRoot.length).replace(/^\//, "");
-      } else {
-        const mappingFile = this.findInMappings(`${rawBase}.mapping.json`);
-        if (mappingFile) {
-          const mFolder = mappingFile.parent?.path ?? "";
-          const mRoot = s.mappingFolder;
-          if (mFolder.startsWith(mRoot)) {
-            classSub = mFolder.slice(mRoot.length).replace(/^\//, "");
-          }
-        }
-      }
-    }
+    const classSub = this.getClassSub(file);
     const join2 = (base) => classSub ? `${base}/${classSub}/${outputName}` : `${base}/${outputName}`;
-    if (s.exportDestinationType === "next-to-source") {
-      return { vaultPath: `${fileFolder}/${outputName}`, externalPath: null };
-    }
     if (s.exportDestinationType === "external" && s.exportExternalPath) {
       return { vaultPath: null, externalPath: join2(s.exportExternalPath) };
     }
@@ -36890,6 +37718,11 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   }
   // --- Conversion automatique ---
   async autoConvert(file) {
+    const s = this.settings;
+    const fileFolder = file.parent?.path ?? "";
+    const outputFolders = [s.exportsFolder, s.mappingFolder, s.exportFinalFolder].filter(Boolean);
+    if (outputFolders.some((f) => fileFolder === f || fileFolder.startsWith(f + "/")))
+      return;
     try {
       const raw = await this.app.vault.read(file);
       const ext = file.extension.toLowerCase();
@@ -36932,8 +37765,8 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       }
       await this.app.vault.create(mdPath, mdContent);
       const transcRoot = this.settings.transcriptionsFolder;
-      const fileFolder = file.parent?.path ?? "";
-      const relSubFolder = fileFolder.startsWith(transcRoot) ? fileFolder.slice(transcRoot.length).replace(/^\//, "") : "";
+      const fileFolder2 = file.parent?.path ?? "";
+      const relSubFolder = fileFolder2.startsWith(transcRoot) ? fileFolder2.slice(transcRoot.length).replace(/^\//, "") : "";
       const mappingDir = relSubFolder ? `${this.settings.mappingFolder}/${relSubFolder}` : this.settings.mappingFolder;
       await this.ensureFolder(mappingDir);
       const mappingPath = `${mappingDir}/${basename}.mapping.json`;
@@ -37106,8 +37939,10 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     } else {
       pseudonymized = engine.pseudonymize(content, rules, marker);
     }
-    await this.ensureFolder(this.settings.exportsFolder);
-    const outputPath = `${this.settings.exportsFolder}/${file.basename}.pseudonymized.${ext}`;
+    const classSub = this.getClassSub(file);
+    const exportBase = classSub ? `${this.settings.exportsFolder}/${classSub}` : this.settings.exportsFolder;
+    await this.ensureFolder(exportBase);
+    const outputPath = `${exportBase}/${file.basename}.pseudonymized.${ext}`;
     const existing = this.app.vault.getAbstractFileByPath(outputPath);
     if (existing instanceof import_obsidian14.TFile) {
       await this.app.vault.modify(existing, pseudonymized);
@@ -37277,6 +38112,37 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     await this.writeExport(file, "vtt", vtt);
   }
   /**
+   * Re-exporte le Markdown noScribe actif au format HTML noScribe pseudonymisé.
+   * Lit le .words.json correspondant pour les timestamps précis.
+   */
+  async exportCurrentFileAsHtml() {
+    const file = this.getActiveOrLastFile();
+    if (!file || file.extension !== "md") {
+      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      return;
+    }
+    const content = await this.app.vault.read(file);
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    if (formatMatch?.[1] !== "html") {
+      new import_obsidian14.Notice(t("notice.notNoScribeFormat"));
+      return;
+    }
+    const rawBasename = file.basename.replace(/\.pseudonymized$/, "");
+    const wordsJson = await this.findWordsJson(rawBasename);
+    if (!wordsJson) {
+      new import_obsidian14.Notice(t("notice.wordsJsonMissing", rawBasename));
+      return;
+    }
+    const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(content);
+    const audioSource = audioMatch?.[1];
+    const wordData = JSON.parse(wordsJson);
+    const { html, mismatch } = markdownToNoScribeHtml(content, wordData, audioSource);
+    if (mismatch) {
+      new import_obsidian14.Notice(t("notice.vttMismatch"));
+    }
+    await this.writeExport(file, "html", html, "notice.htmlExported");
+  }
+  /**
    * Re-exporte le Markdown pseudonymisé courant au format d'origine (srt ou cha).
    */
   async exportCurrentFileAsFormat(targetFormat) {
@@ -37301,7 +38167,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
    * Écrit le contenu d'un export final selon les paramètres de destination.
    * Gère vault, next-to-source et external.
    */
-  async writeExport(file, ext, content) {
+  async writeExport(file, ext, content, noticeKey = "notice.vttExported") {
     const dest = this.resolveExportPath(file, ext);
     if (dest.externalPath) {
       try {
@@ -37309,7 +38175,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         const nodePath = require("path");
         await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
         await nodeFs.promises.writeFile(dest.externalPath, content, "utf-8");
-        new import_obsidian14.Notice(t("notice.vttExported", dest.externalPath));
+        new import_obsidian14.Notice(t(noticeKey, dest.externalPath));
       } catch (e) {
         new import_obsidian14.Notice(`Export error: ${e.message}`);
       }
@@ -37325,7 +38191,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     } else {
       await this.app.vault.create(outputPath, content);
     }
-    new import_obsidian14.Notice(t("notice.vttExported", outputPath));
+    new import_obsidian14.Notice(t(noticeKey, outputPath));
   }
   /** Cherche <basename>.words.json dans le dossier mappings et ses sous-dossiers. */
   async findWordsJson(basename) {

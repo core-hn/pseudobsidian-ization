@@ -22,7 +22,7 @@ import { ChatParser } from './parsers/ChatParser';
 import { VttParser } from './parsers/VttParser';
 import { NoScribeHtmlParser } from './parsers/NoScribeHtmlParser';
 import { NoScribeVttParser } from './parsers/NoScribeVttParser';
-import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, markdownToSrt, markdownToCha, type VttCueData } from './parsers/TranscriptConverter';
+import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, markdownToSrt, markdownToCha, markdownToNoScribeHtml, type VttCueData } from './parsers/TranscriptConverter';
 import { MappingStore } from './mappings/MappingStore';
 import { ScopeResolver } from './mappings/ScopeResolver';
 import { PseudonymizationEngine } from './pseudonymizer/PseudonymizationEngine';
@@ -181,6 +181,12 @@ export default class PseudObsPlugin extends Plugin {
       id: 'export-as-cha',
       name: t('command.exportAsCha'),
       callback: () => void this.exportCurrentFileAsFormat('cha'),
+    });
+
+    this.addCommand({
+      id: 'export-as-html',
+      name: t('command.exportAsHtml'),
+      callback: () => void this.exportCurrentFileAsHtml(),
     });
 
     this.addCommand({
@@ -389,6 +395,26 @@ export default class PseudObsPlugin extends Plugin {
    * Calcule le chemin de l'export final selon les paramètres de destination.
    * Retourne { vaultPath } si dans le vault, { externalPath } si hors vault.
    */
+  /** Retourne le sous-dossier de classe (vide si pas de mirroring ou pas de classe). */
+  private getClassSub(file: TFile): string {
+    const s = this.settings;
+    if (!s.exportMirrorClasses) return '';
+    const transcRoot = s.transcriptionsFolder;
+    const fileFolder = file.parent?.path ?? '';
+    const rawBase = file.basename.replace(/\.pseudonymized$/, '');
+    if (fileFolder.startsWith(transcRoot)) {
+      return fileFolder.slice(transcRoot.length).replace(/^\//, '');
+    }
+    const mappingFile = this.findInMappings(`${rawBase}.mapping.json`);
+    if (mappingFile) {
+      const mFolder = mappingFile.parent?.path ?? '';
+      if (mFolder.startsWith(s.mappingFolder)) {
+        return mFolder.slice(s.mappingFolder.length).replace(/^\//, '');
+      }
+    }
+    return '';
+  }
+
   resolveExportPath(
     file: TFile,
     ext: string,
@@ -396,41 +422,13 @@ export default class PseudObsPlugin extends Plugin {
     const s = this.settings;
     const rawBase = file.basename.replace(/\.pseudonymized$/, '');
     const outputName = `${rawBase}.pseudonymized.${ext}`;
-    const fileFolder = file.parent?.path ?? '';
-
-    // Sous-dossier de classe pour le mirroring.
-    // Si le fichier est dans transcriptionsFolder, on le lit directement.
-    // Sinon (fichier pseudonymisé dans exports/), on remonte via l'emplacement
-    // du .mapping.json qui reflète fidèlement la structure de classes.
-    let classSub = '';
-    if (s.exportMirrorClasses) {
-      const transcRoot = s.transcriptionsFolder;
-      const fileFolder = file.parent?.path ?? '';
-      if (fileFolder.startsWith(transcRoot)) {
-        classSub = fileFolder.slice(transcRoot.length).replace(/^\//, '');
-      } else {
-        // Retrouver la classe depuis l'emplacement du mapping
-        const mappingFile = this.findInMappings(`${rawBase}.mapping.json`);
-        if (mappingFile) {
-          const mFolder = mappingFile.parent?.path ?? '';
-          const mRoot = s.mappingFolder;
-          if (mFolder.startsWith(mRoot)) {
-            classSub = mFolder.slice(mRoot.length).replace(/^\//, '');
-          }
-        }
-      }
-    }
-
+    const classSub = this.getClassSub(file);
     const join = (base: string) =>
       classSub ? `${base}/${classSub}/${outputName}` : `${base}/${outputName}`;
 
-    if (s.exportDestinationType === 'next-to-source') {
-      return { vaultPath: `${fileFolder}/${outputName}`, externalPath: null };
-    }
     if (s.exportDestinationType === 'external' && s.exportExternalPath) {
       return { vaultPath: null, externalPath: join(s.exportExternalPath) };
     }
-    // 'vault' (défaut)
     return { vaultPath: join(s.exportFinalFolder || s.exportsFolder), externalPath: null };
   }
 
@@ -879,6 +877,12 @@ export default class PseudObsPlugin extends Plugin {
   // --- Conversion automatique ---
 
   private async autoConvert(file: TFile): Promise<void> {
+    // Ne pas convertir les fichiers produits par le plugin lui-même
+    const s = this.settings;
+    const fileFolder = file.parent?.path ?? '';
+    const outputFolders = [s.exportsFolder, s.mappingFolder, s.exportFinalFolder].filter(Boolean);
+    if (outputFolders.some((f) => fileFolder === f || fileFolder.startsWith(f + '/'))) return;
+
     try {
       const raw = await this.app.vault.read(file);
       const ext = file.extension.toLowerCase();
@@ -1141,8 +1145,12 @@ export default class PseudObsPlugin extends Plugin {
       pseudonymized = engine.pseudonymize(content, rules, marker);
     }
 
-    await this.ensureFolder(this.settings.exportsFolder);
-    const outputPath = `${this.settings.exportsFolder}/${file.basename}.pseudonymized.${ext}`;
+    const classSub = this.getClassSub(file);
+    const exportBase = classSub
+      ? `${this.settings.exportsFolder}/${classSub}`
+      : this.settings.exportsFolder;
+    await this.ensureFolder(exportBase);
+    const outputPath = `${exportBase}/${file.basename}.pseudonymized.${ext}`;
     const existing = this.app.vault.getAbstractFileByPath(outputPath);
     if (existing instanceof TFile) {
       await this.app.vault.modify(existing, pseudonymized);
@@ -1346,6 +1354,45 @@ export default class PseudObsPlugin extends Plugin {
   }
 
   /**
+   * Re-exporte le Markdown noScribe actif au format HTML noScribe pseudonymisé.
+   * Lit le .words.json correspondant pour les timestamps précis.
+   */
+  async exportCurrentFileAsHtml(): Promise<void> {
+    const file = this.getActiveOrLastFile();
+    if (!file || file.extension !== 'md') {
+      new Notice(t('notice.noActiveFile'));
+      return;
+    }
+
+    const content = await this.app.vault.read(file);
+
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    if (formatMatch?.[1] !== 'html') {
+      new Notice(t('notice.notNoScribeFormat'));
+      return;
+    }
+
+    const rawBasename = file.basename.replace(/\.pseudonymized$/, '');
+    const wordsJson = await this.findWordsJson(rawBasename);
+    if (!wordsJson) {
+      new Notice(t('notice.wordsJsonMissing', rawBasename));
+      return;
+    }
+
+    const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(content);
+    const audioSource = audioMatch?.[1];
+
+    const wordData = JSON.parse(wordsJson) as VttCueData[];
+    const { html, mismatch } = markdownToNoScribeHtml(content, wordData, audioSource);
+
+    if (mismatch) {
+      new Notice(t('notice.vttMismatch'));
+    }
+
+    await this.writeExport(file, 'html', html, 'notice.htmlExported');
+  }
+
+  /**
    * Re-exporte le Markdown pseudonymisé courant au format d'origine (srt ou cha).
    */
   async exportCurrentFileAsFormat(targetFormat: 'srt' | 'cha'): Promise<void> {
@@ -1374,7 +1421,7 @@ export default class PseudObsPlugin extends Plugin {
    * Écrit le contenu d'un export final selon les paramètres de destination.
    * Gère vault, next-to-source et external.
    */
-  private async writeExport(file: TFile, ext: string, content: string): Promise<void> {
+  private async writeExport(file: TFile, ext: string, content: string, noticeKey = 'notice.vttExported'): Promise<void> {
     const dest = this.resolveExportPath(file, ext);
 
     if (dest.externalPath) {
@@ -1386,7 +1433,7 @@ export default class PseudObsPlugin extends Plugin {
         const nodePath = require('path') as typeof import('path');
         await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
         await nodeFs.promises.writeFile(dest.externalPath, content, 'utf-8');
-        new Notice(t('notice.vttExported', dest.externalPath));
+        new Notice(t(noticeKey, dest.externalPath));
       } catch (e) {
         new Notice(`Export error: ${(e as Error).message}`);
       }
@@ -1404,7 +1451,7 @@ export default class PseudObsPlugin extends Plugin {
     } else {
       await this.app.vault.create(outputPath, content);
     }
-    new Notice(t('notice.vttExported', outputPath));
+    new Notice(t(noticeKey, outputPath));
   }
 
   /** Cherche <basename>.words.json dans le dossier mappings et ses sous-dossiers. */

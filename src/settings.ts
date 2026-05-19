@@ -5,7 +5,7 @@ import { OnboardingModal } from './ui/OnboardingModal';
 import { t, setLocale, AVAILABLE_LANGUAGES } from './i18n';
 
 export type NerBackend = 'none' | 'spacy' | 'transformers-js';
-export type ExportDestinationType = 'vault' | 'next-to-source' | 'external';
+export type ExportDestinationType = 'vault' | 'external';
 
 export interface PseudObsSettings {
   transcriptionsFolder: string;

@@ -1,9 +1,11 @@
 import en from './locales/en.json';
+import es from './locales/es.json';
 import fr from './locales/fr.json';
+import ru from './locales/ru.json';
 
 type Strings = Record<string, string>;
 
-const LOCALES: Record<string, Strings> = { en, fr };
+const LOCALES: Record<string, Strings> = { en, es, fr, ru };
 const FALLBACK = 'en';
 
 let _locale = FALLBACK;
@@ -36,5 +38,7 @@ export function t(key: string, ...args: (string | number)[]): string {
 /** Langues disponibles avec leur nom natif. */
 export const AVAILABLE_LANGUAGES: Record<string, string> = {
   en: 'English',
+  es: 'Español',
   fr: 'Français',
+  ru: 'Русский',
 };

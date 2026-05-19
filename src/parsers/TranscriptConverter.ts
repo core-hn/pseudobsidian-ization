@@ -286,6 +286,134 @@ export function noScribeHtmlToMarkdown(doc: VttDocument, sourceName: string, aud
   return vttDocToMarkdown(doc, sourceName, 'html', audioFilename);
 }
 
+// ---- Re-export HTML noScribe ------------------------------------------------
+
+/** Convertit HH:MM:SS.mmm en millisecondes. */
+function tsToMs(ts: string): number {
+  const [h, m, s] = ts.split(':');
+  return Math.round((parseInt(h, 10) * 3600 + parseInt(m, 10) * 60 + parseFloat(s)) * 1000);
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** Conserve uniquement les caractères word ASCII pour les noms d'ancre ts_. */
+function sanitizeSpeakerId(speaker: string): string {
+  return speaker.replace(/\W/g, '');
+}
+
+/**
+ * Reconstruit un fichier HTML noScribe pseudonymisé depuis :
+ *   - `mdContent`   : le Markdown noScribe (pseudobs-format: html)
+ *   - `wordData`    : le contenu de <basename>.words.json (timestamps précis)
+ *   - `audioSource` : chemin vers le fichier audio (optionnel, pour la meta tag)
+ *
+ * Chaque réplique devient un <p> avec deux ancres ts_ : le timestamp d'affichage
+ * et le texte. Les timestamps word-level ne sont pas reconstitués (le texte
+ * pseudonymisé ne s'aligne plus mot à mot sur l'original).
+ */
+export function markdownToNoScribeHtml(
+  mdContent: string,
+  wordData: VttCueData[],
+  audioSource?: string,
+): { html: string; mismatch: boolean } {
+  const bodyMatch = /^---\n[\s\S]*?\n---\n+([\s\S]*)$/.exec(mdContent);
+  const body = bodyMatch ? bodyMatch[1] : mdContent;
+
+  const cueLines = body.split('\n').filter((l) => MD_CUE_RE.test(l.trim()));
+  const mismatch = cueLines.length !== wordData.length;
+  const count = Math.min(cueLines.length, wordData.length);
+
+  const P_STYLE = ' margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;';
+  const paragraphs: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const m = MD_CUE_RE.exec(cueLines[i].trim())!;
+    const speaker = m[1]?.trim() || wordData[i].speaker || '';
+    const text = m[2]?.trim() ?? '';
+    if (!text) continue;
+
+    const cueData = wordData[i];
+    const cueStartMs = tsToMs(cueData.startTime);
+    const cueEndMs   = tsToMs(cueData.endTime);
+    const speakerId  = speaker ? sanitizeSpeakerId(speaker) : '';
+    const cueAnchor  = `ts_${cueStartMs}_${cueEndMs}_${speakerId}`;
+    const displayTs  = `[${cueData.startTime.slice(0, 8)}]`;
+
+    // Ancres word-level : mapper les tokens pseudonymisés sur les timestamps d'origine
+    // par index proportionnel (floor). Un pseudonyme hérite du timestamp du nom original.
+    const origWords    = cueData.words.filter(w => w.time !== '');
+    const pseudoTokens = text.split(/\s+/).filter(Boolean);
+
+    let contentHtml: string;
+
+    if (origWords.length === 0 || pseudoTokens.length === 0) {
+      // Pas de timestamps word-level : ancre unique pour toute la réplique
+      const prefix = speaker ? `${escapeHtml(speaker)} : ` : '';
+      contentHtml = `<a name="${cueAnchor}">${prefix}${escapeHtml(text)}</a>`;
+    } else {
+      const wordStartMs = origWords.map(w => tsToMs(w.time));
+      const wordEndMs   = origWords.map((_, j) =>
+        j + 1 < origWords.length ? wordStartMs[j + 1] : cueEndMs
+      );
+
+      // Mapping floor : token pseudo j → orig word floor(j * M / N)
+      const mapToOrig = (j: number): number =>
+        Math.min(Math.floor(j * origWords.length / pseudoTokens.length), origWords.length - 1);
+
+      // Grouper les tokens consécutifs qui partagent le même index orig
+      interface Group { origIdx: number; tokens: string[] }
+      const groups: Group[] = [];
+      for (let j = 0; j < pseudoTokens.length; j++) {
+        const origIdx = mapToOrig(j);
+        if (groups.length === 0 || groups[groups.length - 1].origIdx !== origIdx) {
+          groups.push({ origIdx, tokens: [] });
+        }
+        groups[groups.length - 1].tokens.push(pseudoTokens[j]);
+      }
+
+      const parts: string[] = [];
+      for (let g = 0; g < groups.length; g++) {
+        const { origIdx, tokens } = groups[g];
+        const anchorName = `ts_${wordStartMs[origIdx]}_${wordEndMs[origIdx]}_${speakerId}`;
+        let groupText = tokens.join(' ');
+        // Espace séparateur entre ancres (sauf la dernière)
+        if (g < groups.length - 1) groupText += ' ';
+        // Préfixe locuteur sur le premier groupe
+        const content = (g === 0 && speaker)
+          ? `${escapeHtml(speaker)} : ${escapeHtml(groupText)}`
+          : escapeHtml(groupText);
+        parts.push(`<a name="${anchorName}">${content}</a>`);
+      }
+      contentHtml = parts.join('');
+    }
+
+    paragraphs.push(
+      `<p style="${P_STYLE}">` +
+      `<a name="${cueAnchor}" href="${cueAnchor}"><span style=" color:#78909c;">${displayTs}</span></a>` +
+      contentHtml +
+      `</p>`
+    );
+  }
+
+  const audioMeta = audioSource
+    ? `<meta name="audio_source" content="${escapeHtml(audioSource)}" />\n`
+    : '';
+
+  const html = [
+    '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">',
+    `<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" />\n${audioMeta}<style type="text/css">`,
+    'p, li { white-space: pre-wrap; }',
+    `</style></head><body style=" font-family:'Arial'; font-size:12pt; font-weight:400; font-style:normal;">`,
+    ...paragraphs,
+    '</body></html>',
+    '',
+  ].join('\n');
+
+  return { html, mismatch };
+}
+
 function lineGroup(line: ChatLine): 'structural' | 'turn' | null {
   if (line.type === 'meta' || line.type === 'dependent') return 'structural';
   if (line.type === 'turn' || line.type === 'continuation') return 'turn';

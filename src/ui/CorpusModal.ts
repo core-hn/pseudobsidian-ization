@@ -21,10 +21,12 @@ export function getCorpusClasses(app: App, transcriptionsFolder: string): string
  */
 export class CorpusModal extends Modal {
   private plugin: PseudObsPlugin;
+  private onCloseCb?: () => void;
 
-  constructor(app: App, plugin: PseudObsPlugin) {
+  constructor(app: App, plugin: PseudObsPlugin, onCloseCb?: () => void) {
     super(app);
     this.plugin = plugin;
+    this.onCloseCb = onCloseCb;
   }
 
   onOpen(): void {
@@ -145,6 +147,7 @@ export class CorpusModal extends Modal {
 
   onClose(): void {
     this.contentEl.empty();
+    this.onCloseCb?.();
   }
 }
 
