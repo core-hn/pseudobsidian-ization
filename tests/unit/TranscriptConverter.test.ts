@@ -4,7 +4,7 @@ import { SrtParser } from '../../src/parsers/SrtParser';
 import { ChatParser } from '../../src/parsers/ChatParser';
 import { VttParser } from '../../src/parsers/VttParser';
 import { NoScribeHtmlParser } from '../../src/parsers/NoScribeHtmlParser';
-import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt } from '../../src/parsers/TranscriptConverter';
+import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, fileSequentialityRate, markdownToVtt } from '../../src/parsers/TranscriptConverter';
 
 const SRT_FIXTURE = path.join(__dirname, '../fixtures/entretien_01.srt');
 const CHA_FIXTURE = path.join(__dirname, '../fixtures/entretien_02.cha');
@@ -191,21 +191,32 @@ describe('extractWordData', () => {
 <v SC01>Si je me présente ?
 `;
 
-  it('extrait les cues avec word timestamps', () => {
+  it('inclut toutes les cues (avec et sans word timestamps)', () => {
     const doc = new VttParser().parse(VTT_WITH_WORDS);
     const data = extractWordData(doc);
-    expect(data).toHaveLength(1); // cue 2 sans word timestamps exclue
+    expect(data).toHaveLength(2); // toutes les cues, index stable
     expect(data[0].index).toBe(0);
     expect(data[0].speaker).toBe('Expérimentateur');
     expect(data[0].startTime).toBe('00:00:01.240');
     expect(data[0].endTime).toBe('00:00:05.800');
-    expect(data[0].words.some((w) => w.time !== '')).toBe(true);
+    expect(data[1].index).toBe(1);
+    expect(data[1].speaker).toBe('SC01');
   });
 
-  it('exclut les cues sans word timestamps', () => {
+  it('calcule wordTimestampRate correctement', () => {
     const doc = new VttParser().parse(VTT_WITH_WORDS);
     const data = extractWordData(doc);
-    expect(data.every((c) => c.words.some((w) => w.time !== ''))).toBe(true);
+    // Cue 0 : 2 mots avec timestamps Whisper → rate = 1.0
+    expect(data[0].wordTimestampRate).toBe(1);
+    // Cue 1 : aucun word timestamp → rate = 0
+    expect(data[1].wordTimestampRate).toBe(0);
+  });
+
+  it('fileSequentialityRate agrège correctement', () => {
+    const doc = new VttParser().parse(VTT_WITH_WORDS);
+    const data = extractWordData(doc);
+    // Cue 0 : 2 mots timés, cue 1 : 1 mot non timé → 2/3
+    expect(fileSequentialityRate(data)).toBeCloseTo(2 / 3);
   });
 
   it('produit un JSON sérialisable', () => {
@@ -220,11 +231,11 @@ describe('extractWordData', () => {
 describe('markdownToVtt — re-export VTT', () => {
   const WORDS_DATA = [
     { index: 0, startTime: '00:01:28.080', endTime: '00:01:33.536', speaker: 'S00',
-      words: [{ text: 'original', time: '00:01:28.080' }] },
+      words: [{ text: 'original', time: '00:01:28.080' }], wordTimestampRate: 1 },
     { index: 1, startTime: '00:01:32.672', endTime: '00:01:34.816', speaker: 'S01',
-      words: [{ text: 'original', time: '00:01:32.672' }] },
+      words: [{ text: 'original', time: '00:01:32.672' }], wordTimestampRate: 1 },
     { index: 2, startTime: '00:01:34.816', endTime: '00:01:45.920', speaker: 'S00',
-      words: [{ text: 'original', time: '00:01:34.816' }] },
+      words: [{ text: 'original', time: '00:01:34.816' }], wordTimestampRate: 1 },
   ];
 
   const MD_PSEUDONYMIZED = `---

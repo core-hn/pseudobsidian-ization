@@ -728,6 +728,14 @@ export class PseudonymizationView extends ItemView {
                   })
                 );
             }
+            new Setting(el)
+              .setName(t('panel.exports.exportEaf'))
+              .setDesc(t('panel.exports.exportEaf.desc'))
+              .addButton((btn) =>
+                btn.setButtonText(t('command.exportAsEaf')).onClick(() => {
+                  void this.plugin.exportCurrentFileAsEaf();
+                })
+              );
           } else if (format === 'srt') {
             new Setting(el)
               .setName(t('panel.exports.exportSrt'))

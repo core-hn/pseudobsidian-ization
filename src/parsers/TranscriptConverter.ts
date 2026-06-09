@@ -158,29 +158,45 @@ export function markdownToCha(mdContent: string): string {
   return out.join('\n');
 }
 
-/** Données word-level d'une cue — stockées dans <basename>.words.json. */
+/** Données d'une cue — stockées dans <basename>.words.json. */
 export interface VttCueData {
   index: number;
   startTime: string;
   endTime: string;
   speaker?: string;
   words: VttWord[];
+  /** Ratio mots avec timestamp Whisper sur total (0.0–1.0). */
+  wordTimestampRate: number;
 }
 
 /**
- * Extrait les données word-level d'un VttDocument pour le fichier .words.json.
- * Seules les cues avec au moins un word timestamp sont incluses.
+ * Extrait les données de toutes les cues d'un VttDocument pour le fichier .words.json.
+ * Toutes les cues sont incluses (même sans word timestamps) pour garantir l'alignement
+ * par index avec le Markdown converti.
  */
 export function extractWordData(doc: VttDocument): VttCueData[] {
-  return doc.cues
-    .map((cue, index) => ({
+  return doc.cues.map((cue, index) => {
+    const total = cue.words.length;
+    const timed = cue.words.filter((w) => w.time !== '').length;
+    return {
       index,
       startTime: cue.startTime,
       endTime:   cue.endTime,
       speaker:   cue.speaker,
       words:     cue.words,
-    }))
-    .filter((c) => c.words.some((w) => w.time !== ''));
+      wordTimestampRate: total > 0 ? timed / total : 0,
+    };
+  });
+}
+
+/**
+ * Taux de séquentialité d'un fichier : ratio global de mots avec timestamp Whisper.
+ * Seuils indicatifs : ≥ 0.5 → .cha avec %tim / EAF word-level envisageable.
+ */
+export function fileSequentialityRate(data: VttCueData[]): number {
+  const total = data.reduce((n, c) => n + c.words.length, 0);
+  const timed = data.reduce((n, c) => n + c.words.filter((w) => w.time !== '').length, 0);
+  return total > 0 ? timed / total : 0;
 }
 
 // ---- Re-export VTT ----------------------------------------------------------
@@ -412,6 +428,99 @@ export function markdownToNoScribeHtml(
   ].join('\n');
 
   return { html, mismatch };
+}
+
+// ---- Export EAF (ELAN) ------------------------------------------------------
+
+/**
+ * Génère un fichier EAF (ELAN Annotation Format 3.0) depuis :
+ *   - `mdContent`   : le Markdown noScribe pseudonymisé (pseudobs-format: vtt ou html)
+ *   - `wordData`    : le contenu de <basename>.words.json (timestamps précis par cue)
+ *   - `audioSource` : chemin audio optionnel (pour <MEDIA_DESCRIPTOR>)
+ *
+ * Produit un tier par locuteur, un ALIGNABLE_ANNOTATION par cue.
+ * Les TIME_SLOTs sont dédupliqués par valeur ms et triés en ordre croissant.
+ */
+export function markdownToEaf(
+  mdContent: string,
+  wordData: VttCueData[],
+  audioSource?: string,
+): { eaf: string; mismatch: boolean } {
+  const bodyMatch = /^---\n[\s\S]*?\n---\n+([\s\S]*)$/.exec(mdContent);
+  const body = bodyMatch ? bodyMatch[1] : mdContent;
+
+  const cueLines = body.split('\n').filter((l) => MD_CUE_RE.test(l.trim()));
+  const mismatch = cueLines.length !== wordData.length;
+  const count = Math.min(cueLines.length, wordData.length);
+
+  interface EafAnnotation { id: string; ts1: string; ts2: string; text: string }
+  const tierMap = new Map<string, EafAnnotation[]>();
+  const timeSlotMap = new Map<number, string>(); // ms → TIME_SLOT_ID
+  let tsCounter = 0;
+  let annCounter = 0;
+
+  const getOrAddTs = (ms: number): string => {
+    if (timeSlotMap.has(ms)) return timeSlotMap.get(ms)!;
+    const id = `ts${++tsCounter}`;
+    timeSlotMap.set(ms, id);
+    return id;
+  };
+
+  for (let i = 0; i < count; i++) {
+    const m = MD_CUE_RE.exec(cueLines[i].trim())!;
+    const speaker = (m[1]?.trim() || wordData[i].speaker || '_transcript').trim();
+    const text = m[2]?.trim() ?? '';
+    if (!text) continue;
+
+    const ts1 = getOrAddTs(tsToMs(wordData[i].startTime));
+    const ts2 = getOrAddTs(tsToMs(wordData[i].endTime));
+    const ann: EafAnnotation = { id: `a${++annCounter}`, ts1, ts2, text };
+
+    if (!tierMap.has(speaker)) tierMap.set(speaker, []);
+    tierMap.get(speaker)!.push(ann);
+  }
+
+  const date = new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00');
+  const out: string[] = [];
+
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push(`<ANNOTATION_DOCUMENT AUTHOR="" DATE="${date}" FORMAT="3.0" VERSION="3.0"`);
+  out.push('  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"');
+  out.push('  xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">');
+
+  out.push('  <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">');
+  if (audioSource) {
+    out.push(`    <MEDIA_DESCRIPTOR MEDIA_URL="${escapeHtml(audioSource)}" MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="" TIME_ORIGIN="0"/>`);
+  }
+  out.push('  </HEADER>');
+
+  out.push('  <TIME_ORDER>');
+  for (const [ms, id] of [...timeSlotMap.entries()].sort((a, b) => a[0] - b[0])) {
+    out.push(`    <TIME_SLOT TIME_SLOT_ID="${id}" TIME_VALUE="${ms}"/>`);
+  }
+  out.push('  </TIME_ORDER>');
+
+  for (const [speaker, anns] of tierMap) {
+    out.push(`  <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="${escapeHtml(speaker)}">`);
+    for (const ann of anns) {
+      out.push('    <ANNOTATION>');
+      out.push(`      <ALIGNABLE_ANNOTATION ANNOTATION_ID="${ann.id}" TIME_SLOT_REF1="${ann.ts1}" TIME_SLOT_REF2="${ann.ts2}">`);
+      out.push(`        <ANNOTATION_VALUE>${escapeHtml(ann.text)}</ANNOTATION_VALUE>`);
+      out.push('      </ALIGNABLE_ANNOTATION>');
+      out.push('    </ANNOTATION>');
+    }
+    out.push('  </TIER>');
+  }
+
+  out.push('  <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false" LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true"/>');
+  out.push('  <CONSTRAINT DESCRIPTION="Time subdivision of parent annotation\'s time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision"/>');
+  out.push('  <CONSTRAINT DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refer to the same time slot as the parent" STEREOTYPE="Symbolic_Subdivision"/>');
+  out.push('  <CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association"/>');
+  out.push('  <CONSTRAINT DESCRIPTION="Time alignment of a parent annotation" STEREOTYPE="Included_In"/>');
+  out.push('</ANNOTATION_DOCUMENT>');
+  out.push('');
+
+  return { eaf: out.join('\n'), mismatch };
 }
 
 function lineGroup(line: ChatLine): 'structural' | 'turn' | null {

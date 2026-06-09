@@ -22,7 +22,7 @@ import { ChatParser } from './parsers/ChatParser';
 import { VttParser } from './parsers/VttParser';
 import { NoScribeHtmlParser } from './parsers/NoScribeHtmlParser';
 import { NoScribeVttParser } from './parsers/NoScribeVttParser';
-import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, markdownToSrt, markdownToCha, markdownToNoScribeHtml, type VttCueData } from './parsers/TranscriptConverter';
+import { srtToMarkdown, chatToMarkdown, vttToMarkdown, noScribeHtmlToMarkdown, extractWordData, markdownToVtt, markdownToSrt, markdownToCha, markdownToNoScribeHtml, markdownToEaf, type VttCueData } from './parsers/TranscriptConverter';
 import { MappingStore } from './mappings/MappingStore';
 import { ScopeResolver } from './mappings/ScopeResolver';
 import { PseudonymizationEngine } from './pseudonymizer/PseudonymizationEngine';
@@ -187,6 +187,12 @@ export default class PseudObsPlugin extends Plugin {
       id: 'export-as-html',
       name: t('command.exportAsHtml'),
       callback: () => void this.exportCurrentFileAsHtml(),
+    });
+
+    this.addCommand({
+      id: 'export-as-eaf',
+      name: t('command.exportAsEaf'),
+      callback: () => void this.exportCurrentFileAsEaf(),
     });
 
     this.addCommand({
@@ -1390,6 +1396,45 @@ export default class PseudObsPlugin extends Plugin {
     }
 
     await this.writeExport(file, 'html', html, 'notice.htmlExported');
+  }
+
+  /**
+   * Exporte le fichier Markdown noScribe actif au format EAF (ELAN).
+   * Lit le .words.json correspondant pour les timestamps précis.
+   */
+  async exportCurrentFileAsEaf(): Promise<void> {
+    const file = this.getActiveOrLastFile();
+    if (!file || file.extension !== 'md') {
+      new Notice(t('notice.noActiveFile'));
+      return;
+    }
+
+    const content = await this.app.vault.read(file);
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    const format = formatMatch?.[1];
+    if (format !== 'vtt' && format !== 'html') {
+      new Notice(t('notice.notNoScribeFormat'));
+      return;
+    }
+
+    const rawBasename = file.basename.replace(/\.pseudonymized$/, '');
+    const wordsJson = await this.findWordsJson(rawBasename);
+    if (!wordsJson) {
+      new Notice(t('notice.wordsJsonMissing', rawBasename));
+      return;
+    }
+
+    const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(content);
+    const audioSource = audioMatch?.[1];
+
+    const wordData = JSON.parse(wordsJson) as VttCueData[];
+    const { eaf, mismatch } = markdownToEaf(content, wordData, audioSource);
+
+    if (mismatch) {
+      new Notice(t('notice.vttMismatch'));
+    }
+
+    await this.writeExport(file, 'eaf', eaf, 'notice.eafExported');
   }
 
   /**

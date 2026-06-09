@@ -90,6 +90,7 @@
   "notice.wordsJsonMissing": "Fichier de timestamps introuvable : {0}.words.json",
   "notice.vttMismatch": "Attention : le nombre de cues du Markdown et du words.json diffère — le VTT exporté peut être incomplet.",
   "notice.vttExported": "VTT exporté : {0}",
+  "notice.eafExported": "EAF exporté : {0}",
 
   "command.organizeCorpus": "Organiser le corpus",
   "command.addTranscription": "Ajouter une transcription",
@@ -221,10 +222,13 @@
   "panel.exports.exportCha.desc": "Reconstruit le fichier CHAT pseudonymisé à partir du Markdown.",
   "panel.exports.exportHtml": "Re-exporter en HTML",
   "panel.exports.exportHtml.desc": "Reconstruit le fichier HTML noScribe pseudonymisé à partir du Markdown et des timestamps (.words.json).",
+  "panel.exports.exportEaf": "Exporter en EAF (ELAN)",
+  "panel.exports.exportEaf.desc": "Génère un fichier ELAN (.eaf) avec un tier par locuteur, à partir du Markdown et des timestamps (.words.json).",
   "notice.htmlExported": "HTML exporté : {0}",
   "command.exportAsSrt": "Exporter en SRT",
   "command.exportAsCha": "Exporter en CHAT",
   "command.exportAsHtml": "Exporter en HTML",
+  "command.exportAsEaf": "Exporter en EAF (ELAN)",
 
   "panel.ner.scanBtn": "Identifier des candidats",
   "panel.ner.hint": "Paramètres du scanner de détection automatique des entités nommées.",

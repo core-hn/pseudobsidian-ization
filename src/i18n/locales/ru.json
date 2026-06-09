@@ -84,6 +84,7 @@
   "notice.wordsJsonMissing": "Файл временных меток не найден: {0}.words.json",
   "notice.vttMismatch": "Предупреждение: количество реплик в Markdown и words.json различается — экспортированный VTT может быть неполным.",
   "notice.vttExported": "VTT экспортирован: {0}",
+  "notice.eafExported": "EAF экспортирован: {0}",
 
   "command.organizeCorpus": "Организовать корпус",
   "command.addTranscription": "Добавить транскрипцию",
@@ -97,6 +98,7 @@
   "command.exportAsSrt": "Экспортировать как SRT",
   "command.exportAsCha": "Экспортировать как CHAT",
   "command.exportAsHtml": "Экспортировать как HTML",
+  "command.exportAsEaf": "Экспортировать как EAF (ELAN)",
   "command.openPanel": "Псевдонимизация: открыть панель",
 
   "contextMenu.declareException": "Объявить «{0}» исключением здесь",
@@ -223,6 +225,8 @@
   "panel.exports.exportCha.desc": "Восстанавливает псевдонимизированный CHAT из Markdown.",
   "panel.exports.exportHtml": "Повторно экспортировать как HTML",
   "panel.exports.exportHtml.desc": "Восстанавливает псевдонимизированный HTML noScribe из Markdown и временных меток (.words.json).",
+  "panel.exports.exportEaf": "Экспортировать как EAF (ELAN)",
+  "panel.exports.exportEaf.desc": "Создаёт файл ELAN (.eaf) с одним tier на каждого говорящего, на основе Markdown и временных меток (.words.json).",
   "notice.htmlExported": "HTML экспортирован: {0}",
 
   "panel.ner.scanBtn": "Определить кандидатов",

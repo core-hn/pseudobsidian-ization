@@ -84,6 +84,7 @@
   "notice.wordsJsonMissing": "Archivo de marcas de tiempo no encontrado: {0}.words.json",
   "notice.vttMismatch": "Aviso: el número de cues del Markdown y del words.json difiere — el VTT exportado puede estar incompleto.",
   "notice.vttExported": "VTT exportado: {0}",
+  "notice.eafExported": "EAF exportado: {0}",
 
   "command.organizeCorpus": "Organizar corpus",
   "command.addTranscription": "Añadir una transcripción",
@@ -97,6 +98,7 @@
   "command.exportAsSrt": "Exportar como SRT",
   "command.exportAsCha": "Exportar como CHAT",
   "command.exportAsHtml": "Exportar como HTML",
+  "command.exportAsEaf": "Exportar como EAF (ELAN)",
   "command.openPanel": "Pseudonimización: abrir panel",
 
   "contextMenu.declareException": "Declarar «{0}» como excepción aquí",
@@ -223,6 +225,8 @@
   "panel.exports.exportCha.desc": "Reconstruye el archivo CHAT pseudonimizado desde el Markdown.",
   "panel.exports.exportHtml": "Reexportar como HTML",
   "panel.exports.exportHtml.desc": "Reconstruye el archivo HTML noScribe pseudonimizado desde el Markdown y las marcas de tiempo (.words.json).",
+  "panel.exports.exportEaf": "Exportar como EAF (ELAN)",
+  "panel.exports.exportEaf.desc": "Genera un archivo ELAN (.eaf) con un tier por locutor, a partir del Markdown y las marcas de tiempo (.words.json).",
   "notice.htmlExported": "HTML exportado: {0}",
 
   "panel.ner.scanBtn": "Identificar candidatos",

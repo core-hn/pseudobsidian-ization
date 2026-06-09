@@ -202,6 +202,7 @@ Objectif : permettre la détection et le remplacement automatiques des entités 
 - [x] `MappingScanReviewModal` : modale de révision pour le scan par règles existantes
 - [x] Scan par dictionnaire accessible depuis l'onglet Dictionnaires et commande Ctrl+P
 - [x] Suppression onglet "Candidats" — scan règles → Mappings · scan NER → NER
+- [ ] Test de remplacement NER par Gliner PII (https://huggingface.co/nvidia/gliner-PII) ou EU PII (https://huggingface.co/bardsai/eu-pii-anonimization-multilang)
 
 
 **Testable (v0.1.3) :** installer le dictionnaire communes → scanner un fichier → modale de révision → décocher les faux positifs → créer les règles → pseudonymiser.
