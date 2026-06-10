@@ -1,4 +1,5 @@
 import { ItemView, Notice, Setting, TFile, TFolder, WorkspaceLeaf, setIcon } from 'obsidian';
+import { ConfirmModal, TextInputModal } from './SimpleModals';
 import { t } from '../i18n';
 import type { DictionaryFile } from '../types';
 import type PseudObsPlugin from '../main';
@@ -49,7 +50,6 @@ export class PseudonymizationView extends ItemView {
 
     // Bannière d'avertissement nom de fichier — au-dessus des onglets
     this.filenameWarningEl = root.createDiv('pseudobs-filename-warning');
-    this.filenameWarningEl.style.display = 'none';
 
     const tabBar = root.createDiv('pseudobs-view-tabs');
     const content = root.createDiv('pseudobs-view-content');
@@ -144,12 +144,12 @@ export class PseudonymizationView extends ItemView {
     el.empty();
 
     const file = this.getFile();
-    if (!file || file.extension !== 'md') { el.style.display = 'none'; return; }
+    if (!file || file.extension !== 'md') { el.removeClass('pseudobs-fw-visible'); return; }
 
     const suggested = await this.plugin.suggestCorrectedFilename(file);
-    if (!suggested) { el.style.display = 'none'; return; }
+    if (!suggested) { el.removeClass('pseudobs-fw-visible'); return; }
 
-    el.style.display = '';
+    el.addClass('pseudobs-fw-visible');
 
     // Ligne 1 : icône + message
     const top = el.createDiv('pseudobs-fw-top');
@@ -164,11 +164,12 @@ export class PseudonymizationView extends ItemView {
     setIcon(editBtn.createSpan(), 'pen-line');
     editBtn.createSpan({ text: ` ${t('panel.filenameWarning.edit')}` });
     editBtn.title = t('panel.filenameWarning.editTitle');
-    editBtn.addEventListener('click', async () => {
-      const newName = this.promptText(t('panel.filenameWarning.editPrompt', file.basename)) ?? '';
-      if (!newName.trim() || newName.trim() === file.basename) return;
-      await this.plugin.renameFileAndRelated(file, newName.trim());
-      void this.refreshFilenameWarning();
+    editBtn.addEventListener('click', () => {
+      new TextInputModal(this.app, t('panel.filenameWarning.editPrompt', file.basename), async (value) => {
+        if (!value || value === file.basename) return;
+        await this.plugin.renameFileAndRelated(file, value);
+        void this.refreshFilenameWarning();
+      }).open();
     });
 
     // Bouton ✨ — appliquer la suggestion
@@ -176,15 +177,10 @@ export class PseudonymizationView extends ItemView {
     setIcon(wandBtn.createSpan(), 'wand-sparkles');
     wandBtn.createSpan({ text: ` ${suggested}.${file.extension}` });
     wandBtn.title = t('panel.filenameWarning.wandTitle', `${suggested}.${file.extension}`);
-    wandBtn.addEventListener('click', async () => {
+    wandBtn.addEventListener('click', () => void (async () => {
       await this.plugin.renameFileAndRelated(file, suggested);
       void this.refreshFilenameWarning();
-    });
-  }
-
-  /** Affiche un prompt natif et retourne la valeur saisie, ou null si annulé. */
-  private promptText(placeholder: string): string | null {
-    return window.prompt(placeholder) ?? null;
+    })());
   }
 
   private getFile(): TFile | null {
@@ -220,11 +216,11 @@ export class PseudonymizationView extends ItemView {
       radio.name = 'exportDest';
       radio.value = val;
       radio.checked = s.exportDestinationType === val;
-      radio.addEventListener('change', async () => {
+      radio.addEventListener('change', () => void (async () => {
         s.exportDestinationType = val as typeof s.exportDestinationType;
         await this.plugin.saveSettings();
         void this.renderTab('corpus');
-      });
+      })());
       lbl.createSpan({ text: ` ${t(labelKey)}` });
     }
 
@@ -306,7 +302,7 @@ export class PseudonymizationView extends ItemView {
           ?? this.app.vault.getAbstractFileByPath(`${s.mappingFolder}/${base}.mapping.json`);
         if (mappingFile instanceof TFile) {
           try {
-            const data = JSON.parse(await this.app.vault.read(mappingFile as TFile));
+            const data = JSON.parse(await this.app.vault.read(mappingFile)) as { mappings?: unknown[] };
             ruleCount = (data.mappings ?? []).length;
           } catch { /* ignore */ }
         }
@@ -327,31 +323,28 @@ export class PseudonymizationView extends ItemView {
 
       // En-tête de classe
       const header = el.createDiv('pseudobs-corpus-class-header');
-      const heading = header.createEl('span', {
+      header.createEl('span', {
         text: cls ?? t('panel.corpus.noClass'),
         cls: 'pseudobs-corpus-class-heading',
       });
-      heading.style.flex = '1';
-
       if (cls) {
         // Bouton supprimer la classe
         const delBtn = header.createEl('button', { cls: 'pseudobs-corpus-class-del' });
         setIcon(delBtn, 'trash-2');
         delBtn.title = t('panel.corpus.deleteClass');
-        delBtn.addEventListener('click', async () => {
-          if (!confirm(t('panel.corpus.deleteClassConfirm', cls))) return;
-          // Déplacer les fichiers à la racine
-          for (const { file } of entries) {
-            await this.plugin.moveFileToClass(file, '');
-          }
-          // Supprimer les dossiers de classe si vides
-          for (const root of [transcRoot, s.mappingFolder]) {
-            const clsFolder = this.app.vault.getAbstractFileByPath(`${root}/${cls}`);
-            if (clsFolder instanceof TFolder && clsFolder.children.length === 0) {
-              await this.app.fileManager.trashFile(clsFolder);
+        delBtn.addEventListener('click', () => {
+          new ConfirmModal(this.app, t('panel.corpus.deleteClassConfirm', cls), async () => {
+            for (const { file } of entries) {
+              await this.plugin.moveFileToClass(file, '');
             }
-          }
-          void this.renderTab('corpus');
+            for (const root of [transcRoot, s.mappingFolder]) {
+              const clsFolder = this.app.vault.getAbstractFileByPath(`${root}/${cls}`);
+              if (clsFolder instanceof TFolder && clsFolder.children.length === 0) {
+                await this.app.fileManager.trashFile(clsFolder);
+              }
+            }
+            void this.renderTab('corpus');
+          }).open();
         });
       }
 
@@ -402,12 +395,12 @@ export class PseudonymizationView extends ItemView {
         for (const target of classes) {
           if (target !== cls) moveBtn.createEl('option', { text: target, value: target });
         }
-        moveBtn.addEventListener('change', async () => {
+        moveBtn.addEventListener('change', () => void (async () => {
           const target = moveBtn.value;
           if (target === '__none__') return;
           await this.plugin.moveFileToClass(file, target);
           void this.renderTab('corpus');
-        });
+        })());
       }
     }
   }
@@ -564,13 +557,13 @@ export class PseudonymizationView extends ItemView {
         const delBtn = card.createEl('button', { cls: 'pseudobs-exception-card-del' });
         setIcon(delBtn, 'x');
         delBtn.title = t('panel.mappings.exceptions.delete');
-        delBtn.addEventListener('click', async () => {
+        delBtn.addEventListener('click', () => void (async () => {
           const updated = (rule.ignoredOccurrences ?? []).filter((o) => o.text !== occ.text);
           store.update(rule.id, { ignoredOccurrences: updated });
           await this.plugin.scopeResolver.saveStore(store, filePath);
           void this.plugin.refresh();
           void this.renderTab('mappings');
-        });
+        })());
       }
     }
   }

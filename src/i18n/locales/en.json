@@ -1,4 +1,7 @@
 {
+  "common.confirm": "Confirm",
+  "common.cancel": "Cancel",
+
   "corpus.modal.title": "Organize corpus",
   "corpus.modal.hint": "Each class creates mirrored folders for transcriptions, mappings and exports.",
   "corpus.modal.noClasses": "No classes defined. Add one to organize your documents by folder.",

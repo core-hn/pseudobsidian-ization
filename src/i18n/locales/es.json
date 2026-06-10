@@ -1,4 +1,7 @@
 {
+  "common.confirm": "Confirmar",
+  "common.cancel": "Cancelar",
+
   "corpus.modal.title": "Organizar corpus",
   "corpus.modal.hint": "Cada clase crea carpetas espejo para las transcripciones, las tablas de correspondencia y los exportes.",
   "corpus.modal.noClasses": "No hay clases definidas. Añada una para organizar sus documentos por carpeta.",

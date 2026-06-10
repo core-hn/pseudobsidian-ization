@@ -1,4 +1,7 @@
 {
+  "common.confirm": "Confirmer",
+  "common.cancel": "Annuler",
+
   "corpus.modal.title": "Organiser le corpus",
   "corpus.modal.hint": "Chaque classe crée des dossiers en miroir pour les transcriptions, les mappings et les exports.",
   "corpus.modal.noClasses": "Aucune classe définie. Ajoutez-en une pour organiser vos documents par dossier.",

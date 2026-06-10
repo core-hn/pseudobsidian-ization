@@ -44,6 +44,8 @@ var en_default;
 var init_en = __esm({
   "src/i18n/locales/en.json"() {
     en_default = {
+      "common.confirm": "Confirm",
+      "common.cancel": "Cancel",
       "corpus.modal.title": "Organize corpus",
       "corpus.modal.hint": "Each class creates mirrored folders for transcriptions, mappings and exports.",
       "corpus.modal.noClasses": "No classes defined. Add one to organize your documents by folder.",
@@ -135,6 +137,7 @@ var init_en = __esm({
       "notice.wordsJsonMissing": "Timestamp file not found: {0}.words.json",
       "notice.vttMismatch": "Warning: Markdown cue count and words.json cue count differ \u2014 exported VTT may be incomplete.",
       "notice.vttExported": "VTT exported: {0}",
+      "notice.eafExported": "EAF exported: {0}",
       "command.organizeCorpus": "Organize corpus",
       "command.addTranscription": "Add a transcription",
       "command.pseudonymizeFile": "Pseudonymize current file",
@@ -256,10 +259,13 @@ var init_en = __esm({
       "panel.exports.exportCha.desc": "Rebuilds the pseudonymized CHAT file from the Markdown.",
       "panel.exports.exportHtml": "Re-export as HTML",
       "panel.exports.exportHtml.desc": "Rebuilds the pseudonymized noScribe HTML file from the Markdown and word timestamps (.words.json).",
+      "panel.exports.exportEaf": "Export as EAF (ELAN)",
+      "panel.exports.exportEaf.desc": "Generates an ELAN file (.eaf) with one tier per speaker, from the Markdown and word timestamps (.words.json).",
       "notice.htmlExported": "HTML exported: {0}",
       "command.exportAsSrt": "Export as SRT",
       "command.exportAsCha": "Export as CHAT",
       "command.exportAsHtml": "Export as HTML",
+      "command.exportAsEaf": "Export as EAF (ELAN)",
       "panel.ner.scanBtn": "Identify candidates",
       "panel.ner.hint": "Settings for the automatic named entity detection scanner.",
       "panel.ner.threshold": "Confidence threshold",
@@ -409,6 +415,8 @@ var es_default;
 var init_es = __esm({
   "src/i18n/locales/es.json"() {
     es_default = {
+      "common.confirm": "Confirmar",
+      "common.cancel": "Cancelar",
       "corpus.modal.title": "Organizar corpus",
       "corpus.modal.hint": "Cada clase crea carpetas espejo para las transcripciones, las tablas de correspondencia y los exportes.",
       "corpus.modal.noClasses": "No hay clases definidas. A\xF1ada una para organizar sus documentos por carpeta.",
@@ -494,6 +502,7 @@ var init_es = __esm({
       "notice.wordsJsonMissing": "Archivo de marcas de tiempo no encontrado: {0}.words.json",
       "notice.vttMismatch": "Aviso: el n\xFAmero de cues del Markdown y del words.json difiere \u2014 el VTT exportado puede estar incompleto.",
       "notice.vttExported": "VTT exportado: {0}",
+      "notice.eafExported": "EAF exportado: {0}",
       "command.organizeCorpus": "Organizar corpus",
       "command.addTranscription": "A\xF1adir una transcripci\xF3n",
       "command.pseudonymizeFile": "Pseudonimizar el archivo actual",
@@ -506,6 +515,7 @@ var init_es = __esm({
       "command.exportAsSrt": "Exportar como SRT",
       "command.exportAsCha": "Exportar como CHAT",
       "command.exportAsHtml": "Exportar como HTML",
+      "command.exportAsEaf": "Exportar como EAF (ELAN)",
       "command.openPanel": "Pseudonimizaci\xF3n: abrir panel",
       "contextMenu.declareException": "Declarar \xAB{0}\xBB como excepci\xF3n aqu\xED",
       "contextMenu.cancelPseudonymization": "Cancelar pseudonimizaci\xF3n de \xAB{0}\xBB",
@@ -621,6 +631,8 @@ var init_es = __esm({
       "panel.exports.exportCha.desc": "Reconstruye el archivo CHAT pseudonimizado desde el Markdown.",
       "panel.exports.exportHtml": "Reexportar como HTML",
       "panel.exports.exportHtml.desc": "Reconstruye el archivo HTML noScribe pseudonimizado desde el Markdown y las marcas de tiempo (.words.json).",
+      "panel.exports.exportEaf": "Exportar como EAF (ELAN)",
+      "panel.exports.exportEaf.desc": "Genera un archivo ELAN (.eaf) con un tier por locutor, a partir del Markdown y las marcas de tiempo (.words.json).",
       "notice.htmlExported": "HTML exportado: {0}",
       "panel.ner.scanBtn": "Identificar candidatos",
       "panel.ner.hint": "Ajustes del esc\xE1ner de detecci\xF3n autom\xE1tica de entidades nombradas.",
@@ -774,6 +786,8 @@ var fr_default;
 var init_fr = __esm({
   "src/i18n/locales/fr.json"() {
     fr_default = {
+      "common.confirm": "Confirmer",
+      "common.cancel": "Annuler",
       "corpus.modal.title": "Organiser le corpus",
       "corpus.modal.hint": "Chaque classe cr\xE9e des dossiers en miroir pour les transcriptions, les mappings et les exports.",
       "corpus.modal.noClasses": "Aucune classe d\xE9finie. Ajoutez-en une pour organiser vos documents par dossier.",
@@ -865,6 +879,7 @@ var init_fr = __esm({
       "notice.wordsJsonMissing": "Fichier de timestamps introuvable : {0}.words.json",
       "notice.vttMismatch": "Attention : le nombre de cues du Markdown et du words.json diff\xE8re \u2014 le VTT export\xE9 peut \xEAtre incomplet.",
       "notice.vttExported": "VTT export\xE9 : {0}",
+      "notice.eafExported": "EAF export\xE9 : {0}",
       "command.organizeCorpus": "Organiser le corpus",
       "command.addTranscription": "Ajouter une transcription",
       "command.pseudonymizeFile": "Pseudonymiser le fichier courant",
@@ -986,10 +1001,13 @@ var init_fr = __esm({
       "panel.exports.exportCha.desc": "Reconstruit le fichier CHAT pseudonymis\xE9 \xE0 partir du Markdown.",
       "panel.exports.exportHtml": "Re-exporter en HTML",
       "panel.exports.exportHtml.desc": "Reconstruit le fichier HTML noScribe pseudonymis\xE9 \xE0 partir du Markdown et des timestamps (.words.json).",
+      "panel.exports.exportEaf": "Exporter en EAF (ELAN)",
+      "panel.exports.exportEaf.desc": "G\xE9n\xE8re un fichier ELAN (.eaf) avec un tier par locuteur, \xE0 partir du Markdown et des timestamps (.words.json).",
       "notice.htmlExported": "HTML export\xE9 : {0}",
       "command.exportAsSrt": "Exporter en SRT",
       "command.exportAsCha": "Exporter en CHAT",
       "command.exportAsHtml": "Exporter en HTML",
+      "command.exportAsEaf": "Exporter en EAF (ELAN)",
       "panel.ner.scanBtn": "Identifier des candidats",
       "panel.ner.hint": "Param\xE8tres du scanner de d\xE9tection automatique des entit\xE9s nomm\xE9es.",
       "panel.ner.threshold": "Seuil de confiance",
@@ -1139,6 +1157,8 @@ var ru_default;
 var init_ru = __esm({
   "src/i18n/locales/ru.json"() {
     ru_default = {
+      "common.confirm": "\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C",
+      "common.cancel": "\u041E\u0442\u043C\u0435\u043D\u0430",
       "corpus.modal.title": "\u041E\u0440\u0433\u0430\u043D\u0438\u0437\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0440\u043F\u0443\u0441",
       "corpus.modal.hint": "\u041A\u0430\u0436\u0434\u044B\u0439 \u043A\u043B\u0430\u0441\u0441 \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u0437\u0435\u0440\u043A\u0430\u043B\u044C\u043D\u044B\u0435 \u043F\u0430\u043F\u043A\u0438 \u0434\u043B\u044F \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u0439, \u0442\u0430\u0431\u043B\u0438\u0446 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u043E\u0432.",
       "corpus.modal.noClasses": "\u041A\u043B\u0430\u0441\u0441\u044B \u043D\u0435 \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u0435\u043D\u044B. \u0414\u043E\u0431\u0430\u0432\u044C\u0442\u0435 \u043E\u0434\u0438\u043D, \u0447\u0442\u043E\u0431\u044B \u043E\u0440\u0433\u0430\u043D\u0438\u0437\u043E\u0432\u0430\u0442\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u043F\u043E \u043F\u0430\u043F\u043A\u0430\u043C.",
@@ -1224,6 +1244,7 @@ var init_ru = __esm({
       "notice.wordsJsonMissing": "\u0424\u0430\u0439\u043B \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445 \u043C\u0435\u0442\u043E\u043A \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D: {0}.words.json",
       "notice.vttMismatch": "\u041F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0435: \u043A\u043E\u043B\u0438\u0447\u0435\u0441\u0442\u0432\u043E \u0440\u0435\u043F\u043B\u0438\u043A \u0432 Markdown \u0438 words.json \u0440\u0430\u0437\u043B\u0438\u0447\u0430\u0435\u0442\u0441\u044F \u2014 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 VTT \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u043F\u043E\u043B\u043D\u044B\u043C.",
       "notice.vttExported": "VTT \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D: {0}",
+      "notice.eafExported": "EAF \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D: {0}",
       "command.organizeCorpus": "\u041E\u0440\u0433\u0430\u043D\u0438\u0437\u043E\u0432\u0430\u0442\u044C \u043A\u043E\u0440\u043F\u0443\u0441",
       "command.addTranscription": "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0442\u0440\u0430\u043D\u0441\u043A\u0440\u0438\u043F\u0446\u0438\u044E",
       "command.pseudonymizeFile": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0442\u0435\u043A\u0443\u0449\u0438\u0439 \u0444\u0430\u0439\u043B",
@@ -1236,6 +1257,7 @@ var init_ru = __esm({
       "command.exportAsSrt": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A SRT",
       "command.exportAsCha": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A CHAT",
       "command.exportAsHtml": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A HTML",
+      "command.exportAsEaf": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A EAF (ELAN)",
       "command.openPanel": "\u041F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0430\u0446\u0438\u044F: \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0430\u043D\u0435\u043B\u044C",
       "contextMenu.declareException": "\u041E\u0431\u044A\u044F\u0432\u0438\u0442\u044C \xAB{0}\xBB \u0438\u0441\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\u043C \u0437\u0434\u0435\u0441\u044C",
       "contextMenu.cancelPseudonymization": "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0430\u0446\u0438\u044E \xAB{0}\xBB",
@@ -1351,6 +1373,8 @@ var init_ru = __esm({
       "panel.exports.exportCha.desc": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 CHAT \u0438\u0437 Markdown.",
       "panel.exports.exportHtml": "\u041F\u043E\u0432\u0442\u043E\u0440\u043D\u043E \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A HTML",
       "panel.exports.exportHtml.desc": "\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u0441\u0435\u0432\u0434\u043E\u043D\u0438\u043C\u0438\u0437\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 HTML noScribe \u0438\u0437 Markdown \u0438 \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445 \u043C\u0435\u0442\u043E\u043A (.words.json).",
+      "panel.exports.exportEaf": "\u042D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043A\u0430\u043A EAF (ELAN)",
+      "panel.exports.exportEaf.desc": "\u0421\u043E\u0437\u0434\u0430\u0451\u0442 \u0444\u0430\u0439\u043B ELAN (.eaf) \u0441 \u043E\u0434\u043D\u0438\u043C tier \u043D\u0430 \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u0433\u043E\u0432\u043E\u0440\u044F\u0449\u0435\u0433\u043E, \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 Markdown \u0438 \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445 \u043C\u0435\u0442\u043E\u043A (.words.json).",
       "notice.htmlExported": "HTML \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0438\u0440\u043E\u0432\u0430\u043D: {0}",
       "panel.ner.scanBtn": "\u041E\u043F\u0440\u0435\u0434\u0435\u043B\u0438\u0442\u044C \u043A\u0430\u043D\u0434\u0438\u0434\u0430\u0442\u043E\u0432",
       "panel.ner.hint": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u0441\u043A\u0430\u043D\u0435\u0440\u0430 \u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u044F \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0441\u0443\u0449\u043D\u043E\u0441\u0442\u0435\u0439.",
@@ -33369,7 +33393,7 @@ __export(main_exports, {
   default: () => PseudObsPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 init_i18n();
 init_settings();
 
@@ -34105,7 +34129,73 @@ var EditRuleModal = class extends import_obsidian6.Modal {
 };
 
 // src/ui/PseudonymizationView.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
+
+// src/ui/SimpleModals.ts
+var import_obsidian7 = require("obsidian");
+init_i18n();
+var ConfirmModal = class extends import_obsidian7.Modal {
+  constructor(app, message, onConfirm) {
+    super(app);
+    this.message = message;
+    this.onConfirm = onConfirm;
+    this.resolved = false;
+  }
+  onOpen() {
+    this.contentEl.createEl("p", { text: this.message });
+    new import_obsidian7.Setting(this.contentEl).addButton(
+      (btn) => btn.setButtonText(t("common.cancel")).onClick(() => {
+        this.resolved = true;
+        this.close();
+      })
+    ).addButton(
+      (btn) => btn.setButtonText(t("common.confirm")).setWarning().setCta().onClick(() => {
+        this.resolved = true;
+        this.close();
+        void (async () => this.onConfirm())();
+      })
+    );
+  }
+  onClose() {
+    if (!this.resolved)
+      this.resolved = true;
+    this.contentEl.empty();
+  }
+};
+var TextInputModal = class extends import_obsidian7.Modal {
+  constructor(app, label, onSubmit) {
+    super(app);
+    this.label = label;
+    this.onSubmit = onSubmit;
+  }
+  onOpen() {
+    this.contentEl.createEl("p", { text: this.label });
+    this.input = this.contentEl.createEl("input", { type: "text" });
+    this.input.addClass("pseudobs-text-input-field");
+    this.input.focus();
+    this.input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter")
+        this.submit();
+      else if (e.key === "Escape")
+        this.close();
+    });
+    new import_obsidian7.Setting(this.contentEl).addButton(
+      (btn) => btn.setButtonText(t("common.cancel")).onClick(() => this.close())
+    ).addButton(
+      (btn) => btn.setButtonText(t("common.confirm")).setCta().onClick(() => this.submit())
+    );
+  }
+  submit() {
+    const value = this.input.value.trim();
+    this.close();
+    void (async () => this.onSubmit(value))();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/ui/PseudonymizationView.ts
 init_i18n();
 
 // src/pseudonymizer/ReplacementPlanner.ts
@@ -34207,15 +34297,15 @@ function scanOccurrences(content, filePath, rules, settings = DEFAULT_PLANNER_SE
 }
 
 // src/ui/CorpusModal.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 init_i18n();
 function getCorpusClasses(app, transcriptionsFolder) {
   const folder = app.vault.getAbstractFileByPath(transcriptionsFolder);
-  if (!(folder instanceof import_obsidian7.TFolder))
+  if (!(folder instanceof import_obsidian8.TFolder))
     return [];
-  return folder.children.filter((c) => c instanceof import_obsidian7.TFolder).map((c) => c.name).sort();
+  return folder.children.filter((c) => c instanceof import_obsidian8.TFolder).map((c) => c.name).sort();
 }
-var CorpusModal = class extends import_obsidian7.Modal {
+var CorpusModal = class extends import_obsidian8.Modal {
   constructor(app, plugin, onCloseCb) {
     super(app);
     this.plugin = plugin;
@@ -34260,7 +34350,7 @@ var CorpusModal = class extends import_obsidian7.Modal {
     const s = this.plugin.settings;
     const transcPath = `${s.transcriptionsFolder}/${cls}`;
     const folder = this.app.vault.getAbstractFileByPath(transcPath);
-    const fileCount = folder instanceof import_obsidian7.TFolder ? folder.children.filter((c) => !(c instanceof import_obsidian7.TFolder)).length : 0;
+    const fileCount = folder instanceof import_obsidian8.TFolder ? folder.children.filter((c) => !(c instanceof import_obsidian8.TFolder)).length : 0;
     const li = list.createEl("li", { cls: "pseudobs-corpus-class-item" });
     const nameWrap = li.createDiv("pseudobs-corpus-class-name");
     nameWrap.createEl("strong", { text: cls });
@@ -34282,12 +34372,12 @@ var CorpusModal = class extends import_obsidian7.Modal {
   async addClass(name2) {
     const trimmed = name2.trim();
     if (!trimmed) {
-      new import_obsidian7.Notice(t("corpus.modal.classNameEmpty"));
+      new import_obsidian8.Notice(t("corpus.modal.classNameEmpty"));
       return;
     }
     const existing = getCorpusClasses(this.app, this.plugin.settings.transcriptionsFolder);
     if (existing.includes(trimmed)) {
-      new import_obsidian7.Notice(t("corpus.modal.classExists"));
+      new import_obsidian8.Notice(t("corpus.modal.classExists"));
       return;
     }
     const s = this.plugin.settings;
@@ -34315,7 +34405,7 @@ var CorpusModal = class extends import_obsidian7.Modal {
     this.onCloseCb?.();
   }
 };
-var ClassSelectModal = class extends import_obsidian7.Modal {
+var ClassSelectModal = class extends import_obsidian8.Modal {
   constructor(app, plugin, classes) {
     super(app);
     this.plugin = plugin;
@@ -34382,7 +34472,7 @@ var ClassSelectModal = class extends import_obsidian7.Modal {
 init_FolderSuggest();
 
 // src/ui/MappingScanReviewModal.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 init_i18n();
 
 // src/pseudonymizer/SpanProtector.ts
@@ -34416,9 +34506,9 @@ function applySpans(text, spans, marker) {
 }
 
 // src/ui/OccurrencesContextModal.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 init_i18n();
-var OccurrencesContextModal = class extends import_obsidian8.Modal {
+var OccurrencesContextModal = class extends import_obsidian9.Modal {
   constructor(app, rule, occurrences, existingDecisions, onConfirm) {
     super(app);
     this.cardRefs = /* @__PURE__ */ new Map();
@@ -34439,7 +34529,7 @@ var OccurrencesContextModal = class extends import_obsidian8.Modal {
       text: t("occurrencesCtx.hint", String(n), n > 1 ? t("occurrencesCtx.hint.s") : t("occurrencesCtx.hint.empty")),
       cls: "pseudobs-view-hint"
     });
-    new import_obsidian8.Setting(contentEl).addButton(
+    new import_obsidian9.Setting(contentEl).addButton(
       (b) => b.setButtonText(t("occurrencesCtx.validateAll")).onClick(() => {
         for (const occ of this.occurrences)
           this.decisions.set(occ.id, "validated");
@@ -34457,7 +34547,7 @@ var OccurrencesContextModal = class extends import_obsidian8.Modal {
       this.buildCard(scroll, occ);
     }
     contentEl.createEl("hr");
-    new import_obsidian8.Setting(contentEl).addButton(
+    new import_obsidian9.Setting(contentEl).addButton(
       (b) => b.setButtonText(t("occurrencesCtx.cancel")).onClick(() => this.close())
     ).addButton(
       (b) => b.setButtonText(t("occurrencesCtx.confirm")).setCta().onClick(() => {
@@ -34527,7 +34617,7 @@ var OccurrencesContextModal = class extends import_obsidian8.Modal {
 };
 
 // src/ui/MappingScanReviewModal.ts
-var MappingScanReviewModal = class extends import_obsidian9.Modal {
+var MappingScanReviewModal = class extends import_obsidian10.Modal {
   constructor(app, plugin, file, content, ruleResults) {
     super(app);
     // Décisions par règle : ruleId → occId → decision
@@ -34649,7 +34739,7 @@ var MappingScanReviewModal = class extends import_obsidian9.Modal {
   /** Enregistre les exceptions dans le mapping sans appliquer de remplacements. */
   async saveExceptions() {
     await this.persistIgnoredOccurrences();
-    new import_obsidian9.Notice(t("mappingScanModal.exceptionsSaved"));
+    new import_obsidian10.Notice(t("mappingScanModal.exceptionsSaved"));
     this.close();
   }
   /**
@@ -34701,7 +34791,7 @@ var MappingScanReviewModal = class extends import_obsidian9.Modal {
       }
     }
     if (spans.length === 0) {
-      new import_obsidian9.Notice(t("notice.noOccurrences"));
+      new import_obsidian10.Notice(t("notice.noOccurrences"));
       this.close();
       return;
     }
@@ -34711,7 +34801,7 @@ var MappingScanReviewModal = class extends import_obsidian9.Modal {
     await this.app.vault.modify(this.file, modified);
     await this.persistIgnoredOccurrences();
     const total = resolved.length;
-    new import_obsidian9.Notice(t(
+    new import_obsidian10.Notice(t(
       "notice.occurrencesPseudonymized",
       String(total),
       total > 1 ? t("notice.occurrencesPseudonymized.occurrences") : t("notice.occurrencesPseudonymized.occurrence"),
@@ -34735,7 +34825,7 @@ function scopeLabel(s) {
 function statusLabel(s) {
   return t(`status.${s}`) || s;
 }
-var PseudonymizationView = class extends import_obsidian10.ItemView {
+var PseudonymizationView = class extends import_obsidian11.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.activeTab = "mappings";
@@ -34763,7 +34853,6 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     root.empty();
     root.addClass("pseudobs-view");
     this.filenameWarningEl = root.createDiv("pseudobs-filename-warning");
-    this.filenameWarningEl.style.display = "none";
     const tabBar = root.createDiv("pseudobs-view-tabs");
     const content = root.createDiv("pseudobs-view-content");
     const tabs = [
@@ -34827,7 +34916,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
   async onFileChange() {
     if (this._renderingTab)
       return;
-    if (this.app.workspace.getActiveViewOfType(import_obsidian10.ItemView) === this)
+    if (this.app.workspace.getActiveViewOfType(import_obsidian11.ItemView) === this)
       return;
     const f = this.app.workspace.getActiveFile();
     if (f)
@@ -34847,42 +34936,39 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     el.empty();
     const file = this.getFile();
     if (!file || file.extension !== "md") {
-      el.style.display = "none";
+      el.removeClass("pseudobs-fw-visible");
       return;
     }
     const suggested = await this.plugin.suggestCorrectedFilename(file);
     if (!suggested) {
-      el.style.display = "none";
+      el.removeClass("pseudobs-fw-visible");
       return;
     }
-    el.style.display = "";
+    el.addClass("pseudobs-fw-visible");
     const top = el.createDiv("pseudobs-fw-top");
-    (0, import_obsidian10.setIcon)(top.createSpan("pseudobs-fw-icon"), "triangle-alert");
+    (0, import_obsidian11.setIcon)(top.createSpan("pseudobs-fw-icon"), "triangle-alert");
     top.createSpan({ cls: "pseudobs-fw-msg", text: t("panel.filenameWarning.msg", file.basename) });
     const row = el.createDiv("pseudobs-fw-row");
     const editBtn = row.createEl("button", { cls: "pseudobs-fw-action-btn" });
-    (0, import_obsidian10.setIcon)(editBtn.createSpan(), "pen-line");
+    (0, import_obsidian11.setIcon)(editBtn.createSpan(), "pen-line");
     editBtn.createSpan({ text: ` ${t("panel.filenameWarning.edit")}` });
     editBtn.title = t("panel.filenameWarning.editTitle");
-    editBtn.addEventListener("click", async () => {
-      const newName = this.promptText(t("panel.filenameWarning.editPrompt", file.basename)) ?? "";
-      if (!newName.trim() || newName.trim() === file.basename)
-        return;
-      await this.plugin.renameFileAndRelated(file, newName.trim());
-      void this.refreshFilenameWarning();
+    editBtn.addEventListener("click", () => {
+      new TextInputModal(this.app, t("panel.filenameWarning.editPrompt", file.basename), async (value) => {
+        if (!value || value === file.basename)
+          return;
+        await this.plugin.renameFileAndRelated(file, value);
+        void this.refreshFilenameWarning();
+      }).open();
     });
     const wandBtn = row.createEl("button", { cls: "pseudobs-fw-action-btn pseudobs-fw-wand-btn" });
-    (0, import_obsidian10.setIcon)(wandBtn.createSpan(), "wand-sparkles");
+    (0, import_obsidian11.setIcon)(wandBtn.createSpan(), "wand-sparkles");
     wandBtn.createSpan({ text: ` ${suggested}.${file.extension}` });
     wandBtn.title = t("panel.filenameWarning.wandTitle", `${suggested}.${file.extension}`);
-    wandBtn.addEventListener("click", async () => {
+    wandBtn.addEventListener("click", () => void (async () => {
       await this.plugin.renameFileAndRelated(file, suggested);
       void this.refreshFilenameWarning();
-    });
-  }
-  /** Affiche un prompt natif et retourne la valeur saisie, ou null si annulé. */
-  promptText(placeholder) {
-    return window.prompt(placeholder) ?? null;
+    })());
   }
   getFile() {
     return this.app.workspace.getActiveFile() ?? this.lastFile;
@@ -34893,7 +34979,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     const transcRoot = s.transcriptionsFolder;
     const FINAL_EXTS = ["vtt", "srt", "cha", "chat"];
     const transcFolder = this.app.vault.getAbstractFileByPath(transcRoot);
-    if (!(transcFolder instanceof import_obsidian10.TFolder)) {
+    if (!(transcFolder instanceof import_obsidian11.TFolder)) {
       el.createEl("p", { text: t("panel.corpus.noFolder"), cls: "pseudobs-view-hint" });
       return;
     }
@@ -34910,15 +34996,15 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
       radio.name = "exportDest";
       radio.value = val;
       radio.checked = s.exportDestinationType === val;
-      radio.addEventListener("change", async () => {
+      radio.addEventListener("change", () => void (async () => {
         s.exportDestinationType = val;
         await this.plugin.saveSettings();
         void this.renderTab("corpus");
-      });
+      })());
       lbl.createSpan({ text: ` ${t(labelKey)}` });
     }
     if (s.exportDestinationType === "vault") {
-      new import_obsidian10.Setting(exportSection).setName(t("panel.corpus.exportFolder")).addSearch((cb) => {
+      new import_obsidian11.Setting(exportSection).setName(t("panel.corpus.exportFolder")).addSearch((cb) => {
         new FolderSuggest(this.app, cb.inputEl);
         cb.setValue(s.exportFinalFolder).onChange(async (v) => {
           s.exportFinalFolder = v;
@@ -34927,7 +35013,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
       });
     }
     if (s.exportDestinationType === "external") {
-      new import_obsidian10.Setting(exportSection).setName(t("panel.corpus.exportExternalPath")).addText((txt) => {
+      new import_obsidian11.Setting(exportSection).setName(t("panel.corpus.exportExternalPath")).addText((txt) => {
         txt.setPlaceholder(t("panel.corpus.exportExternalPathPlaceholder"));
         txt.setValue(s.exportExternalPath).onChange(async (v) => {
           s.exportExternalPath = v;
@@ -34935,7 +35021,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         });
       });
     }
-    new import_obsidian10.Setting(exportSection).setName(t("panel.corpus.exportMirrorClasses")).addToggle(
+    new import_obsidian11.Setting(exportSection).setName(t("panel.corpus.exportMirrorClasses")).addToggle(
       (tog) => tog.setValue(s.exportMirrorClasses).onChange(async (v) => {
         s.exportMirrorClasses = v;
         await this.plugin.saveSettings();
@@ -34957,7 +35043,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
           `${s.exportsFolder}/${base}.pseudonymized.${ext}`
         ];
         for (const c of candidates) {
-          if (this.app.vault.getAbstractFileByPath(c) instanceof import_obsidian10.TFile)
+          if (this.app.vault.getAbstractFileByPath(c) instanceof import_obsidian11.TFile)
             return ext;
         }
       }
@@ -34966,7 +35052,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     const collectFiles = async (folder) => {
       const entries = [];
       for (const child of folder.children) {
-        if (!(child instanceof import_obsidian10.TFile))
+        if (!(child instanceof import_obsidian11.TFile))
           continue;
         if (!["md", "srt", "cha", "chat", "txt"].includes(child.extension.toLowerCase()))
           continue;
@@ -34975,7 +35061,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         const base = child.basename;
         let ruleCount = 0;
         const mappingFile = this.plugin["findInMappings"]?.(`${base}.mapping.json`) ?? this.app.vault.getAbstractFileByPath(`${s.mappingFolder}/${base}.mapping.json`);
-        if (mappingFile instanceof import_obsidian10.TFile) {
+        if (mappingFile instanceof import_obsidian11.TFile) {
           try {
             const data = JSON.parse(await this.app.vault.read(mappingFile));
             ruleCount = (data.mappings ?? []).length;
@@ -34983,39 +35069,38 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
           }
         }
         const pseudoMd = this.app.vault.getAbstractFileByPath(`${s.exportsFolder}/${base}.pseudonymized.md`);
-        entries.push({ file: child, ruleCount, hasPseudo: pseudoMd instanceof import_obsidian10.TFile, finalExt: detectFinalExport(base) });
+        entries.push({ file: child, ruleCount, hasPseudo: pseudoMd instanceof import_obsidian11.TFile, finalExt: detectFinalExport(base) });
       }
       return entries;
     };
     for (const cls of allClasses) {
       const folderPath = cls ? `${transcRoot}/${cls}` : transcRoot;
       const folder = this.app.vault.getAbstractFileByPath(folderPath);
-      if (!(folder instanceof import_obsidian10.TFolder))
+      if (!(folder instanceof import_obsidian11.TFolder))
         continue;
       const entries = await collectFiles(folder);
       const header = el.createDiv("pseudobs-corpus-class-header");
-      const heading = header.createEl("span", {
+      header.createEl("span", {
         text: cls ?? t("panel.corpus.noClass"),
         cls: "pseudobs-corpus-class-heading"
       });
-      heading.style.flex = "1";
       if (cls) {
         const delBtn = header.createEl("button", { cls: "pseudobs-corpus-class-del" });
-        (0, import_obsidian10.setIcon)(delBtn, "trash-2");
+        (0, import_obsidian11.setIcon)(delBtn, "trash-2");
         delBtn.title = t("panel.corpus.deleteClass");
-        delBtn.addEventListener("click", async () => {
-          if (!confirm(t("panel.corpus.deleteClassConfirm", cls)))
-            return;
-          for (const { file } of entries) {
-            await this.plugin.moveFileToClass(file, "");
-          }
-          for (const root of [transcRoot, s.mappingFolder]) {
-            const clsFolder = this.app.vault.getAbstractFileByPath(`${root}/${cls}`);
-            if (clsFolder instanceof import_obsidian10.TFolder && clsFolder.children.length === 0) {
-              await this.app.fileManager.trashFile(clsFolder);
+        delBtn.addEventListener("click", () => {
+          new ConfirmModal(this.app, t("panel.corpus.deleteClassConfirm", cls), async () => {
+            for (const { file } of entries) {
+              await this.plugin.moveFileToClass(file, "");
             }
-          }
-          void this.renderTab("corpus");
+            for (const root of [transcRoot, s.mappingFolder]) {
+              const clsFolder = this.app.vault.getAbstractFileByPath(`${root}/${cls}`);
+              if (clsFolder instanceof import_obsidian11.TFolder && clsFolder.children.length === 0) {
+                await this.app.fileManager.trashFile(clsFolder);
+              }
+            }
+            void this.renderTab("corpus");
+          }).open();
         });
       }
       if (entries.length === 0)
@@ -35035,7 +35120,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         const rb = badges.createEl("span", { text: `${ruleCount}R`, cls: "pseudobs-corpus-badge pseudobs-corpus-badge-rules" });
         rb.title = t("panel.corpus.rules", String(ruleCount));
         const pb = badges.createEl("span", { cls: `pseudobs-corpus-badge ${hasPseudo ? "pseudobs-corpus-badge-pseudo" : "pseudobs-corpus-badge-none"}` });
-        (0, import_obsidian10.setIcon)(pb, hasPseudo ? "file-check" : "file-x");
+        (0, import_obsidian11.setIcon)(pb, hasPseudo ? "file-check" : "file-x");
         pb.title = hasPseudo ? t("panel.corpus.hasPseudo") : t("panel.corpus.noPseudo");
         const fb = badges.createEl("span", {
           cls: `pseudobs-corpus-badge ${finalExt ? "pseudobs-corpus-badge-final" : "pseudobs-corpus-badge-none"}`,
@@ -35052,13 +35137,13 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
           if (target !== cls)
             moveBtn.createEl("option", { text: target, value: target });
         }
-        moveBtn.addEventListener("change", async () => {
+        moveBtn.addEventListener("change", () => void (async () => {
           const target = moveBtn.value;
           if (target === "__none__")
             return;
           await this.plugin.moveFileToClass(file, target);
           void this.renderTab("corpus");
-        });
+        })());
       }
     }
   }
@@ -35067,11 +35152,11 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     const file = this.getFile();
     const toolbar = el.createDiv("pseudobs-view-toolbar");
     const addRuleBtn = toolbar.createEl("button", { cls: "pseudobs-view-action-btn" });
-    (0, import_obsidian10.setIcon)(addRuleBtn, "list-plus");
+    (0, import_obsidian11.setIcon)(addRuleBtn, "list-plus");
     addRuleBtn.createSpan({ text: t("panel.mappings.addRule") });
     addRuleBtn.addEventListener("click", () => new RuleModal(this.app, this.plugin).open());
     const scanBtn = toolbar.createEl("button", { cls: "pseudobs-view-action-btn" });
-    (0, import_obsidian10.setIcon)(scanBtn, "scan-search");
+    (0, import_obsidian11.setIcon)(scanBtn, "scan-search");
     scanBtn.createSpan({ text: t("panel.mappings.scanFile") });
     if (!file)
       scanBtn.setAttr("disabled", "true");
@@ -35085,7 +35170,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
           const content = await this.app.vault.read(file);
           const rules = await this.plugin.scopeResolver.getRulesFor(file.path);
           if (rules.length === 0) {
-            new import_obsidian10.Notice(t("panel.mappings.noRulesHint"));
+            new import_obsidian11.Notice(t("panel.mappings.noRulesHint"));
             return;
           }
           const occs = scanOccurrences(content, file.path, rules, {
@@ -35105,7 +35190,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
             occurrences: occsByRule.get(r.id)
           }));
           if (ruleResults.length === 0) {
-            new import_obsidian10.Notice(t("notice.noOccurrences"));
+            new import_obsidian11.Notice(t("notice.noOccurrences"));
             return;
           }
           new MappingScanReviewModal(this.app, this.plugin, file, content, ruleResults).open();
@@ -35170,7 +35255,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         row.createEl("td", { text: String(rule.priority) });
         row.createEl("td", { text: statusLabel(rule.status) });
         const editBtn = row.createEl("td").createEl("button", { cls: "pseudobs-mappings-edit-btn" });
-        (0, import_obsidian10.setIcon)(editBtn, "pencil");
+        (0, import_obsidian11.setIcon)(editBtn, "pencil");
         editBtn.addEventListener("click", () => new EditRuleModal(this.app, this.plugin, loc).open());
       }
     }
@@ -35192,15 +35277,15 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         ctx.createSpan({ text: occ.text, cls: "pseudobs-exception-card-term" });
         ctx.createSpan({ text: occ.contextAfter, cls: "pseudobs-ctx-side" });
         const delBtn = card.createEl("button", { cls: "pseudobs-exception-card-del" });
-        (0, import_obsidian10.setIcon)(delBtn, "x");
+        (0, import_obsidian11.setIcon)(delBtn, "x");
         delBtn.title = t("panel.mappings.exceptions.delete");
-        delBtn.addEventListener("click", async () => {
+        delBtn.addEventListener("click", () => void (async () => {
           const updated = (rule.ignoredOccurrences ?? []).filter((o) => o.text !== occ.text);
           store.update(rule.id, { ignoredOccurrences: updated });
           await this.plugin.scopeResolver.saveStore(store, filePath);
           void this.plugin.refresh();
           void this.renderTab("mappings");
-        });
+        })());
       }
     }
   }
@@ -35231,7 +35316,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         info.createEl("small", { text: `${dict.dictionaryId}.dict.json`, cls: "pseudobs-dict-card-filename" });
         if (dict.roles?.detection) {
           const scanBtn = card.createEl("button", { cls: "pseudobs-dict-card-scan mod-cta" });
-          (0, import_obsidian10.setIcon)(scanBtn, "scan-search");
+          (0, import_obsidian11.setIcon)(scanBtn, "scan-search");
           scanBtn.setAttribute("aria-label", t("panel.dict.scanWith", dict.label));
           scanBtn.title = t("panel.dict.scanWith", dict.label);
           scanBtn.addEventListener("click", () => {
@@ -35239,7 +35324,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
           });
         }
         const removeBtn = card.createEl("button", { cls: "pseudobs-dict-card-remove" });
-        (0, import_obsidian10.setIcon)(removeBtn, "trash-2");
+        (0, import_obsidian11.setIcon)(removeBtn, "trash-2");
         removeBtn.setAttribute("aria-label", t("panel.dict.remove"));
         removeBtn.title = t("panel.dict.remove");
         removeBtn.addEventListener("click", () => {
@@ -35247,7 +35332,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
             const f = this.app.vault.getAbstractFileByPath(
               `${this.plugin.settings.dictionariesFolder}/${dict.dictionaryId}.dict.json`
             );
-            if (f instanceof import_obsidian10.TFile)
+            if (f instanceof import_obsidian11.TFile)
               await this.app.fileManager.trashFile(f);
             this.checkedDicts.delete(dict.dictionaryId);
             await this.plugin.dictionaryLoader.load();
@@ -35257,12 +35342,12 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
       }
       el.createEl("hr");
       const groupScanBtn = el.createEl("button", { cls: "pseudobs-dict-group-scan mod-cta" });
-      (0, import_obsidian10.setIcon)(groupScanBtn, "scan-search");
+      (0, import_obsidian11.setIcon)(groupScanBtn, "scan-search");
       groupScanBtn.createSpan({ text: t("panel.dict.scanAll") });
       groupScanBtn.addEventListener("click", () => {
         const ids = [...this.checkedDicts];
         if (ids.length === 0) {
-          new import_obsidian10.Notice(t("notice.noCheckedDicts"));
+          new import_obsidian11.Notice(t("notice.noCheckedDicts"));
           return;
         }
         void this.plugin.scanCurrentFileWithDictionaries(ids);
@@ -35296,18 +35381,18 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
                 throw new Error("Format invalide");
               const dest = `${this.plugin.settings.dictionariesFolder}/${f.name}`;
               const existing = this.app.vault.getAbstractFileByPath(dest);
-              if (existing instanceof import_obsidian10.TFile) {
+              if (existing instanceof import_obsidian11.TFile) {
                 await this.app.vault.modify(existing, text);
               } else {
                 await this.app.vault.create(dest, text);
               }
               ok++;
             } catch {
-              new import_obsidian10.Notice(t("notice.invalidFormat", f.name));
+              new import_obsidian11.Notice(t("notice.invalidFormat", f.name));
             }
           }
           if (ok > 0) {
-            new import_obsidian10.Notice(t("notice.dictImported", String(ok), ok > 1 ? t("notice.dictImported.many") : t("notice.dictImported.one")));
+            new import_obsidian11.Notice(t("notice.dictImported", String(ok), ok > 1 ? t("notice.dictImported.many") : t("notice.dictImported.one")));
             await this.plugin.dictionaryLoader.load();
           }
           await this.renderTab("dictionaries");
@@ -35333,26 +35418,31 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
           const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
           const format = formatMatch?.[1];
           if (format === "vtt" || format === "html") {
-            new import_obsidian10.Setting(el).setName(t("panel.exports.exportVtt")).setDesc(t("panel.exports.exportVtt.desc")).addButton(
+            new import_obsidian11.Setting(el).setName(t("panel.exports.exportVtt")).setDesc(t("panel.exports.exportVtt.desc")).addButton(
               (btn) => btn.setButtonText(t("command.exportAsVtt")).setCta().onClick(() => {
                 void this.plugin.exportCurrentFileAsVtt();
               })
             );
             if (format === "html") {
-              new import_obsidian10.Setting(el).setName(t("panel.exports.exportHtml")).setDesc(t("panel.exports.exportHtml.desc")).addButton(
+              new import_obsidian11.Setting(el).setName(t("panel.exports.exportHtml")).setDesc(t("panel.exports.exportHtml.desc")).addButton(
                 (btn) => btn.setButtonText(t("command.exportAsHtml")).onClick(() => {
                   void this.plugin.exportCurrentFileAsHtml();
                 })
               );
             }
+            new import_obsidian11.Setting(el).setName(t("panel.exports.exportEaf")).setDesc(t("panel.exports.exportEaf.desc")).addButton(
+              (btn) => btn.setButtonText(t("command.exportAsEaf")).onClick(() => {
+                void this.plugin.exportCurrentFileAsEaf();
+              })
+            );
           } else if (format === "srt") {
-            new import_obsidian10.Setting(el).setName(t("panel.exports.exportSrt")).setDesc(t("panel.exports.exportSrt.desc")).addButton(
+            new import_obsidian11.Setting(el).setName(t("panel.exports.exportSrt")).setDesc(t("panel.exports.exportSrt.desc")).addButton(
               (btn) => btn.setButtonText(t("command.exportAsSrt")).setCta().onClick(() => {
                 void this.plugin.exportCurrentFileAsFormat("srt");
               })
             );
           } else if (format === "chat") {
-            new import_obsidian10.Setting(el).setName(t("panel.exports.exportCha")).setDesc(t("panel.exports.exportCha.desc")).addButton(
+            new import_obsidian11.Setting(el).setName(t("panel.exports.exportCha")).setDesc(t("panel.exports.exportCha.desc")).addButton(
               (btn) => btn.setButtonText(t("command.exportAsCha")).setCta().onClick(() => {
                 void this.plugin.exportCurrentFileAsFormat("cha");
               })
@@ -35362,13 +35452,13 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
         }
       }
     } else {
-      new import_obsidian10.Setting(el).setName(t("panel.exports.pseudonymize")).addButton(
+      new import_obsidian11.Setting(el).setName(t("panel.exports.pseudonymize")).addButton(
         (btn) => btn.setButtonText(t("panel.exports.pseudonymize")).setCta().onClick(() => {
           void this.plugin.pseudonymizeActiveFile();
         })
       );
     }
-    new import_obsidian10.Setting(el).setName(t("panel.exports.exportMapping")).addButton(
+    new import_obsidian11.Setting(el).setName(t("panel.exports.exportMapping")).addButton(
       (btn) => btn.setButtonText(t("panel.exports.exportMapping")).onClick(() => {
         void this.plugin.exportMappingForFile(file);
       })
@@ -35379,19 +35469,19 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
     const s = this.plugin.settings;
     const nerScanBtn = el.createEl("button", { cls: "pseudobs-view-action-btn mod-cta" });
     const nerScanIcon = nerScanBtn.createSpan();
-    (0, import_obsidian10.setIcon)(nerScanIcon, "scan-search");
+    (0, import_obsidian11.setIcon)(nerScanIcon, "scan-search");
     nerScanBtn.createSpan({ text: ` ${t("panel.ner.scanBtn")}` });
     nerScanBtn.title = t("panel.ner.scanBtn");
     nerScanBtn.addEventListener("click", () => {
       void (async () => {
         nerScanBtn.setAttr("disabled", "true");
-        (0, import_obsidian10.setIcon)(nerScanIcon, "loader-circle");
+        (0, import_obsidian11.setIcon)(nerScanIcon, "loader-circle");
         nerScanIcon.addClass("pseudobs-spin");
         try {
           await this.plugin.scanCurrentFileNer();
         } finally {
           nerScanBtn.removeAttribute("disabled");
-          (0, import_obsidian10.setIcon)(nerScanIcon, "scan-search");
+          (0, import_obsidian11.setIcon)(nerScanIcon, "scan-search");
           nerScanIcon.removeClass("pseudobs-spin");
         }
       })();
@@ -35446,7 +35536,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
       })();
     });
     const resetBtn = fwSection.createEl("button", { cls: "pseudobs-view-action-btn" });
-    (0, import_obsidian10.setIcon)(resetBtn, "rotate-ccw");
+    (0, import_obsidian11.setIcon)(resetBtn, "rotate-ccw");
     resetBtn.createSpan({ text: t("panel.ner.reset") });
     resetBtn.addClass("pseudobs-ner-reset-btn");
     resetBtn.addEventListener("click", () => {
@@ -35467,7 +35557,7 @@ var PseudonymizationView = class extends import_obsidian10.ItemView {
 init_OnboardingModal();
 
 // src/scanner/OnnxNerScanner.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 var path3 = __toESM(require("path"));
 var os = __toESM(require("os"));
 var MODEL_ID = "Xenova/bert-base-multilingual-cased-ner-hrl";
@@ -35518,7 +35608,7 @@ var OnnxNerScanner = class {
   }
   getPluginDir() {
     const { adapter } = this.app.vault;
-    if (!(adapter instanceof import_obsidian11.FileSystemAdapter))
+    if (!(adapter instanceof import_obsidian12.FileSystemAdapter))
       return null;
     return path3.join(
       adapter.getBasePath(),
@@ -35544,7 +35634,7 @@ var OnnxNerScanner = class {
     }
   }
   async _doLoad() {
-    const notice = new import_obsidian11.Notice("Chargement du mod\xE8le NER (premi\xE8re utilisation \u2014 ~66 Mo)\u2026", 0);
+    const notice = new import_obsidian12.Notice("Chargement du mod\xE8le NER (premi\xE8re utilisation \u2014 ~66 Mo)\u2026", 0);
     try {
       const t2 = await Promise.resolve().then(() => (init_transformers(), transformers_exports));
       const { env: env3, pipeline: pipeline2 } = t2;
@@ -35564,7 +35654,7 @@ var OnnxNerScanner = class {
       env3.allowLocalModels = false;
       _pipeline = await pipeline2("token-classification", MODEL_ID);
       notice.hide();
-      new import_obsidian11.Notice("\u2713 Mod\xE8le NER charg\xE9", 3e3);
+      new import_obsidian12.Notice("\u2713 Mod\xE8le NER charg\xE9", 3e3);
     } catch (e) {
       notice.hide();
       const err = e;
@@ -35952,9 +36042,9 @@ var DictionaryLoader = class {
 };
 
 // src/ui/DictScanReviewModal.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 init_i18n();
-var DictScanReviewModal = class extends import_obsidian12.Modal {
+var DictScanReviewModal = class extends import_obsidian13.Modal {
   constructor(app, plugin, file, results, existingReplacements) {
     super(app);
     // remplacement fixe pour les entrées word-to-word
@@ -36105,7 +36195,7 @@ var DictScanReviewModal = class extends import_obsidian12.Modal {
     const mappingPath = `${this.plugin.settings.mappingFolder}/${this.file.basename}.mapping.json`;
     let store;
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
-    if (mappingFile instanceof import_obsidian12.TFile) {
+    if (mappingFile instanceof import_obsidian13.TFile) {
       const data = JSON.parse(await this.app.vault.read(mappingFile));
       store = MappingStore.fromJSON(data);
     } else {
@@ -36131,13 +36221,13 @@ var DictScanReviewModal = class extends import_obsidian12.Modal {
       });
     }
     const json = JSON.stringify(store.toJSON(), null, 2);
-    if (mappingFile instanceof import_obsidian12.TFile) {
+    if (mappingFile instanceof import_obsidian13.TFile) {
       await this.app.vault.modify(mappingFile, json);
     } else {
       await this.app.vault.create(mappingPath, json);
     }
     const n = toCreate.length;
-    new import_obsidian12.Notice(t("notice.rulesCreated", String(n), n > 1 ? t("notice.rulesCreated.rules") : t("notice.rulesCreated.rule")));
+    new import_obsidian13.Notice(t("notice.rulesCreated", String(n), n > 1 ? t("notice.rulesCreated.rules") : t("notice.rulesCreated.rule")));
     void this.plugin.refresh();
     this.close();
   }
@@ -36722,13 +36812,18 @@ function markdownToCha(mdContent) {
   return out.join("\n");
 }
 function extractWordData(doc) {
-  return doc.cues.map((cue, index) => ({
-    index,
-    startTime: cue.startTime,
-    endTime: cue.endTime,
-    speaker: cue.speaker,
-    words: cue.words
-  })).filter((c) => c.words.some((w) => w.time !== ""));
+  return doc.cues.map((cue, index) => {
+    const total = cue.words.length;
+    const timed = cue.words.filter((w) => w.time !== "").length;
+    return {
+      index,
+      startTime: cue.startTime,
+      endTime: cue.endTime,
+      speaker: cue.speaker,
+      words: cue.words,
+      wordTimestampRate: total > 0 ? timed / total : 0
+    };
+  });
 }
 var MD_CUE_RE = /^(?:\*\*([^*]+)\*\*\s+)?\[[\d:]+\]\s*(?::\s*)?(.*)$/;
 function markdownToVtt(mdContent, wordData) {
@@ -36859,6 +36954,72 @@ ${audioMeta}<style type="text/css">`,
   ].join("\n");
   return { html, mismatch };
 }
+function markdownToEaf(mdContent, wordData, audioSource) {
+  const bodyMatch = /^---\n[\s\S]*?\n---\n+([\s\S]*)$/.exec(mdContent);
+  const body = bodyMatch ? bodyMatch[1] : mdContent;
+  const cueLines = body.split("\n").filter((l) => MD_CUE_RE.test(l.trim()));
+  const mismatch = cueLines.length !== wordData.length;
+  const count = Math.min(cueLines.length, wordData.length);
+  const tierMap = /* @__PURE__ */ new Map();
+  const timeSlotMap = /* @__PURE__ */ new Map();
+  let tsCounter = 0;
+  let annCounter = 0;
+  const getOrAddTs = (ms) => {
+    if (timeSlotMap.has(ms))
+      return timeSlotMap.get(ms);
+    const id = `ts${++tsCounter}`;
+    timeSlotMap.set(ms, id);
+    return id;
+  };
+  for (let i2 = 0; i2 < count; i2++) {
+    const m = MD_CUE_RE.exec(cueLines[i2].trim());
+    const speaker = (m[1]?.trim() || wordData[i2].speaker || "_transcript").trim();
+    const text = m[2]?.trim() ?? "";
+    if (!text)
+      continue;
+    const ts1 = getOrAddTs(tsToMs(wordData[i2].startTime));
+    const ts2 = getOrAddTs(tsToMs(wordData[i2].endTime));
+    const ann = { id: `a${++annCounter}`, ts1, ts2, text };
+    if (!tierMap.has(speaker))
+      tierMap.set(speaker, []);
+    tierMap.get(speaker).push(ann);
+  }
+  const date = (/* @__PURE__ */ new Date()).toISOString().replace(/\.\d{3}Z$/, "+00:00");
+  const out = [];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>');
+  out.push(`<ANNOTATION_DOCUMENT AUTHOR="" DATE="${date}" FORMAT="3.0" VERSION="3.0"`);
+  out.push('  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"');
+  out.push('  xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">');
+  out.push('  <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds">');
+  if (audioSource) {
+    out.push(`    <MEDIA_DESCRIPTOR MEDIA_URL="${escapeHtml(audioSource)}" MIME_TYPE="audio/x-wav" RELATIVE_MEDIA_URL="" TIME_ORIGIN="0"/>`);
+  }
+  out.push("  </HEADER>");
+  out.push("  <TIME_ORDER>");
+  for (const [ms, id] of [...timeSlotMap.entries()].sort((a, b) => a[0] - b[0])) {
+    out.push(`    <TIME_SLOT TIME_SLOT_ID="${id}" TIME_VALUE="${ms}"/>`);
+  }
+  out.push("  </TIME_ORDER>");
+  for (const [speaker, anns] of tierMap) {
+    out.push(`  <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="${escapeHtml(speaker)}">`);
+    for (const ann of anns) {
+      out.push("    <ANNOTATION>");
+      out.push(`      <ALIGNABLE_ANNOTATION ANNOTATION_ID="${ann.id}" TIME_SLOT_REF1="${ann.ts1}" TIME_SLOT_REF2="${ann.ts2}">`);
+      out.push(`        <ANNOTATION_VALUE>${escapeHtml(ann.text)}</ANNOTATION_VALUE>`);
+      out.push("      </ALIGNABLE_ANNOTATION>");
+      out.push("    </ANNOTATION>");
+    }
+    out.push("  </TIER>");
+  }
+  out.push('  <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false" LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true"/>');
+  out.push(`  <CONSTRAINT DESCRIPTION="Time subdivision of parent annotation's time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision"/>`);
+  out.push('  <CONSTRAINT DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refer to the same time slot as the parent" STEREOTYPE="Symbolic_Subdivision"/>');
+  out.push('  <CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association"/>');
+  out.push('  <CONSTRAINT DESCRIPTION="Time alignment of a parent annotation" STEREOTYPE="Included_In"/>');
+  out.push("</ANNOTATION_DOCUMENT>");
+  out.push("");
+  return { eaf: out.join("\n"), mismatch };
+}
 function lineGroup(line) {
   if (line.type === "meta" || line.type === "dependent")
     return "structural";
@@ -36868,7 +37029,7 @@ function lineGroup(line) {
 }
 
 // src/mappings/ScopeResolver.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 var ScopeResolver = class {
   constructor(vault, mappingFolder) {
     this.vault = vault;
@@ -36878,9 +37039,9 @@ var ScopeResolver = class {
   collectMappingFiles(folder) {
     const files = [];
     for (const child of folder.children) {
-      if (child instanceof import_obsidian13.TFile && child.name.endsWith(".mapping.json")) {
+      if (child instanceof import_obsidian14.TFile && child.name.endsWith(".mapping.json")) {
         files.push(child);
-      } else if (child instanceof import_obsidian13.TFolder) {
+      } else if (child instanceof import_obsidian14.TFolder) {
         files.push(...this.collectMappingFiles(child));
       }
     }
@@ -36888,7 +37049,7 @@ var ScopeResolver = class {
   }
   async getRulesFor(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian13.TFolder))
+    if (!(folder instanceof import_obsidian14.TFolder))
       return [];
     const allRules = [];
     for (const child of this.collectMappingFiles(folder)) {
@@ -36913,7 +37074,7 @@ var ScopeResolver = class {
   // Retourne aussi le store et le chemin JSON pour permettre la modification.
   async findRuleByTerm(term) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian13.TFolder))
+    if (!(folder instanceof import_obsidian14.TFolder))
       return null;
     const needle = term.toLowerCase();
     for (const child of this.collectMappingFiles(folder)) {
@@ -36934,7 +37095,7 @@ var ScopeResolver = class {
   // Utilisé par l'onglet Mappings du panneau latéral pour l'édition et la suppression.
   async getRulesWithLocation(filePath) {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian13.TFolder))
+    if (!(folder instanceof import_obsidian14.TFolder))
       return [];
     const result = [];
     for (const child of this.collectMappingFiles(folder)) {
@@ -36960,7 +37121,7 @@ var ScopeResolver = class {
   // Utilisé par l'onglet Mappings en mode "toutes les règles".
   async getAllRulesWithLocation() {
     const folder = this.vault.getAbstractFileByPath(this.mappingFolder);
-    if (!(folder instanceof import_obsidian13.TFolder))
+    if (!(folder instanceof import_obsidian14.TFolder))
       return [];
     const result = [];
     for (const child of this.collectMappingFiles(folder)) {
@@ -36980,7 +37141,7 @@ var ScopeResolver = class {
   async getRulesFromMappingFile(mappingFilename) {
     const path4 = `${this.mappingFolder}/${mappingFilename}`;
     const file = this.vault.getAbstractFileByPath(path4);
-    if (!(file instanceof import_obsidian13.TFile))
+    if (!(file instanceof import_obsidian14.TFile))
       return [];
     try {
       const data = JSON.parse(await this.vault.read(file));
@@ -36994,7 +37155,7 @@ var ScopeResolver = class {
   async saveStore(store, filePath) {
     const file = this.vault.getAbstractFileByPath(filePath);
     const json = JSON.stringify(store.toJSON(), null, 2);
-    if (file instanceof import_obsidian13.TFile) {
+    if (file instanceof import_obsidian14.TFile) {
       await this.vault.modify(file, json);
     }
   }
@@ -37017,7 +37178,7 @@ var PseudonymizationEngine = class {
 
 // src/main.ts
 var CONVERTIBLE_EXTS = ["srt", "cha", "chat", "vtt", "html"];
-var PseudObsPlugin = class extends import_obsidian14.Plugin {
+var PseudObsPlugin = class extends import_obsidian15.Plugin {
   constructor() {
     super(...arguments);
     // Cache synchrone pour le surlignage CM6 (mis à jour de façon asynchrone)
@@ -37050,14 +37211,14 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) => {
         const v = leaf?.view;
-        if (v instanceof import_obsidian14.MarkdownView)
+        if (v instanceof import_obsidian15.MarkdownView)
           this.lastMarkdownView = v;
         void this.refresh();
       })
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (file instanceof import_obsidian14.TFile && !file.name.endsWith(".mapping.json") && file === this.app.workspace.getActiveFile()) {
+        if (file instanceof import_obsidian15.TFile && !file.name.endsWith(".mapping.json") && file === this.app.workspace.getActiveFile()) {
           void this.refresh();
         }
       })
@@ -37070,7 +37231,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     }
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if (!(file instanceof import_obsidian14.TFile))
+        if (!(file instanceof import_obsidian15.TFile))
           return;
         if (!CONVERTIBLE_EXTS.includes(file.extension.toLowerCase()))
           return;
@@ -37083,7 +37244,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       this.app.vault.on("rename", (file, oldPath) => {
         if (this._renamingRelated)
           return;
-        if (!(file instanceof import_obsidian14.TFile))
+        if (!(file instanceof import_obsidian15.TFile))
           return;
         void this.onTranscriptionRenamed(file, oldPath);
       })
@@ -37146,6 +37307,11 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       callback: () => void this.exportCurrentFileAsHtml()
     });
     this.addCommand({
+      id: "export-as-eaf",
+      name: t("command.exportAsEaf"),
+      callback: () => void this.exportCurrentFileAsEaf()
+    });
+    this.addCommand({
       id: "pseudonymize-selection",
       name: t("command.pseudonymizeSelection"),
       editorCheckCallback: (checking, editor) => {
@@ -37179,7 +37345,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
             (item) => item.setTitle(t("contextMenu.cancelPseudonymization", truncate(bare))).setIcon("undo").onClick(async () => {
               const location = await this.scopeResolver.findRuleByTerm(bare);
               if (!location) {
-                new import_obsidian14.Notice(t("notice.ruleNotFound"));
+                new import_obsidian15.Notice(t("notice.ruleNotFound"));
                 return;
               }
               editor.replaceSelection(location.rule.source);
@@ -37205,7 +37371,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
               if (location) {
                 new EditRuleModal(this.app, this, location).open();
               } else {
-                new import_obsidian14.Notice(t("notice.ruleNotFound"));
+                new import_obsidian15.Notice(t("notice.ruleNotFound"));
               }
             })
           );
@@ -37218,11 +37384,11 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         );
         menu.addItem(
           (item) => item.setTitle(t("contextMenu.coulmont")).setIcon("book-user").onClick(async () => {
-            const notice = new import_obsidian14.Notice("Recherche sur coulmont.com\u2026", 0);
+            const notice = new import_obsidian15.Notice("Recherche sur coulmont.com\u2026", 0);
             const suggestions = await this.fetchCoulmont(selection);
             notice.hide();
             if (suggestions.length === 0) {
-              new import_obsidian14.Notice(`Aucun r\xE9sultat Coulmont pour "${selection}".`);
+              new import_obsidian15.Notice(`Aucun r\xE9sultat Coulmont pour "${selection}".`);
               return;
             }
             new RuleModal(this.app, this, selection, "", suggestions).open();
@@ -37290,7 +37456,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async declareException(term, contextBefore, contextAfter) {
     const location = await this.scopeResolver.findRuleByTerm(term);
     if (!location) {
-      new import_obsidian14.Notice(t("notice.ruleNotFound"));
+      new import_obsidian15.Notice(t("notice.ruleNotFound"));
       return;
     }
     const existing = location.rule.ignoredOccurrences ?? [];
@@ -37394,18 +37560,18 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       const audioToMove = /* @__PURE__ */ new Set();
       for (const ext of AUDIO_EXTS) {
         const candidate = sourceFolder ? `${sourceFolder}/${base}.${ext}` : `${base}.${ext}`;
-        if (this.app.vault.getAbstractFileByPath(candidate) instanceof import_obsidian14.TFile) {
+        if (this.app.vault.getAbstractFileByPath(candidate) instanceof import_obsidian15.TFile) {
           audioToMove.add(candidate);
         }
       }
       try {
         const mdFile = this.app.vault.getAbstractFileByPath(newMdPath);
-        if (mdFile instanceof import_obsidian14.TFile) {
+        if (mdFile instanceof import_obsidian15.TFile) {
           const mdContent = await this.app.vault.read(mdFile);
           const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(mdContent);
           if (audioMatch) {
             const refPath = sourceFolder ? `${sourceFolder}/${audioMatch[1]}` : audioMatch[1];
-            if (this.app.vault.getAbstractFileByPath(refPath) instanceof import_obsidian14.TFile) {
+            if (this.app.vault.getAbstractFileByPath(refPath) instanceof import_obsidian15.TFile) {
               audioToMove.add(refPath);
             }
           }
@@ -37414,7 +37580,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       }
       for (const audioPath of audioToMove) {
         const audioFile = this.app.vault.getAbstractFileByPath(audioPath);
-        if (!(audioFile instanceof import_obsidian14.TFile))
+        if (!(audioFile instanceof import_obsidian15.TFile))
           continue;
         const newAudioPath = targetFolder ? `${targetFolder}/${audioFile.name}` : audioFile.name;
         if (audioPath !== newAudioPath) {
@@ -37438,7 +37604,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       return null;
     const folder = file.parent;
     const existing = new Set(
-      (folder?.children ?? []).filter((c) => c instanceof import_obsidian14.TFile).map((c) => c.basename.toLowerCase())
+      (folder?.children ?? []).filter((c) => c instanceof import_obsidian15.TFile).map((c) => c.basename.toLowerCase())
     );
     let n = 1;
     while (existing.has(`transcript_${n}`))
@@ -37458,7 +37624,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     try {
       await this.app.vault.rename(file, newPath);
       const newFile = this.app.vault.getAbstractFileByPath(newPath);
-      if (newFile instanceof import_obsidian14.TFile) {
+      if (newFile instanceof import_obsidian15.TFile) {
         await this.cascadeRelatedRename(oldBase, newBasename, newFile, oldFilePath);
       }
     } finally {
@@ -37536,13 +37702,13 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     for (const root of [s.exportsFolder, s.exportFinalFolder].filter(Boolean)) {
       for (const ext of EXPORT_EXTS) {
         const exportFile = this.app.vault.getAbstractFileByPath(`${root}/${oldBase}.pseudonymized.${ext}`);
-        if (!(exportFile instanceof import_obsidian14.TFile))
+        if (!(exportFile instanceof import_obsidian15.TFile))
           continue;
         const newExportPath = `${root}/${newBase}.pseudonymized.${ext}`;
         await this.app.vault.rename(exportFile, newExportPath);
         if (ext === "md") {
           const ef = this.app.vault.getAbstractFileByPath(newExportPath);
-          if (ef instanceof import_obsidian14.TFile) {
+          if (ef instanceof import_obsidian15.TFile) {
             try {
               await this.app.fileManager.processFrontMatter(ef, (fm) => {
                 if (fm["pseudobs-source"] !== void 0) {
@@ -37560,7 +37726,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     for (const ext of AUDIO_EXTS) {
       const audioPath = fileFolder ? `${fileFolder}/${oldBase}.${ext}` : `${oldBase}.${ext}`;
       const audioFile = this.app.vault.getAbstractFileByPath(audioPath);
-      if (!(audioFile instanceof import_obsidian14.TFile))
+      if (!(audioFile instanceof import_obsidian15.TFile))
         continue;
       const oldAudioName = audioFile.name;
       const newAudioName = `${newBase}.${ext}`;
@@ -37577,7 +37743,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
           if (!audioRenamed.has(oldAudioName)) {
             const oldAudioPath = fileFolder ? `${fileFolder}/${oldAudioName}` : oldAudioName;
             const audioFile = this.app.vault.getAbstractFileByPath(oldAudioPath);
-            if (audioFile instanceof import_obsidian14.TFile) {
+            if (audioFile instanceof import_obsidian15.TFile) {
               const ext = oldAudioName.split(".").pop() ?? "";
               const newAudioName = ext ? `${newBase}.${ext}` : newBase;
               const newAudioPath = fileFolder ? `${fileFolder}/${newAudioName}` : newAudioName;
@@ -37593,7 +37759,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       try {
         await this.app.fileManager.processFrontMatter(file, (fm) => {
           const current = fm["pseudobs-audio"];
-          if (current && audioRenamed.has(current)) {
+          if (typeof current === "string" && audioRenamed.has(current)) {
             fm["pseudobs-audio"] = audioRenamed.get(current);
           }
         });
@@ -37606,7 +37772,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         continue;
       const srcPath = fileFolder ? `${fileFolder}/${oldBase}.${ext}` : `${oldBase}.${ext}`;
       const srcFile = this.app.vault.getAbstractFileByPath(srcPath);
-      if (!(srcFile instanceof import_obsidian14.TFile))
+      if (!(srcFile instanceof import_obsidian15.TFile))
         continue;
       const newSrcPath = fileFolder ? `${fileFolder}/${newBase}.${ext}` : `${newBase}.${ext}`;
       await this.app.vault.rename(srcFile, newSrcPath);
@@ -37616,9 +37782,9 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   findInMappings(filename) {
     const search = (folder) => {
       for (const child of folder.children) {
-        if (child instanceof import_obsidian14.TFile && child.name === filename)
+        if (child instanceof import_obsidian15.TFile && child.name === filename)
           return child;
-        if (child instanceof import_obsidian14.TFolder) {
+        if (child instanceof import_obsidian15.TFolder) {
           const found = search(child);
           if (found)
             return found;
@@ -37627,7 +37793,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       return null;
     };
     const root = this.app.vault.getAbstractFileByPath(this.settings.mappingFolder);
-    return root instanceof import_obsidian14.TFolder ? search(root) : null;
+    return root instanceof import_obsidian15.TFolder ? search(root) : null;
   }
   // --- Coulmont ---
   // Interroge l'outil de Baptiste Coulmont pour suggérer un prénom équivalent.
@@ -37638,7 +37804,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async fetchCoulmont(prenom) {
     try {
       const url2 = `https://coulmont.com/bac/results.php?search=${encodeURIComponent(prenom)}`;
-      const response = await (0, import_obsidian14.requestUrl)({ url: url2, method: "GET" });
+      const response = await (0, import_obsidian15.requestUrl)({ url: url2, method: "GET" });
       const doc = new DOMParser().parseFromString(response.text, "text/html");
       const els = doc.querySelectorAll(
         "#hero > div > div > div > div > p.mb-1.mb-md-1 > a"
@@ -37684,7 +37850,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         this.highlightData = { sources: [], replacements: [], nerCandidates, exceptionRanges: [] };
       }
     }
-    const view = this.app.workspace.getActiveViewOfType(import_obsidian14.MarkdownView) ?? this.lastMarkdownView;
+    const view = this.app.workspace.getActiveViewOfType(import_obsidian15.MarkdownView) ?? this.lastMarkdownView;
     const cm = view?.editor && view.editor.cm;
     cm?.dispatch({ effects: highlightDataChanged.of(void 0) });
   }
@@ -37729,8 +37895,8 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       const basename = file.basename;
       const folder = file.parent?.path ?? "";
       const mdPath = folder ? `${folder}/${basename}.md` : `${basename}.md`;
-      if (this.app.vault.getAbstractFileByPath(mdPath) instanceof import_obsidian14.TFile) {
-        new import_obsidian14.Notice(t("notice.conversionSkipped", basename, file.name));
+      if (this.app.vault.getAbstractFileByPath(mdPath) instanceof import_obsidian15.TFile) {
+        new import_obsidian15.Notice(t("notice.conversionSkipped", basename, file.name));
         return;
       }
       let audioFilename = this.findAudioInVaultFolder(folder);
@@ -37782,23 +37948,22 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       }
       await this.app.fileManager.trashFile(file);
       const mdFile = this.app.vault.getAbstractFileByPath(mdPath);
-      if (mdFile instanceof import_obsidian14.TFile) {
+      if (mdFile instanceof import_obsidian15.TFile) {
         await this.app.workspace.getLeaf().openFile(mdFile);
       }
-      new import_obsidian14.Notice(t("notice.converted", file.name, `${basename}.md`));
+      new import_obsidian15.Notice(t("notice.converted", file.name, `${basename}.md`));
     } catch (e) {
-      new import_obsidian14.Notice(t("notice.conversionError", file.name, e.message));
+      new import_obsidian15.Notice(t("notice.conversionError", file.name, e.message));
     }
   }
   /** Retourne le nom du premier fichier audio trouvé dans un dossier du vault. */
   findAudioInVaultFolder(folderPath) {
     const AUDIO_EXTS = /* @__PURE__ */ new Set(["m4a", "mp3", "wav", "ogg", "flac", "mp4", "aac", "aiff"]);
     const folder = this.app.vault.getAbstractFileByPath(folderPath || "/");
-    if (!(folder instanceof import_obsidian14.TFolder))
+    if (!(folder instanceof import_obsidian15.TFolder))
       return null;
-    const audioFile = folder.children.find(
-      (f) => f instanceof import_obsidian14.TFile && AUDIO_EXTS.has(f.extension.toLowerCase())
-    );
+    const isAudioTFile = (f) => f instanceof import_obsidian15.TFile && AUDIO_EXTS.has(f.extension.toLowerCase());
+    const audioFile = folder.children.find(isAudioTFile);
     return audioFile?.name ?? null;
   }
   /**
@@ -37813,14 +37978,14 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         return null;
       const audioFilename = sourcePath.replace(/\\/g, "/").split("/").pop();
       const destPath = targetFolder ? `${targetFolder}/${audioFilename}` : audioFilename;
-      if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian14.TFile) {
+      if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian15.TFile) {
         return audioFilename;
       }
       const buffer = await nodeFs.promises.readFile(sourcePath);
       await this.ensureFolder(targetFolder);
       const arrayBuf = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       await this.app.vault.createBinary(destPath, arrayBuf);
-      new import_obsidian14.Notice(t("notice.audioImported", audioFilename));
+      new import_obsidian15.Notice(t("notice.audioImported", audioFilename));
       return audioFilename;
     } catch {
       return null;
@@ -37861,8 +38026,8 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     }
     await this.ensureFolder(targetFolder);
     const destPath = `${targetFolder}/${browserFile.name}`;
-    if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian14.TFile) {
-      new import_obsidian14.Notice(t("notice.fileExists", browserFile.name));
+    if (this.app.vault.getAbstractFileByPath(destPath) instanceof import_obsidian15.TFile) {
+      new import_obsidian15.Notice(t("notice.fileExists", browserFile.name));
       return;
     }
     await this.app.vault.create(destPath, raw);
@@ -37900,18 +38065,18 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async pseudonymizeActiveFile() {
     const file = this.getActiveOrLastFile();
     if (!file) {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian14.Notice(t("notice.formatUnsupported", ext));
+      new import_obsidian15.Notice(t("notice.formatUnsupported", ext));
       return;
     }
     const content = await this.app.vault.read(file);
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new import_obsidian14.Notice(t("notice.noRules"));
+      new import_obsidian15.Notice(t("notice.noRules"));
       return;
     }
     const marker = this.settings.useMarkerInExport ? { open: this.settings.markerOpen, close: this.settings.markerClose } : void 0;
@@ -37944,26 +38109,26 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     await this.ensureFolder(exportBase);
     const outputPath = `${exportBase}/${file.basename}.pseudonymized.${ext}`;
     const existing = this.app.vault.getAbstractFileByPath(outputPath);
-    if (existing instanceof import_obsidian14.TFile) {
+    if (existing instanceof import_obsidian15.TFile) {
       await this.app.vault.modify(existing, pseudonymized);
     } else {
       await this.app.vault.create(outputPath, pseudonymized);
     }
-    new import_obsidian14.Notice(t("notice.exportDone", String(rules.length), outputPath));
+    new import_obsidian15.Notice(t("notice.exportDone", String(rules.length), outputPath));
   }
   async scanCurrentFileNer() {
     if (this.settings.nerBackend !== "transformers-js") {
-      new import_obsidian14.Notice("La d\xE9tection NER transformers.js n'est pas activ\xE9e.\nActivez-la dans Param\xE8tres \u2192 Pseudonymizer Tool.");
+      new import_obsidian15.Notice("La d\xE9tection NER transformers.js n'est pas activ\xE9e.\nActivez-la dans Param\xE8tres \u2192 Pseudonymizer Tool.");
       return;
     }
     const file = this.getActiveOrLastFile();
     if (!file) {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian14.Notice(t("notice.formatUnsupported", ext));
+      new import_obsidian15.Notice(t("notice.formatUnsupported", ext));
       return;
     }
     try {
@@ -37973,31 +38138,31 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         functionWords: new Set(this.settings.nerFunctionWords.map((w) => w.toLowerCase()))
       });
       if (occurrences.length === 0) {
-        new import_obsidian14.Notice(t("notice.noNerEntities"));
+        new import_obsidian15.Notice(t("notice.noNerEntities"));
         return;
       }
       const unique = [...new Set(occurrences.map((o) => o.text).filter(Boolean))];
       this.nerCandidateFile = file;
       this.nerCandidates = unique;
       void this.refresh();
-      new import_obsidian14.Notice(t("notice.nerEntitiesFound", String(unique.length), unique.length > 1 ? t("notice.nerEntitiesFound.entities") : t("notice.nerEntitiesFound.entity")), 6e3);
+      new import_obsidian15.Notice(t("notice.nerEntitiesFound", String(unique.length), unique.length > 1 ? t("notice.nerEntitiesFound.entities") : t("notice.nerEntitiesFound.entity")), 6e3);
     } catch (e) {
-      new import_obsidian14.Notice(`NER error: ${e.message}`);
+      new import_obsidian15.Notice(`NER error: ${e.message}`);
     }
   }
   async scanCurrentFileWithDictionaries(dictIds) {
     if (!this.dictionaryLoader.hasDetection()) {
-      new import_obsidian14.Notice(t("notice.noDictDetection"));
+      new import_obsidian15.Notice(t("notice.noDictDetection"));
       return;
     }
     const file = this.getActiveOrLastFile();
     if (!file) {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const ext = file.extension.toLowerCase();
     if (!["srt", "cha", "chat", "md", "txt"].includes(ext)) {
-      new import_obsidian14.Notice(t("notice.formatUnsupported", ext));
+      new import_obsidian15.Notice(t("notice.formatUnsupported", ext));
       return;
     }
     const content = await this.app.vault.read(file);
@@ -38005,7 +38170,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     const existingSources = new Set(rules.map((r) => r.source.toLowerCase()));
     const occurrences = this.dictionaryLoader.scanText(content, file.path, existingSources, dictIds);
     if (occurrences.length === 0) {
-      new import_obsidian14.Notice(t("notice.noDictEntities"));
+      new import_obsidian15.Notice(t("notice.noDictEntities"));
       return;
     }
     const seenTerms = /* @__PURE__ */ new Map();
@@ -38049,7 +38214,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       });
     }
     if (results.length === 0) {
-      new import_obsidian14.Notice("Aucun remplacement disponible pour les entit\xE9s trouv\xE9es.");
+      new import_obsidian15.Notice("Aucun remplacement disponible pour les entit\xE9s trouv\xE9es.");
       return;
     }
     this.nerCandidateFile = file;
@@ -38066,20 +38231,20 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async exportMappingForFile(file) {
     const mappingPath = `${this.settings.mappingFolder}/${file.basename}.mapping.json`;
     const mappingFile = this.app.vault.getAbstractFileByPath(mappingPath);
-    if (!(mappingFile instanceof import_obsidian14.TFile)) {
-      new import_obsidian14.Notice(t("notice.noMapping", file.name));
+    if (!(mappingFile instanceof import_obsidian15.TFile)) {
+      new import_obsidian15.Notice(t("notice.noMapping", file.name));
       return;
     }
     const content = await this.app.vault.read(mappingFile);
     await this.ensureFolder(this.settings.exportsFolder);
     const destPath = `${this.settings.exportsFolder}/${file.basename}.mapping.json`;
     const existing = this.app.vault.getAbstractFileByPath(destPath);
-    if (existing instanceof import_obsidian14.TFile) {
+    if (existing instanceof import_obsidian15.TFile) {
       await this.app.vault.modify(existing, content);
     } else {
       await this.app.vault.create(destPath, content);
     }
-    new import_obsidian14.Notice(t("notice.mappingExported", destPath));
+    new import_obsidian15.Notice(t("notice.mappingExported", destPath));
   }
   /**
    * Exporte le fichier Markdown noScribe actif en WebVTT pseudonymisé.
@@ -38088,26 +38253,26 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async exportCurrentFileAsVtt() {
     const file = this.getActiveOrLastFile();
     if (!file || file.extension !== "md") {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const content = await this.app.vault.read(file);
     const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
     const format = formatMatch?.[1];
     if (format !== "vtt" && format !== "html") {
-      new import_obsidian14.Notice(t("notice.notNoScribeFormat"));
+      new import_obsidian15.Notice(t("notice.notNoScribeFormat"));
       return;
     }
     const rawBasename = file.basename.replace(/\.pseudonymized$/, "");
     const wordsJson = await this.findWordsJson(rawBasename);
     if (!wordsJson) {
-      new import_obsidian14.Notice(t("notice.wordsJsonMissing", rawBasename));
+      new import_obsidian15.Notice(t("notice.wordsJsonMissing", rawBasename));
       return;
     }
     const wordData = JSON.parse(wordsJson);
     const { vtt, mismatch } = markdownToVtt(content, wordData);
     if (mismatch) {
-      new import_obsidian14.Notice(t("notice.vttMismatch"));
+      new import_obsidian15.Notice(t("notice.vttMismatch"));
     }
     await this.writeExport(file, "vtt", vtt);
   }
@@ -38118,19 +38283,19 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async exportCurrentFileAsHtml() {
     const file = this.getActiveOrLastFile();
     if (!file || file.extension !== "md") {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const content = await this.app.vault.read(file);
     const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
     if (formatMatch?.[1] !== "html") {
-      new import_obsidian14.Notice(t("notice.notNoScribeFormat"));
+      new import_obsidian15.Notice(t("notice.notNoScribeFormat"));
       return;
     }
     const rawBasename = file.basename.replace(/\.pseudonymized$/, "");
     const wordsJson = await this.findWordsJson(rawBasename);
     if (!wordsJson) {
-      new import_obsidian14.Notice(t("notice.wordsJsonMissing", rawBasename));
+      new import_obsidian15.Notice(t("notice.wordsJsonMissing", rawBasename));
       return;
     }
     const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(content);
@@ -38138,9 +38303,41 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     const wordData = JSON.parse(wordsJson);
     const { html, mismatch } = markdownToNoScribeHtml(content, wordData, audioSource);
     if (mismatch) {
-      new import_obsidian14.Notice(t("notice.vttMismatch"));
+      new import_obsidian15.Notice(t("notice.vttMismatch"));
     }
     await this.writeExport(file, "html", html, "notice.htmlExported");
+  }
+  /**
+   * Exporte le fichier Markdown noScribe actif au format EAF (ELAN).
+   * Lit le .words.json correspondant pour les timestamps précis.
+   */
+  async exportCurrentFileAsEaf() {
+    const file = this.getActiveOrLastFile();
+    if (!file || file.extension !== "md") {
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
+      return;
+    }
+    const content = await this.app.vault.read(file);
+    const formatMatch = /^pseudobs-format:\s*(\w+)/m.exec(content);
+    const format = formatMatch?.[1];
+    if (format !== "vtt" && format !== "html") {
+      new import_obsidian15.Notice(t("notice.notNoScribeFormat"));
+      return;
+    }
+    const rawBasename = file.basename.replace(/\.pseudonymized$/, "");
+    const wordsJson = await this.findWordsJson(rawBasename);
+    if (!wordsJson) {
+      new import_obsidian15.Notice(t("notice.wordsJsonMissing", rawBasename));
+      return;
+    }
+    const audioMatch = /^pseudobs-audio:\s*"([^"]+)"/m.exec(content);
+    const audioSource = audioMatch?.[1];
+    const wordData = JSON.parse(wordsJson);
+    const { eaf, mismatch } = markdownToEaf(content, wordData, audioSource);
+    if (mismatch) {
+      new import_obsidian15.Notice(t("notice.vttMismatch"));
+    }
+    await this.writeExport(file, "eaf", eaf, "notice.eafExported");
   }
   /**
    * Re-exporte le Markdown pseudonymisé courant au format d'origine (srt ou cha).
@@ -38148,7 +38345,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async exportCurrentFileAsFormat(targetFormat) {
     const file = this.getActiveOrLastFile();
     if (!file || file.extension !== "md") {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const content = await this.app.vault.read(file);
@@ -38156,7 +38353,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     const format = formatMatch?.[1];
     const expectedFormat = targetFormat === "cha" ? "chat" : "srt";
     if (format !== expectedFormat) {
-      new import_obsidian14.Notice(t("notice.notNoScribeFormat"));
+      new import_obsidian15.Notice(t("notice.notNoScribeFormat"));
       return;
     }
     const ext = targetFormat === "cha" ? "cha" : "srt";
@@ -38175,9 +38372,9 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
         const nodePath = require("path");
         await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
         await nodeFs.promises.writeFile(dest.externalPath, content, "utf-8");
-        new import_obsidian14.Notice(t(noticeKey, dest.externalPath));
+        new import_obsidian15.Notice(t(noticeKey, dest.externalPath));
       } catch (e) {
-        new import_obsidian14.Notice(`Export error: ${e.message}`);
+        new import_obsidian15.Notice(`Export error: ${e.message}`);
       }
       return;
     }
@@ -38186,21 +38383,21 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
     if (dir)
       await this.ensureFolder(dir);
     const existing = this.app.vault.getAbstractFileByPath(outputPath);
-    if (existing instanceof import_obsidian14.TFile) {
+    if (existing instanceof import_obsidian15.TFile) {
       await this.app.vault.modify(existing, content);
     } else {
       await this.app.vault.create(outputPath, content);
     }
-    new import_obsidian14.Notice(t(noticeKey, outputPath));
+    new import_obsidian15.Notice(t(noticeKey, outputPath));
   }
   /** Cherche <basename>.words.json dans le dossier mappings et ses sous-dossiers. */
   async findWordsJson(basename) {
     const filename = `${basename}.words.json`;
     const search = (folder) => {
       for (const child of folder.children) {
-        if (child instanceof import_obsidian14.TFile && child.name === filename)
+        if (child instanceof import_obsidian15.TFile && child.name === filename)
           return child;
-        if (child instanceof import_obsidian14.TFolder) {
+        if (child instanceof import_obsidian15.TFolder) {
           const found = search(child);
           if (found)
             return found;
@@ -38209,7 +38406,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       return null;
     };
     const mappingRoot = this.app.vault.getAbstractFileByPath(this.settings.mappingFolder);
-    if (!(mappingRoot instanceof import_obsidian14.TFolder))
+    if (!(mappingRoot instanceof import_obsidian15.TFolder))
       return null;
     const wordsFile = search(mappingRoot);
     return wordsFile ? this.app.vault.read(wordsFile) : null;
@@ -38217,12 +38414,12 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
   async scanCurrentFile() {
     const file = this.getActiveOrLastFile();
     if (!file) {
-      new import_obsidian14.Notice(t("notice.noActiveFile"));
+      new import_obsidian15.Notice(t("notice.noActiveFile"));
       return;
     }
     const rules = await this.scopeResolver.getRulesFor(file.path);
     if (rules.length === 0) {
-      new import_obsidian14.Notice(t("notice.noRules"));
+      new import_obsidian15.Notice(t("notice.noRules"));
       return;
     }
     const content = await this.app.vault.read(file);
@@ -38231,7 +38428,7 @@ var PseudObsPlugin = class extends import_obsidian14.Plugin {
       wholeWordOnly: this.settings.wholeWordOnly
     });
     if (occurrences.length === 0) {
-      new import_obsidian14.Notice(t("notice.noOccurrences"));
+      new import_obsidian15.Notice(t("notice.noOccurrences"));
       return;
     }
     const occsByRule = /* @__PURE__ */ new Map();

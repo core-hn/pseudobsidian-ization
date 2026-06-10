@@ -478,7 +478,7 @@ export default class PseudObsPlugin extends Plugin {
           if (suffix === '.mapping.json') {
             try {
               const raw = await this.app.vault.read(found);
-              const data = JSON.parse(raw);
+              const data = JSON.parse(raw) as { scope?: { type: string; path: string }; mappings?: Array<{ scope?: { type: string; path: string } }> };
               let changed = false;
               if (data.scope?.type === 'file' && data.scope.path === file.path) {
                 data.scope.path = newMdPath;
@@ -635,7 +635,7 @@ export default class PseudObsPlugin extends Plugin {
     // 1. Mettre à jour pseudobs-source dans le frontmatter via l'API Obsidian
     if (file.extension === 'md') {
       try {
-        await this.app.fileManager.processFrontMatter(file, (fm) => {
+        await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
           if (fm['pseudobs-source'] !== undefined) {
             fm['pseudobs-source'] = `${newBase}.${file.extension}`;
           }
@@ -651,7 +651,7 @@ export default class PseudObsPlugin extends Plugin {
       if (suffix === '.mapping.json') {
         try {
           const raw = await this.app.vault.read(found);
-          const data = JSON.parse(raw);
+          const data = JSON.parse(raw) as { scope?: { type: string; path: string }; mappings?: Array<{ scope?: { type: string; path: string } }> };
           // Scope de niveau store (chemin du fichier de transcription)
           if (data.scope?.type === 'file' && data.scope.path === oldFilePath) {
             data.scope.path = file.path;
@@ -680,7 +680,7 @@ export default class PseudObsPlugin extends Plugin {
           const ef = this.app.vault.getAbstractFileByPath(newExportPath);
           if (ef instanceof TFile) {
             try {
-              await this.app.fileManager.processFrontMatter(ef, (fm) => {
+              await this.app.fileManager.processFrontMatter(ef, (fm: Record<string, unknown>) => {
                 if (fm['pseudobs-source'] !== undefined) {
                   fm['pseudobs-source'] = `${newBase}.${file.extension}`;
                 }
@@ -735,9 +735,9 @@ export default class PseudObsPlugin extends Plugin {
     // Mettre à jour pseudobs-audio dans le frontmatter via l'API Obsidian
     if (file.extension === 'md' && audioRenamed.size > 0) {
       try {
-        await this.app.fileManager.processFrontMatter(file, (fm) => {
+        await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
           const current = fm['pseudobs-audio'];
-          if (current && audioRenamed.has(current)) {
+          if (typeof current === 'string' && audioRenamed.has(current)) {
             fm['pseudobs-audio'] = audioRenamed.get(current);
           }
         });
@@ -984,9 +984,9 @@ export default class PseudObsPlugin extends Plugin {
     const AUDIO_EXTS = new Set(['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff']);
     const folder = this.app.vault.getAbstractFileByPath(folderPath || '/');
     if (!(folder instanceof TFolder)) return null;
-    const audioFile = folder.children.find(
-      (f) => f instanceof TFile && AUDIO_EXTS.has((f as TFile).extension.toLowerCase())
-    ) as TFile | undefined;
+    const isAudioTFile = (f: TAbstractFile): f is TFile =>
+      f instanceof TFile && AUDIO_EXTS.has(f.extension.toLowerCase());
+    const audioFile = folder.children.find(isAudioTFile);
     return audioFile?.name ?? null;
   }
 
@@ -997,7 +997,7 @@ export default class PseudObsPlugin extends Plugin {
    */
   private async importAudioFromPath(sourcePath: string, targetFolder: string): Promise<string | null> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
       const nodeFs = require('fs') as typeof import('fs');
       if (!nodeFs.existsSync(sourcePath)) return null;
 
@@ -1086,7 +1086,7 @@ export default class PseudObsPlugin extends Plugin {
    */
   private async findAudioInSourceFolder(folderPath: string): Promise<string | null> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
       const nodeFs = require('fs') as typeof import('fs');
       const AUDIO_EXTS = new Set(['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff']);
       const entries = await nodeFs.promises.readdir(folderPath);
@@ -1472,9 +1472,9 @@ export default class PseudObsPlugin extends Plugin {
     if (dest.externalPath) {
       // Export hors vault via Node.js fs
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
         const nodeFs = require('fs') as typeof import('fs');
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
         const nodePath = require('path') as typeof import('path');
         await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
         await nodeFs.promises.writeFile(dest.externalPath, content, 'utf-8');

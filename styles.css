@@ -1118,13 +1118,16 @@
 
 /* ---- Bannière avertissement nom de fichier ---- */
 .pseudobs-filename-warning {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 5px;
   padding: 7px 10px;
   background: rgba(255, 160, 0, 0.1);
   border-bottom: 1px solid rgba(255, 160, 0, 0.35);
   font-size: 0.82em;
+}
+.pseudobs-filename-warning.pseudobs-fw-visible {
+  display: flex;
 }
 .pseudobs-fw-top { display: flex; align-items: center; gap: 6px; }
 .pseudobs-fw-icon { color: var(--text-warning); flex-shrink: 0; }
@@ -1224,6 +1227,7 @@
 }
 
 .pseudobs-corpus-class-heading {
+  flex: 1;
   font-size: 0.82em;
   font-weight: 600;
   text-transform: uppercase;
