@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
 import { FolderSuggest } from './ui/FolderSuggest';
 import type PseudObsPlugin from './main';
 import { OnboardingModal } from './ui/OnboardingModal';
@@ -78,203 +78,304 @@ export class PseudObsSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
+  private heading(name: string): SettingDefinitionItem {
+    return { name, render: (setting) => { setting.setName(name).setHeading(); } };
+  }
 
-    // ---- Général -------------------------------------------------------
-    new Setting(containerEl).setName(t('settings.heading.general')).setHeading();
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [
+      // ---- Général -------------------------------------------------------
+      this.heading(t('settings.heading.general')),
 
-    new Setting(containerEl)
-      .setName(t('settings.language'))
-      .setDesc(t('settings.languageDesc'))
-      .addDropdown((d) => {
-        for (const [code, name] of Object.entries(AVAILABLE_LANGUAGES)) {
-          d.addOption(code, name);
-        }
-        d.setValue(this.plugin.settings.language);
-        d.onChange(async (v) => {
-          this.plugin.settings.language = v;
-          await this.plugin.saveSettings();
-          setLocale(v);
-          this.display();
-        });
-      });
+      {
+        name: t('settings.language'),
+        desc: t('settings.languageDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.language'))
+            .setDesc(t('settings.languageDesc'))
+            .addDropdown((d) => {
+              for (const [code, name] of Object.entries(AVAILABLE_LANGUAGES)) {
+                d.addOption(code, name);
+              }
+              d.setValue(this.plugin.settings.language);
+              d.onChange(async (v) => {
+                this.plugin.settings.language = v;
+                await this.plugin.saveSettings();
+                setLocale(v);
+                this.update();
+              });
+            });
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.reconfigure'))
-      .setDesc(t('settings.reconfigureDesc2'))
-      .addButton((btn) =>
-        btn.setButtonText(t('settings.reconfigureBtn2')).onClick(() => {
-          new OnboardingModal(this.app, this.plugin).open();
-        })
-      );
+      {
+        name: t('settings.reconfigure'),
+        desc: t('settings.reconfigureDesc2'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.reconfigure'))
+            .setDesc(t('settings.reconfigureDesc2'))
+            .addButton((btn) =>
+              btn.setButtonText(t('settings.reconfigureBtn2')).onClick(() => {
+                new OnboardingModal(this.app, this.plugin).open();
+              })
+            );
+        },
+      },
 
-    // ---- Détection du texte --------------------------------------------
-    new Setting(containerEl).setName(t('settings.heading.textDetection')).setHeading();
+      // ---- Détection du texte --------------------------------------------
+      this.heading(t('settings.heading.textDetection')),
 
-    new Setting(containerEl)
-      .setName(t('settings.wholeWordOnly'))
-      .setDesc(t('settings.wholeWordOnlyDesc'))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.wholeWordOnly).onChange(async (value) => {
-          this.plugin.settings.wholeWordOnly = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.wholeWordOnly'),
+        desc: t('settings.wholeWordOnlyDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.wholeWordOnly'))
+            .setDesc(t('settings.wholeWordOnlyDesc'))
+            .addToggle((toggle) =>
+              toggle.setValue(this.plugin.settings.wholeWordOnly).onChange(async (value) => {
+                this.plugin.settings.wholeWordOnly = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.caseSensitive'))
-      .setDesc(t('settings.caseSensitiveDesc'))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.caseSensitive).onChange(async (value) => {
-          this.plugin.settings.caseSensitive = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.caseSensitive'),
+        desc: t('settings.caseSensitiveDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.caseSensitive'))
+            .setDesc(t('settings.caseSensitiveDesc'))
+            .addToggle((toggle) =>
+              toggle.setValue(this.plugin.settings.caseSensitive).onChange(async (value) => {
+                this.plugin.settings.caseSensitive = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.accentSensitive'))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.accentSensitive).onChange(async (value) => {
-          this.plugin.settings.accentSensitive = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.accentSensitive'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.accentSensitive'))
+            .addToggle((toggle) =>
+              toggle.setValue(this.plugin.settings.accentSensitive).onChange(async (value) => {
+                this.plugin.settings.accentSensitive = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    // ---- Pseudonymisation ----------------------------------------------
-    new Setting(containerEl).setName(t('settings.heading.pseudonymization')).setHeading();
+      // ---- Pseudonymisation ----------------------------------------------
+      this.heading(t('settings.heading.pseudonymization')),
 
-    new Setting(containerEl)
-      .setName(t('settings.preserveCase'))
-      .setDesc(t('settings.preserveCaseDesc'))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
-          this.plugin.settings.preserveCase = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.preserveCase'),
+        desc: t('settings.preserveCaseDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.preserveCase'))
+            .setDesc(t('settings.preserveCaseDesc'))
+            .addToggle((toggle) =>
+              toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
+                this.plugin.settings.preserveCase = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.preserveAnalyticNotation'))
-      .setDesc(t('settings.preserveAnalyticNotationDesc'))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.preserveAnalyticNotation)
-          .onChange(async (value) => {
-            this.plugin.settings.preserveAnalyticNotation = value;
-            await this.plugin.saveSettings();
-          })
-      );
+      {
+        name: t('settings.preserveAnalyticNotation'),
+        desc: t('settings.preserveAnalyticNotationDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.preserveAnalyticNotation'))
+            .setDesc(t('settings.preserveAnalyticNotationDesc'))
+            .addToggle((toggle) =>
+              toggle
+                .setValue(this.plugin.settings.preserveAnalyticNotation)
+                .onChange(async (value) => {
+                  this.plugin.settings.preserveAnalyticNotation = value;
+                  await this.plugin.saveSettings();
+                })
+            );
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.useMarkerInExport'))
-      .setDesc(t('settings.useMarkerInExportDesc'))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.useMarkerInExport).onChange(async (value) => {
-          this.plugin.settings.useMarkerInExport = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.useMarkerInExport'),
+        desc: t('settings.useMarkerInExportDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.useMarkerInExport'))
+            .setDesc(t('settings.useMarkerInExportDesc'))
+            .addToggle((toggle) =>
+              toggle.setValue(this.plugin.settings.useMarkerInExport).onChange(async (value) => {
+                this.plugin.settings.useMarkerInExport = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.markerOpen'))
-      .setDesc(t('settings.markerOpenDesc'))
-      .addText((text) =>
-        text.setValue(this.plugin.settings.markerOpen).onChange(async (value) => {
-          this.plugin.settings.markerOpen = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.markerOpen'),
+        desc: t('settings.markerOpenDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.markerOpen'))
+            .setDesc(t('settings.markerOpenDesc'))
+            .addText((text) =>
+              text.setValue(this.plugin.settings.markerOpen).onChange(async (value) => {
+                this.plugin.settings.markerOpen = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.markerClose'))
-      .setDesc(t('settings.markerCloseDesc'))
-      .addText((text) =>
-        text.setValue(this.plugin.settings.markerClose).onChange(async (value) => {
-          this.plugin.settings.markerClose = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.markerClose'),
+        desc: t('settings.markerCloseDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.markerClose'))
+            .setDesc(t('settings.markerCloseDesc'))
+            .addText((text) =>
+              text.setValue(this.plugin.settings.markerClose).onChange(async (value) => {
+                this.plugin.settings.markerClose = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
 
-    // ---- Détection NER -------------------------------------------------
-    new Setting(containerEl).setName(t('settings.heading.ner')).setHeading();
+      // ---- Détection NER -------------------------------------------------
+      this.heading(t('settings.heading.ner')),
 
-    new Setting(containerEl)
-      .setName(t('settings.nerBackend'))
-      .setDesc(t('settings.nerBackendDesc'))
-      .addDropdown((d) => {
-        d.addOption('none', t('settings.nerBackend.none'));
-        d.addOption('transformers-js', t('settings.nerBackend.tfjs'));
-        d.setValue(this.plugin.settings.nerBackend);
-        d.onChange(async (v) => {
-          this.plugin.settings.nerBackend = v as PseudObsSettings['nerBackend'];
-          await this.plugin.saveSettings();
-          this.display();
-        });
-      });
+      {
+        name: t('settings.nerBackend'),
+        desc: t('settings.nerBackendDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.nerBackend'))
+            .setDesc(t('settings.nerBackendDesc'))
+            .addDropdown((d) => {
+              d.addOption('none', t('settings.nerBackend.none'));
+              d.addOption('transformers-js', t('settings.nerBackend.tfjs'));
+              d.setValue(this.plugin.settings.nerBackend);
+              d.onChange(async (v) => {
+                this.plugin.settings.nerBackend = v as PseudObsSettings['nerBackend'];
+                await this.plugin.saveSettings();
+                this.update();
+              });
+            });
+        },
+      },
 
-    // ---- Stockage -------------------------------------------------------
-    new Setting(containerEl).setName(t('settings.heading.storage')).setHeading();
+      // ---- Stockage -------------------------------------------------------
+      this.heading(t('settings.heading.storage')),
 
-    new Setting(containerEl)
-      .setName(t('settings.transcriptionsFolder'))
-      .setDesc(t('settings.transcriptionsFolderDesc'))
-      .addSearch((cb) => {
-        new FolderSuggest(this.app, cb.inputEl);
-        cb.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
-          this.plugin.settings.transcriptionsFolder = value;
-          await this.plugin.saveSettings();
-        });
-      });
+      {
+        name: t('settings.transcriptionsFolder'),
+        desc: t('settings.transcriptionsFolderDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.transcriptionsFolder'))
+            .setDesc(t('settings.transcriptionsFolderDesc'))
+            .addSearch((cb) => {
+              new FolderSuggest(this.app, cb.inputEl);
+              cb.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
+                this.plugin.settings.transcriptionsFolder = value;
+                await this.plugin.saveSettings();
+              });
+            });
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.mappingFolder'))
-      .setDesc(t('settings.mappingFolderDesc'))
-      .addSearch((cb) => {
-        new FolderSuggest(this.app, cb.inputEl);
-        cb.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
-          this.plugin.settings.mappingFolder = value;
-          await this.plugin.saveSettings();
-        });
-      });
+      {
+        name: t('settings.mappingFolder'),
+        desc: t('settings.mappingFolderDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.mappingFolder'))
+            .setDesc(t('settings.mappingFolderDesc'))
+            .addSearch((cb) => {
+              new FolderSuggest(this.app, cb.inputEl);
+              cb.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
+                this.plugin.settings.mappingFolder = value;
+                await this.plugin.saveSettings();
+              });
+            });
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.dictionariesFolder'))
-      .setDesc(t('settings.dictionariesFolderDesc'))
-      .addSearch((cb) => {
-        new FolderSuggest(this.app, cb.inputEl);
-        cb.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
-          this.plugin.settings.dictionariesFolder = value;
-          await this.plugin.saveSettings();
-        });
-      });
+      {
+        name: t('settings.dictionariesFolder'),
+        desc: t('settings.dictionariesFolderDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.dictionariesFolder'))
+            .setDesc(t('settings.dictionariesFolderDesc'))
+            .addSearch((cb) => {
+              new FolderSuggest(this.app, cb.inputEl);
+              cb.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
+                this.plugin.settings.dictionariesFolder = value;
+                await this.plugin.saveSettings();
+              });
+            });
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.exportsFolder'))
-      .addSearch((cb) => {
-        new FolderSuggest(this.app, cb.inputEl);
-        cb.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
-          this.plugin.settings.exportsFolder = value;
-          await this.plugin.saveSettings();
-        });
-      });
+      {
+        name: t('settings.exportsFolder'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.exportsFolder'))
+            .addSearch((cb) => {
+              new FolderSuggest(this.app, cb.inputEl);
+              cb.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
+                this.plugin.settings.exportsFolder = value;
+                await this.plugin.saveSettings();
+              });
+            });
+        },
+      },
 
-    // ---- Sécurité -------------------------------------------------------
-    new Setting(containerEl).setName(t('settings.heading.security')).setHeading();
+      // ---- Sécurité -------------------------------------------------------
+      this.heading(t('settings.heading.security')),
 
-    new Setting(containerEl)
-      .setName(t('settings.vaultPerCorpus'))
-      .setDesc(t('settings.vaultPerCorpusDesc'));
+      {
+        name: t('settings.vaultPerCorpus'),
+        desc: t('settings.vaultPerCorpusDesc'),
+        render: (setting) => {
+          setting.setName(t('settings.vaultPerCorpus')).setDesc(t('settings.vaultPerCorpusDesc'));
+        },
+      },
 
-    new Setting(containerEl)
-      .setName(t('settings.warnIfSyncedFolder'))
-      .setDesc(t('settings.warnIfSyncedFolderDesc'))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.warnIfSyncedFolder).onChange(async (value) => {
-          this.plugin.settings.warnIfSyncedFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      {
+        name: t('settings.warnIfSyncedFolder'),
+        desc: t('settings.warnIfSyncedFolderDesc'),
+        render: (setting) => {
+          setting
+            .setName(t('settings.warnIfSyncedFolder'))
+            .setDesc(t('settings.warnIfSyncedFolderDesc'))
+            .addToggle((toggle) =>
+              toggle.setValue(this.plugin.settings.warnIfSyncedFolder).onChange(async (value) => {
+                this.plugin.settings.warnIfSyncedFolder = value;
+                await this.plugin.saveSettings();
+              })
+            );
+        },
+      },
+    ];
   }
 }

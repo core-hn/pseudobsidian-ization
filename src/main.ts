@@ -1,4 +1,6 @@
 import { Plugin, Notice, TFile, TFolder, TAbstractFile, Editor, Menu, MarkdownView, requestUrl, WorkspaceLeaf } from 'obsidian';
+import * as nodeFs from 'fs';
+import * as nodePath from 'path';
 import { t, setLocale } from './i18n';
 import { EditorView } from '@codemirror/view';
 import { PseudObsSettings, DEFAULT_SETTINGS, PseudObsSettingTab } from './settings';
@@ -997,8 +999,6 @@ export default class PseudObsPlugin extends Plugin {
    */
   private async importAudioFromPath(sourcePath: string, targetFolder: string): Promise<string | null> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
-      const nodeFs = require('fs') as typeof import('fs');
       if (!nodeFs.existsSync(sourcePath)) return null;
 
       const audioFilename = sourcePath.replace(/\\/g, '/').split('/').pop()!;
@@ -1086,8 +1086,6 @@ export default class PseudObsPlugin extends Plugin {
    */
   private async findAudioInSourceFolder(folderPath: string): Promise<string | null> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
-      const nodeFs = require('fs') as typeof import('fs');
       const AUDIO_EXTS = new Set(['m4a', 'mp3', 'wav', 'ogg', 'flac', 'mp4', 'aac', 'aiff']);
       const entries = await nodeFs.promises.readdir(folderPath);
       const audioFiles = entries.filter((f) => {
@@ -1472,10 +1470,6 @@ export default class PseudObsPlugin extends Plugin {
     if (dest.externalPath) {
       // Export hors vault via Node.js fs
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
-        const nodeFs = require('fs') as typeof import('fs');
-        // eslint-disable-next-line @typescript-eslint/no-var-requires -- dynamic require() needed: esbuild CJS bundle cannot statically import Node.js built-ins
-        const nodePath = require('path') as typeof import('path');
         await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
         await nodeFs.promises.writeFile(dest.externalPath, content, 'utf-8');
         new Notice(t(noticeKey, dest.externalPath));

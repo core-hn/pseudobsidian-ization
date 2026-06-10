@@ -108,7 +108,7 @@ export class EditRuleModal extends Modal {
         btn.setButtonText(t('panel.ner.save')).setCta().onClick(() => void this.save())
       )
       .addButton((btn) =>
-        btn.setButtonText(t('ruleModal.delete')).setWarning().onClick(() => void this.delete())
+        btn.setButtonText(t('ruleModal.delete')).setDestructive().onClick(() => void this.delete())
       );
   }
 

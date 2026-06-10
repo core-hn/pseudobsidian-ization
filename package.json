@@ -1,6 +1,6 @@
 {
   "name": "pseudonymizer-tool",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Obsidian plugin for pseudonymizing and correcting interactional transcripts (Jefferson, ICOR, SRT, CHAT/CHA).",
   "author": "Axelle Abbadie",
   "homepage": "https://cv.hal.science/axelle-abbadie/",
@@ -15,17 +15,17 @@
     "deploy": "npm run build && node -e \"const {mkdirSync,copyFileSync,existsSync}=require('fs'),d='test_vault/.obsidian/plugins/pseudonymizer-tool',w='node_modules/@xenova/transformers/dist';mkdirSync(d,{recursive:true});['main.js','manifest.json','styles.css'].forEach(f=>{if(existsSync(f))copyFileSync(f,d+'/'+f);});['ort-wasm-simd-threaded.wasm','ort-wasm-simd.wasm','ort-wasm-threaded.wasm','ort-wasm.wasm'].forEach(f=>{if(existsSync(w+'/'+f))copyFileSync(w+'/'+f,d+'/'+f);})\""
   },
   "devDependencies": {
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "@codemirror/state": "^6.0.0",
-    "@codemirror/view": "^6.0.0",
     "esbuild": "^0.20.0",
     "eslint": "^8.57.0",
     "eslint-plugin-obsidianmd": "^0.2.9",
     "jest": "^29.5.0",
-    "obsidian": "latest",
+    "obsidian": "^1.13.1",
     "prettier": "^3.0.0",
     "ts-jest": "^29.4.9",
     "tslib": "^2.6.0",

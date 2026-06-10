@@ -163,11 +163,11 @@ export class OnboardingModal extends Modal {
       const input = row.createEl('input');
       input.type = 'text';
       input.value = String(this.plugin.settings[key]);
-      new FolderSuggest(this.app, input).onFolderSelect(async (folder) => {
+      new FolderSuggest(this.app, input).onFolderSelect((folder) => void (async () => {
         (this.plugin.settings as unknown as Record<string, unknown>)[key] = folder.path;
         input.value = folder.path;
         await this.plugin.saveSettings();
-      });
+      })());
       input.addEventListener('change', () => { void (async () => {
         (this.plugin.settings as unknown as Record<string, unknown>)[key] = input.value.trim() || String(this.plugin.settings[key]);
         await this.plugin.saveSettings();

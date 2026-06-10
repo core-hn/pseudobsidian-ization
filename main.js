@@ -1733,11 +1733,11 @@ var init_OnboardingModal = __esm({
           const input = row.createEl("input");
           input.type = "text";
           input.value = String(this.plugin.settings[key]);
-          new FolderSuggest(this.app, input).onFolderSelect(async (folder) => {
+          new FolderSuggest(this.app, input).onFolderSelect((folder) => void (async () => {
             this.plugin.settings[key] = folder.path;
             input.value = folder.path;
             await this.plugin.saveSettings();
-          });
+          })());
           input.addEventListener("change", () => {
             void (async () => {
               this.plugin.settings[key] = input.value.trim() || String(this.plugin.settings[key]);
@@ -2190,125 +2190,236 @@ var init_settings = __esm({
         super(app, plugin);
         this.plugin = plugin;
       }
-      display() {
-        const { containerEl } = this;
-        containerEl.empty();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.heading.general")).setHeading();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.language")).setDesc(t("settings.languageDesc")).addDropdown((d) => {
-          for (const [code, name2] of Object.entries(AVAILABLE_LANGUAGES)) {
-            d.addOption(code, name2);
+      heading(name2) {
+        return { name: name2, render: (setting) => {
+          setting.setName(name2).setHeading();
+        } };
+      }
+      getSettingDefinitions() {
+        return [
+          // ---- Général -------------------------------------------------------
+          this.heading(t("settings.heading.general")),
+          {
+            name: t("settings.language"),
+            desc: t("settings.languageDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.language")).setDesc(t("settings.languageDesc")).addDropdown((d) => {
+                for (const [code, name2] of Object.entries(AVAILABLE_LANGUAGES)) {
+                  d.addOption(code, name2);
+                }
+                d.setValue(this.plugin.settings.language);
+                d.onChange(async (v) => {
+                  this.plugin.settings.language = v;
+                  await this.plugin.saveSettings();
+                  setLocale(v);
+                  this.update();
+                });
+              });
+            }
+          },
+          {
+            name: t("settings.reconfigure"),
+            desc: t("settings.reconfigureDesc2"),
+            render: (setting) => {
+              setting.setName(t("settings.reconfigure")).setDesc(t("settings.reconfigureDesc2")).addButton(
+                (btn) => btn.setButtonText(t("settings.reconfigureBtn2")).onClick(() => {
+                  new OnboardingModal(this.app, this.plugin).open();
+                })
+              );
+            }
+          },
+          // ---- Détection du texte --------------------------------------------
+          this.heading(t("settings.heading.textDetection")),
+          {
+            name: t("settings.wholeWordOnly"),
+            desc: t("settings.wholeWordOnlyDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.wholeWordOnly")).setDesc(t("settings.wholeWordOnlyDesc")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.wholeWordOnly).onChange(async (value) => {
+                  this.plugin.settings.wholeWordOnly = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          {
+            name: t("settings.caseSensitive"),
+            desc: t("settings.caseSensitiveDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.caseSensitive")).setDesc(t("settings.caseSensitiveDesc")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.caseSensitive).onChange(async (value) => {
+                  this.plugin.settings.caseSensitive = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          {
+            name: t("settings.accentSensitive"),
+            render: (setting) => {
+              setting.setName(t("settings.accentSensitive")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.accentSensitive).onChange(async (value) => {
+                  this.plugin.settings.accentSensitive = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          // ---- Pseudonymisation ----------------------------------------------
+          this.heading(t("settings.heading.pseudonymization")),
+          {
+            name: t("settings.preserveCase"),
+            desc: t("settings.preserveCaseDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.preserveCase")).setDesc(t("settings.preserveCaseDesc")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
+                  this.plugin.settings.preserveCase = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          {
+            name: t("settings.preserveAnalyticNotation"),
+            desc: t("settings.preserveAnalyticNotationDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.preserveAnalyticNotation")).setDesc(t("settings.preserveAnalyticNotationDesc")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.preserveAnalyticNotation).onChange(async (value) => {
+                  this.plugin.settings.preserveAnalyticNotation = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          {
+            name: t("settings.useMarkerInExport"),
+            desc: t("settings.useMarkerInExportDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.useMarkerInExport")).setDesc(t("settings.useMarkerInExportDesc")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.useMarkerInExport).onChange(async (value) => {
+                  this.plugin.settings.useMarkerInExport = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          {
+            name: t("settings.markerOpen"),
+            desc: t("settings.markerOpenDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.markerOpen")).setDesc(t("settings.markerOpenDesc")).addText(
+                (text) => text.setValue(this.plugin.settings.markerOpen).onChange(async (value) => {
+                  this.plugin.settings.markerOpen = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          {
+            name: t("settings.markerClose"),
+            desc: t("settings.markerCloseDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.markerClose")).setDesc(t("settings.markerCloseDesc")).addText(
+                (text) => text.setValue(this.plugin.settings.markerClose).onChange(async (value) => {
+                  this.plugin.settings.markerClose = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
+          },
+          // ---- Détection NER -------------------------------------------------
+          this.heading(t("settings.heading.ner")),
+          {
+            name: t("settings.nerBackend"),
+            desc: t("settings.nerBackendDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.nerBackend")).setDesc(t("settings.nerBackendDesc")).addDropdown((d) => {
+                d.addOption("none", t("settings.nerBackend.none"));
+                d.addOption("transformers-js", t("settings.nerBackend.tfjs"));
+                d.setValue(this.plugin.settings.nerBackend);
+                d.onChange(async (v) => {
+                  this.plugin.settings.nerBackend = v;
+                  await this.plugin.saveSettings();
+                  this.update();
+                });
+              });
+            }
+          },
+          // ---- Stockage -------------------------------------------------------
+          this.heading(t("settings.heading.storage")),
+          {
+            name: t("settings.transcriptionsFolder"),
+            desc: t("settings.transcriptionsFolderDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.transcriptionsFolder")).setDesc(t("settings.transcriptionsFolderDesc")).addSearch((cb) => {
+                new FolderSuggest(this.app, cb.inputEl);
+                cb.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
+                  this.plugin.settings.transcriptionsFolder = value;
+                  await this.plugin.saveSettings();
+                });
+              });
+            }
+          },
+          {
+            name: t("settings.mappingFolder"),
+            desc: t("settings.mappingFolderDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.mappingFolder")).setDesc(t("settings.mappingFolderDesc")).addSearch((cb) => {
+                new FolderSuggest(this.app, cb.inputEl);
+                cb.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
+                  this.plugin.settings.mappingFolder = value;
+                  await this.plugin.saveSettings();
+                });
+              });
+            }
+          },
+          {
+            name: t("settings.dictionariesFolder"),
+            desc: t("settings.dictionariesFolderDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.dictionariesFolder")).setDesc(t("settings.dictionariesFolderDesc")).addSearch((cb) => {
+                new FolderSuggest(this.app, cb.inputEl);
+                cb.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
+                  this.plugin.settings.dictionariesFolder = value;
+                  await this.plugin.saveSettings();
+                });
+              });
+            }
+          },
+          {
+            name: t("settings.exportsFolder"),
+            render: (setting) => {
+              setting.setName(t("settings.exportsFolder")).addSearch((cb) => {
+                new FolderSuggest(this.app, cb.inputEl);
+                cb.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
+                  this.plugin.settings.exportsFolder = value;
+                  await this.plugin.saveSettings();
+                });
+              });
+            }
+          },
+          // ---- Sécurité -------------------------------------------------------
+          this.heading(t("settings.heading.security")),
+          {
+            name: t("settings.vaultPerCorpus"),
+            desc: t("settings.vaultPerCorpusDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.vaultPerCorpus")).setDesc(t("settings.vaultPerCorpusDesc"));
+            }
+          },
+          {
+            name: t("settings.warnIfSyncedFolder"),
+            desc: t("settings.warnIfSyncedFolderDesc"),
+            render: (setting) => {
+              setting.setName(t("settings.warnIfSyncedFolder")).setDesc(t("settings.warnIfSyncedFolderDesc")).addToggle(
+                (toggle) => toggle.setValue(this.plugin.settings.warnIfSyncedFolder).onChange(async (value) => {
+                  this.plugin.settings.warnIfSyncedFolder = value;
+                  await this.plugin.saveSettings();
+                })
+              );
+            }
           }
-          d.setValue(this.plugin.settings.language);
-          d.onChange(async (v) => {
-            this.plugin.settings.language = v;
-            await this.plugin.saveSettings();
-            setLocale(v);
-            this.display();
-          });
-        });
-        new import_obsidian3.Setting(containerEl).setName(t("settings.reconfigure")).setDesc(t("settings.reconfigureDesc2")).addButton(
-          (btn) => btn.setButtonText(t("settings.reconfigureBtn2")).onClick(() => {
-            new OnboardingModal(this.app, this.plugin).open();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.heading.textDetection")).setHeading();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.wholeWordOnly")).setDesc(t("settings.wholeWordOnlyDesc")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.wholeWordOnly).onChange(async (value) => {
-            this.plugin.settings.wholeWordOnly = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.caseSensitive")).setDesc(t("settings.caseSensitiveDesc")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.caseSensitive).onChange(async (value) => {
-            this.plugin.settings.caseSensitive = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.accentSensitive")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.accentSensitive).onChange(async (value) => {
-            this.plugin.settings.accentSensitive = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.heading.pseudonymization")).setHeading();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.preserveCase")).setDesc(t("settings.preserveCaseDesc")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.preserveCase).onChange(async (value) => {
-            this.plugin.settings.preserveCase = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.preserveAnalyticNotation")).setDesc(t("settings.preserveAnalyticNotationDesc")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.preserveAnalyticNotation).onChange(async (value) => {
-            this.plugin.settings.preserveAnalyticNotation = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.useMarkerInExport")).setDesc(t("settings.useMarkerInExportDesc")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.useMarkerInExport).onChange(async (value) => {
-            this.plugin.settings.useMarkerInExport = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.markerOpen")).setDesc(t("settings.markerOpenDesc")).addText(
-          (text) => text.setValue(this.plugin.settings.markerOpen).onChange(async (value) => {
-            this.plugin.settings.markerOpen = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.markerClose")).setDesc(t("settings.markerCloseDesc")).addText(
-          (text) => text.setValue(this.plugin.settings.markerClose).onChange(async (value) => {
-            this.plugin.settings.markerClose = value;
-            await this.plugin.saveSettings();
-          })
-        );
-        new import_obsidian3.Setting(containerEl).setName(t("settings.heading.ner")).setHeading();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.nerBackend")).setDesc(t("settings.nerBackendDesc")).addDropdown((d) => {
-          d.addOption("none", t("settings.nerBackend.none"));
-          d.addOption("transformers-js", t("settings.nerBackend.tfjs"));
-          d.setValue(this.plugin.settings.nerBackend);
-          d.onChange(async (v) => {
-            this.plugin.settings.nerBackend = v;
-            await this.plugin.saveSettings();
-            this.display();
-          });
-        });
-        new import_obsidian3.Setting(containerEl).setName(t("settings.heading.storage")).setHeading();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.transcriptionsFolder")).setDesc(t("settings.transcriptionsFolderDesc")).addSearch((cb) => {
-          new FolderSuggest(this.app, cb.inputEl);
-          cb.setValue(this.plugin.settings.transcriptionsFolder).onChange(async (value) => {
-            this.plugin.settings.transcriptionsFolder = value;
-            await this.plugin.saveSettings();
-          });
-        });
-        new import_obsidian3.Setting(containerEl).setName(t("settings.mappingFolder")).setDesc(t("settings.mappingFolderDesc")).addSearch((cb) => {
-          new FolderSuggest(this.app, cb.inputEl);
-          cb.setValue(this.plugin.settings.mappingFolder).onChange(async (value) => {
-            this.plugin.settings.mappingFolder = value;
-            await this.plugin.saveSettings();
-          });
-        });
-        new import_obsidian3.Setting(containerEl).setName(t("settings.dictionariesFolder")).setDesc(t("settings.dictionariesFolderDesc")).addSearch((cb) => {
-          new FolderSuggest(this.app, cb.inputEl);
-          cb.setValue(this.plugin.settings.dictionariesFolder).onChange(async (value) => {
-            this.plugin.settings.dictionariesFolder = value;
-            await this.plugin.saveSettings();
-          });
-        });
-        new import_obsidian3.Setting(containerEl).setName(t("settings.exportsFolder")).addSearch((cb) => {
-          new FolderSuggest(this.app, cb.inputEl);
-          cb.setValue(this.plugin.settings.exportsFolder).onChange(async (value) => {
-            this.plugin.settings.exportsFolder = value;
-            await this.plugin.saveSettings();
-          });
-        });
-        new import_obsidian3.Setting(containerEl).setName(t("settings.heading.security")).setHeading();
-        new import_obsidian3.Setting(containerEl).setName(t("settings.vaultPerCorpus")).setDesc(t("settings.vaultPerCorpusDesc"));
-        new import_obsidian3.Setting(containerEl).setName(t("settings.warnIfSyncedFolder")).setDesc(t("settings.warnIfSyncedFolderDesc")).addToggle(
-          (toggle) => toggle.setValue(this.plugin.settings.warnIfSyncedFolder).onChange(async (value) => {
-            this.plugin.settings.warnIfSyncedFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
+        ];
       }
     };
   }
@@ -25390,14 +25501,14 @@ var init_models = __esm({
       * @todo Use https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry
       */
       async dispose() {
-        const promises = [];
+        const promises2 = [];
         for (let key of Object.keys(this)) {
           const item = this[key];
           if (item instanceof InferenceSession) {
-            promises.push(item.handler.dispose());
+            promises2.push(item.handler.dispose());
           }
         }
-        return await Promise.all(promises);
+        return await Promise.all(promises2);
       }
       /**
        * Instantiate one of the model classes of the library from a pretrained model.
@@ -31368,7 +31479,7 @@ async function pipeline(task, model = null, {
 }
 async function loadItems(mapping, model, pretrainedOptions) {
   const result = /* @__PURE__ */ Object.create(null);
-  const promises = [];
+  const promises2 = [];
   for (let [name2, cls] of mapping.entries()) {
     if (!cls)
       continue;
@@ -31394,9 +31505,9 @@ async function loadItems(mapping, model, pretrainedOptions) {
       promise = cls.from_pretrained(model, pretrainedOptions);
     }
     result[name2] = promise;
-    promises.push(promise);
+    promises2.push(promise);
   }
-  await Promise.all(promises);
+  await Promise.all(promises2);
   for (let [name2, promise] of Object.entries(result)) {
     result[name2] = await promise;
   }
@@ -33394,6 +33505,8 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian15 = require("obsidian");
+var nodeFs = __toESM(require("fs"));
+var nodePath = __toESM(require("path"));
 init_i18n();
 init_settings();
 
@@ -34095,7 +34208,7 @@ var EditRuleModal = class extends import_obsidian6.Modal {
     new import_obsidian6.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(t("panel.ner.save")).setCta().onClick(() => void this.save())
     ).addButton(
-      (btn) => btn.setButtonText(t("ruleModal.delete")).setWarning().onClick(() => void this.delete())
+      (btn) => btn.setButtonText(t("ruleModal.delete")).setDestructive().onClick(() => void this.delete())
     );
   }
   async save() {
@@ -34149,7 +34262,7 @@ var ConfirmModal = class extends import_obsidian7.Modal {
         this.close();
       })
     ).addButton(
-      (btn) => btn.setButtonText(t("common.confirm")).setWarning().setCta().onClick(() => {
+      (btn) => btn.setButtonText(t("common.confirm")).setDestructive().setCta().onClick(() => {
         this.resolved = true;
         this.close();
         void (async () => this.onConfirm())();
@@ -37973,7 +38086,6 @@ var PseudObsPlugin = class extends import_obsidian15.Plugin {
    */
   async importAudioFromPath(sourcePath, targetFolder) {
     try {
-      const nodeFs = require("fs");
       if (!nodeFs.existsSync(sourcePath))
         return null;
       const audioFilename = sourcePath.replace(/\\/g, "/").split("/").pop();
@@ -38047,7 +38159,6 @@ var PseudObsPlugin = class extends import_obsidian15.Plugin {
    */
   async findAudioInSourceFolder(folderPath) {
     try {
-      const nodeFs = require("fs");
       const AUDIO_EXTS = /* @__PURE__ */ new Set(["m4a", "mp3", "wav", "ogg", "flac", "mp4", "aac", "aiff"]);
       const entries = await nodeFs.promises.readdir(folderPath);
       const audioFiles = entries.filter((f) => {
@@ -38368,8 +38479,6 @@ var PseudObsPlugin = class extends import_obsidian15.Plugin {
     const dest = this.resolveExportPath(file, ext);
     if (dest.externalPath) {
       try {
-        const nodeFs = require("fs");
-        const nodePath = require("path");
         await nodeFs.promises.mkdir(nodePath.dirname(dest.externalPath), { recursive: true });
         await nodeFs.promises.writeFile(dest.externalPath, content, "utf-8");
         new import_obsidian15.Notice(t(noticeKey, dest.externalPath));
