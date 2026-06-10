@@ -2,6 +2,30 @@
 
 > Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
 
+## [prod] v0.1.7 — 10 June 2026
+
+### New features
+
+**i18n**
+- Russian (ru) and Spanish (es) locales added (~240 keys each), alongside French and English
+
+**Exports**
+- `markdownToNoScribeHtml()` — reconstruct pseudonymized noScribe HTML with word-level `ts_` timestamp anchors, via proportional index mapping on `words.json`; new export-as-HTML command and panel button
+- `markdownToEaf()` — export to ELAN `.eaf` (FORMAT 3.0): per-speaker tiers, deduplicated/sorted `TIME_SLOT`s, optional `MEDIA_DESCRIPTOR`, XML escaping; new export-as-EAF command and panel button (shown for VTT/HTML-sourced files)
+
+**Settings**
+- Settings tab rewritten using the Obsidian 1.13.0 declarative `getSettingDefinitions()` API
+- `minAppVersion` raised to `1.13.0`
+
+### Fixes
+- `autoConvert` now skips files created inside the exports/mappings folders, preventing re-import of freshly written exports
+- `pseudonymizeActiveFile` respects `exportMirrorClasses` — the intermediate `.pseudonymized.md` is written into the correct class subfolder (new shared helper `getClassSub()`)
+- "New class" button in the Corpus tab now opens `CorpusModal` instead of `window.prompt` (blocked in Electron); `window.confirm`/`window.prompt` replaced throughout by `ConfirmModal`/`TextInputModal`
+- Removed the "next to source" export destination option
+- Various fixes from the Obsidian community plugin review (no `require()`, no unnecessary type assertions, no floating promises, `setDestructive()` instead of deprecated `setWarning()`)
+
+---
+
 ## [prod] v0.1.6 — 17 May 2026
 
 ### New features

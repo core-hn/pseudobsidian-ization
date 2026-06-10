@@ -1,5 +1,29 @@
 # Changelog
 
+## [prod] v0.1.7 — 10 juin 2026
+
+### Nouvelles fonctionnalités
+
+**i18n**
+- Ajout des locales russe (ru) et espagnole (es) (~240 clés chacune), en plus du français et de l'anglais
+
+**Exports**
+- `markdownToNoScribeHtml()` — reconstruction du HTML noScribe pseudonymisé avec ancres temporelles `ts_` au mot près, via mapping proportionnel sur `words.json` ; nouvelle commande et bouton d'export HTML
+- `markdownToEaf()` — export ELAN `.eaf` (FORMAT 3.0) : tiers par locuteur, `TIME_SLOT` dédupliqués/triés, `MEDIA_DESCRIPTOR` optionnel, échappement XML ; nouvelle commande et bouton d'export EAF (visible pour les fichiers issus de VTT/HTML)
+
+**Paramètres**
+- Onglet Paramètres réécrit avec l'API déclarative `getSettingDefinitions()` (Obsidian 1.13.0)
+- `minAppVersion` relevé à `1.13.0`
+
+### Corrections
+- `autoConvert` ignore désormais les fichiers créés dans les dossiers exports/mappings (évite la réimportation des exports fraîchement écrits)
+- `pseudonymizeActiveFile` respecte `exportMirrorClasses` — le `.pseudonymized.md` intermédiaire est écrit dans le bon sous-dossier de classe (helper partagé `getClassSub()`)
+- Le bouton "Nouvelle classe" de l'onglet Corpus ouvre désormais `CorpusModal` au lieu de `window.prompt` (bloqué dans Electron) ; `window.confirm`/`window.prompt` remplacés partout par `ConfirmModal`/`TextInputModal`
+- Suppression de l'option d'export "à côté du fichier source"
+- Diverses corrections issues de la revue communautaire Obsidian (plus de `require()`, plus d'assertions de type inutiles, plus de promesses non gérées, `setDestructive()` à la place de `setWarning()` déprécié)
+
+---
+
 ## [prod] v0.1.6 — 17 mai 2026
 
 ### Nouvelles fonctionnalités
