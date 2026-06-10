@@ -38095,7 +38095,8 @@ var PseudObsPlugin = class extends import_obsidian15.Plugin {
       }
       const buffer = await nodeFs.promises.readFile(sourcePath);
       await this.ensureFolder(targetFolder);
-      const arrayBuf = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      const arrayBuf = new ArrayBuffer(buffer.byteLength);
+      new Uint8Array(arrayBuf).set(buffer);
       await this.app.vault.createBinary(destPath, arrayBuf);
       new import_obsidian15.Notice(t("notice.audioImported", audioFilename));
       return audioFilename;
