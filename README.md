@@ -232,6 +232,27 @@ Please open an issue before submitting a pull request for significant features.
 
 ---
 
+## Citing this work
+
+If you use this plugin in academic research, please cite it (APA 7th edition):
+
+> Abbadie, A. (2026). *Pseudonymizer Tool* (Version 0.1.7) [Computer software]. UR LHUMAIN, Université de Montpellier Paul-Valéry. https://github.com/core-hn/pseudobsidian-ization
+
+BibTeX:
+
+```bibtex
+@software{abbadie_pseudonymizer_tool,
+  author  = {Abbadie, Axelle},
+  title   = {Pseudonymizer Tool},
+  year    = {2026},
+  version = {0.1.7},
+  url     = {https://github.com/core-hn/pseudobsidian-ization},
+  note    = {UR LHUMAIN, Université de Montpellier Paul-Valéry}
+}
+```
+
+---
+
 ## Licence
 
 GPL 3.0
