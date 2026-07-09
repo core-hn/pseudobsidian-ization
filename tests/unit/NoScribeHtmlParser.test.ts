@@ -102,3 +102,40 @@ describe('NoScribeHtmlParser — parse', () => {
     expect(turn.text).not.toMatch(/\[\d{2}:\d{2}:\d{2}\]/);
   });
 });
+
+// ---- Régression : ancres avec suffixe de locuteur non standard --------------
+// Quand l'utilisatrice tape une annotation de chevauchement ("//S01: ...") juste
+// avant une coupure de segment noScribe, le nom d'ancre généré peut contenir ce
+// texte dans le suffixe (ex. "ts_95480_96512_//S01" au lieu de "ts_95480_96512_S01").
+// Avant le correctif, TS_NAME_RE (`\w*`) rejetait ces ancres et le texte entier
+// du segment disparaissait silencieusement.
+
+const NOSCRIBE_HTML_OVERLAP = `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html><head><meta name="qrichtext" content="1" />
+<meta charset="UTF-8" />
+<meta name="audio_source" content="/Corpus/entretien_02.m4a" />
+</head><body>
+<div class="WordSection1">
+
+<p><a name="ts_90660_95140_S00" ><span style="color: #000000">Expérimentateur : qu'on m'a dit pendant très très longtemps qu'il fallait se brosser des dents.</span></a><a name="ts_95480_96512_//S01" ><span style="color: #000000"> Bon, maintenant, je le fais." //S01:</span></a><a name="ts_96512_105792_//S03" ><span style="color: #000000"> C'était par flemme la vérité mais si je me brossais les dents.</span></a><a name="ts_105792_107904_S00" ><span style="color: #000000">// Ça a été, vous y arrivez de mieux en mieux, quand même.</span></a></p>
+
+</div>
+</body></html>`;
+
+describe('NoScribeHtmlParser — ancres avec suffixe non standard (chevauchements)', () => {
+  test('ne perd pas le texte des ancres dont le suffixe contient des caractères hors \\w', () => {
+    const doc = parser.parse(NOSCRIBE_HTML_OVERLAP);
+    expect(doc.cues.length).toBe(1);
+    const turn = doc.cues[0];
+    expect(turn.text).toContain('Bon, maintenant, je le fais');
+    expect(turn.text).toContain("C'était par flemme");
+    expect(turn.text).toContain('Ça a été, vous y arrivez');
+  });
+
+  test('conserve le timing correct malgré le suffixe non standard', () => {
+    const doc = parser.parse(NOSCRIBE_HTML_OVERLAP);
+    const turn = doc.cues[0];
+    expect(turn.startTime).toBe('00:01:30.660');
+    expect(turn.endTime).toBe('00:01:47.904');
+  });
+});

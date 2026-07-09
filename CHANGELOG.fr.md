@@ -1,5 +1,10 @@
 # Changelog
 
+## [prod] v0.1.8 — 9 juillet 2026
+
+### Corrections
+- `NoScribeHtmlParser` — les noms d'ancre dont le suffixe contient des caractères hors `\w` (ex. `ts_95480_96512_//S01`, produit quand une annotation de chevauchement `//S01:` est tapée juste avant une coupure de segment noScribe) étaient rejetés par `TS_NAME_RE` (`\w*`), faisant disparaître silencieusement tout le texte de l'ancre. Des chevauchements entiers pouvaient ainsi disparaître à l'import HTML. Le suffixe est désormais accepté tel quel.
+
 ## [prod] v0.1.7 — 10 juin 2026
 
 ### Nouvelles fonctionnalités

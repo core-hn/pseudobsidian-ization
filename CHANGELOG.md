@@ -2,6 +2,11 @@
 
 > Previous entries in French: [CHANGELOG.fr.md](CHANGELOG.fr.md)
 
+## [prod] v0.1.8 — 9 July 2026
+
+### Fixes
+- `NoScribeHtmlParser` — anchor names with a suffix containing non-word characters (e.g. `ts_95480_96512_//S01`, produced when an overlap annotation like `//S01:` is typed right before a noScribe segment break) were rejected by `TS_NAME_RE` (`\w*`), silently dropping the entire anchor's text. Whole overlapping-speech segments could disappear on HTML import. The suffix is now accepted as-is.
+
 ## [prod] v0.1.7 — 10 June 2026
 
 ### New features

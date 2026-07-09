@@ -16,7 +16,11 @@ import type { VttDocument, VttCue, VttWord } from './VttParser';
 
 const PARA_RE = /<p(?:\s[^>]*)?>(?<content>.*?)<\/p>/gs;
 const ANCHOR_RE = /<a\s+name="(ts_[^"]+)"[^>]*>(.*?)<\/a>/gs;
-const TS_NAME_RE = /^ts_(\d+)_(\d+)_(\w*)$/;
+// Le suffixe après START_END est censé être l'id de locuteur (S00, S01...), mais
+// noScribe peut y injecter des caractères arbitraires si l'utilisateur a tapé une
+// annotation de chevauchement (ex. "//S01:") juste avant une coupure de segment —
+// accepter n'importe quel caractère pour ne pas perdre le segment (cf. bug import HTML).
+const TS_NAME_RE = /^ts_(\d+)_(\d+)_(.*)$/;
 // Timestamps d'affichage [HH:MM:SS] générés par noScribe pour l'interface — ignorer
 const DISPLAY_TS_RE = /^\[\d{2}:\d{2}:\d{2}\]$/;
 // Locuteur suivi de " :" en début de texte

@@ -36562,7 +36562,7 @@ var VttParser = class {
 // src/parsers/NoScribeHtmlParser.ts
 var PARA_RE = /<p(?:\s[^>]*)?>(?<content>.*?)<\/p>/gs;
 var ANCHOR_RE = /<a\s+name="(ts_[^"]+)"[^>]*>(.*?)<\/a>/gs;
-var TS_NAME_RE = /^ts_(\d+)_(\d+)_(\w*)$/;
+var TS_NAME_RE = /^ts_(\d+)_(\d+)_(.*)$/;
 var DISPLAY_TS_RE = /^\[\d{2}:\d{2}:\d{2}\]$/;
 var SPEAKER_RE = /^(.+?)\s*:\s*/;
 var ALL_TAGS_RE2 = /<[^>]+>/g;
