@@ -1,5 +1,13 @@
 # Changelog
 
+## [prod] v0.1.9 — 17 juillet 2026
+
+### Corrections
+- `minAppVersion` redescendu à `1.12.7` (depuis `1.13.0`) — Obsidian 1.13 reste réservé à l'accès anticipé Catalyst ; la majorité des utilisateurs sont encore sur la version publique 1.12.7
+- Onglet Paramètres : ajout d'un fallback `display()` en complément de `getSettingDefinitions()`, pour que l'onglet s'affiche toujours sur Obsidian < 1.13, qui ignore l'API déclarative des réglages
+- `setDestructive()` (exclusif à 1.13.0) remplacé à nouveau par `setWarning()` sur les boutons supprimer/confirmer de `EditRuleModal` et `ConfirmModal`, pour la même raison de compatibilité
+- Sécurité : `protobufjs` forcé en `^7.6.5` via `overrides` npm — la dépendance transitive apportée par `@xenova/transformers` → `onnxruntime-web` → `onnx-proto` était figée sur une version vulnérable à l'exécution de code arbitraire ([GHSA-xq3m-2v4x-88gg](https://github.com/advisories/GHSA-xq3m-2v4x-88gg), CVSS 9.8)
+
 ## [prod] v0.1.8 — 9 juillet 2026
 
 ### Corrections
