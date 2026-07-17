@@ -223,17 +223,17 @@ Merci d'ouvrir une issue avant de proposer une pull request pour les fonctionnal
 
 Si vous utilisez ce plugin dans une recherche académique, merci de le citer (norme APA 7e édition) :
 
-> Abbadie, A. (2026). *Pseudonymizer Tool* (Version 0.1.7) [Computer software]. UR LHUMAIN, Université de Montpellier Paul-Valéry. https://github.com/core-hn/pseudobsidian-ization
+> Abbadie, A. (2026). *Pseudobsidian-ization* (Version 0.1.9) [Logiciel]. https://gitlab.huma-num.fr/aabbadie/pseudobsidian-ization/
 
 BibTeX :
 
 ```bibtex
-@software{abbadie_pseudonymizer_tool,
+@software{abbadie_pseudobsidian_ization,
   author  = {Abbadie, Axelle},
-  title   = {Pseudonymizer Tool},
+  title   = {Pseudobsidian-ization},
   year    = {2026},
-  version = {0.1.7},
-  url     = {https://github.com/core-hn/pseudobsidian-ization},
+  version = {0.1.9},
+  url     = {https://gitlab.huma-num.fr/aabbadie/pseudobsidian-ization/},
   note    = {UR LHUMAIN, Université de Montpellier Paul-Valéry}
 }
 ```
