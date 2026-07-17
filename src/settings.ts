@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
+import { App, PluginSettingTab, Setting, type SettingDefinitionItem, type SettingGroup } from 'obsidian';
 import { FolderSuggest } from './ui/FolderSuggest';
 import type PseudObsPlugin from './main';
 import { OnboardingModal } from './ui/OnboardingModal';
@@ -82,6 +82,31 @@ export class PseudObsSettingTab extends PluginSettingTab {
     return { name, render: (setting) => { setting.setName(name).setHeading(); } };
   }
 
+  // `update()` (re-rendu déclaratif) n'existe qu'à partir d'Obsidian 1.13 ;
+  // sur les versions antérieures on retombe sur display() (voir ci-dessous).
+  private refresh(): void {
+    const declarativeUpdate = (this as unknown as { update?: () => void }).update;
+    if (typeof declarativeUpdate === 'function') {
+      declarativeUpdate.call(this);
+    } else {
+      this.display();
+    }
+  }
+
+  // Fallback pour Obsidian < 1.13 : sur ces versions, getSettingDefinitions()
+  // n'est jamais appelée par le coeur et l'onglet resterait vide sans display().
+  display(): void {
+    const { containerEl } = this;
+    containerEl.empty();
+    // Aucun de nos callbacks render() n'utilise ce second paramètre (réservé
+    // aux items imbriqués dans un SettingDefinitionGroup) : stub inoffensif.
+    const unusedGroup = {} as unknown as SettingGroup;
+    for (const def of this.getSettingDefinitions()) {
+      if (!('render' in def) || !def.render) continue;
+      def.render(new Setting(containerEl), unusedGroup);
+    }
+  }
+
   getSettingDefinitions(): SettingDefinitionItem[] {
     return [
       // ---- Général -------------------------------------------------------
@@ -103,7 +128,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
                 this.plugin.settings.language = v;
                 await this.plugin.saveSettings();
                 setLocale(v);
-                this.update();
+                this.refresh();
               });
             });
         },
@@ -275,7 +300,7 @@ export class PseudObsSettingTab extends PluginSettingTab {
               d.onChange(async (v) => {
                 this.plugin.settings.nerBackend = v as PseudObsSettings['nerBackend'];
                 await this.plugin.saveSettings();
-                this.update();
+                this.refresh();
               });
             });
         },

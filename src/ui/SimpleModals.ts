@@ -22,7 +22,7 @@ export class ConfirmModal extends Modal {
         })
       )
       .addButton((btn) =>
-        btn.setButtonText(t('common.confirm')).setDestructive().setCta().onClick(() => {
+        btn.setButtonText(t('common.confirm')).setWarning().setCta().onClick(() => {
           this.resolved = true;
           this.close();
           void (async () => this.onConfirm())();

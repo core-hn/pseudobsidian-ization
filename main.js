@@ -2195,6 +2195,28 @@ var init_settings = __esm({
           setting.setName(name2).setHeading();
         } };
       }
+      // `update()` (re-rendu déclaratif) n'existe qu'à partir d'Obsidian 1.13 ;
+      // sur les versions antérieures on retombe sur display() (voir ci-dessous).
+      refresh() {
+        const declarativeUpdate = this.update;
+        if (typeof declarativeUpdate === "function") {
+          declarativeUpdate.call(this);
+        } else {
+          this.display();
+        }
+      }
+      // Fallback pour Obsidian < 1.13 : sur ces versions, getSettingDefinitions()
+      // n'est jamais appelée par le coeur et l'onglet resterait vide sans display().
+      display() {
+        const { containerEl } = this;
+        containerEl.empty();
+        const unusedGroup = {};
+        for (const def of this.getSettingDefinitions()) {
+          if (!("render" in def) || !def.render)
+            continue;
+          def.render(new import_obsidian3.Setting(containerEl), unusedGroup);
+        }
+      }
       getSettingDefinitions() {
         return [
           // ---- Général -------------------------------------------------------
@@ -2212,7 +2234,7 @@ var init_settings = __esm({
                   this.plugin.settings.language = v;
                   await this.plugin.saveSettings();
                   setLocale(v);
-                  this.update();
+                  this.refresh();
                 });
               });
             }
@@ -2340,7 +2362,7 @@ var init_settings = __esm({
                 d.onChange(async (v) => {
                   this.plugin.settings.nerBackend = v;
                   await this.plugin.saveSettings();
-                  this.update();
+                  this.refresh();
                 });
               });
             }
@@ -34208,7 +34230,7 @@ var EditRuleModal = class extends import_obsidian6.Modal {
     new import_obsidian6.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(t("panel.ner.save")).setCta().onClick(() => void this.save())
     ).addButton(
-      (btn) => btn.setButtonText(t("ruleModal.delete")).setDestructive().onClick(() => void this.delete())
+      (btn) => btn.setButtonText(t("ruleModal.delete")).setWarning().onClick(() => void this.delete())
     );
   }
   async save() {
@@ -34262,7 +34284,7 @@ var ConfirmModal = class extends import_obsidian7.Modal {
         this.close();
       })
     ).addButton(
-      (btn) => btn.setButtonText(t("common.confirm")).setDestructive().setCta().onClick(() => {
+      (btn) => btn.setButtonText(t("common.confirm")).setWarning().setCta().onClick(() => {
         this.resolved = true;
         this.close();
         void (async () => this.onConfirm())();
